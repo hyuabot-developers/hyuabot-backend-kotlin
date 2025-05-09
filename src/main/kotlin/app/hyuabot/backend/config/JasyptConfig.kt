@@ -10,11 +10,10 @@ class JasyptConfig(
     @Value("\${jasypt.encryptor.password}") private val jasyptPassword: String,
 ) {
     @Bean("jasyptStringEncryptor")
-    fun provideJasyptEncryptor(): StandardPBEStringEncryptor {
-        return StandardPBEStringEncryptor().apply {
+    fun provideJasyptEncryptor(): StandardPBEStringEncryptor =
+        StandardPBEStringEncryptor().apply {
             setPassword(jasyptPassword)
             setAlgorithm("PBEWithMD5AndDES")
             setKeyObtentionIterations(1000)
         }
-    }
 }
