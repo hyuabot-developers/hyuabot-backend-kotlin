@@ -1,0 +1,28 @@
+package app.hyuabot.backend.model
+
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.SequenceGenerator
+import jakarta.persistence.Table
+import java.time.LocalTime
+
+@Entity(name = "shuttle_timetable")
+@Table(name = "shuttle_timetable")
+@SequenceGenerator(name = "shuttle_timetable_seq_seq", allocationSize = 1)
+data class ShuttleTimetable(
+    @Id
+    @Column(name = "seq", columnDefinition = "serial")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "shuttle_timetable_seq_seq")
+    val seq: Int,
+    @Column(name = "period_type", length = 20)
+    val periodType: String,
+    @Column(name = "weekday")
+    val weekday: Boolean,
+    @Column(name = "route_name", length = 20)
+    val routeName: String,
+    @Column(name = "departure_time", columnDefinition = "timetz")
+    val departureTime: LocalTime,
+)
