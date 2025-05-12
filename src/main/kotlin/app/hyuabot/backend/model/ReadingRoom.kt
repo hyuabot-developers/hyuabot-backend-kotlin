@@ -10,24 +10,24 @@ import java.time.ZonedDateTime
 @Table(name = "reading_room")
 data class ReadingRoom(
     @Id
-    @Column(name = "room_id", columnDefinition = "integer")
+    @Column(name = "room_id", columnDefinition = "integer", nullable = false)
     val id: Int,
-    @Column(name = "room_name", length = 20)
+    @Column(name = "room_name", length = 20, nullable = false)
     val name: String,
-    @Column(name = "campus_id", columnDefinition = "integer")
+    @Column(name = "campus_id", columnDefinition = "integer", nullable = false)
     val campusID: Int,
-    @Column(name = "is_active", columnDefinition = "boolean")
+    @Column(name = "is_active", columnDefinition = "boolean", nullable = false)
     val isActive: Boolean,
-    @Column(name = "is_reservable", columnDefinition = "boolean")
+    @Column(name = "is_reservable", columnDefinition = "boolean", nullable = false)
     val isReservable: Boolean,
-    @Column(name = "total", columnDefinition = "integer")
+    @Column(name = "total", columnDefinition = "integer", nullable = false)
     val total: Int,
-    @Column(name = "active_total", columnDefinition = "integer")
+    @Column(name = "active_total", columnDefinition = "integer", nullable = false)
     val active: Int,
-    @Column(name = "occupied", columnDefinition = "integer")
+    @Column(name = "occupied", columnDefinition = "integer", nullable = false)
     val occupied: Int,
-    @Column(name = "available", columnDefinition = "integer")
+    @Column(name = "available", columnDefinition = "integer", nullable = false)
     val available: Int,
-    @Column(name = "last_updated_time", columnDefinition = "timestamptz")
+    @Column(name = "last_updated_time", columnDefinition = "timestamptz", nullable = false)
     val updatedAt: ZonedDateTime,
 )

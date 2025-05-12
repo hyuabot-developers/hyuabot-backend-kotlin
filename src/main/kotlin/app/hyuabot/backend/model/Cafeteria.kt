@@ -9,20 +9,20 @@ import jakarta.persistence.Table
 @Table(name = "restaurant")
 data class Cafeteria(
     @Id
-    @Column(name = "restaurant_id", columnDefinition = "integer")
+    @Column(name = "restaurant_id", columnDefinition = "integer", nullable = false)
     val id: Int,
-    @Column(name = "campus_id", columnDefinition = "integer")
+    @Column(name = "campus_id", columnDefinition = "integer", nullable = false)
     val campusID: Int,
-    @Column(name = "restaurant_name", length = 50)
+    @Column(name = "restaurant_name", length = 50, nullable = false)
     val name: String,
-    @Column(name = "latitude", columnDefinition = "double precision")
+    @Column(name = "latitude", columnDefinition = "double precision", nullable = false)
     val latitude: Double,
-    @Column(name = "longitude", columnDefinition = "double precision")
+    @Column(name = "longitude", columnDefinition = "double precision", nullable = false)
     val longitude: Double,
-    @Column(name = "breakfast_time", length = 40)
+    @Column(name = "breakfast_time", length = 40, nullable = false)
     val breakfastTime: String,
-    @Column(name = "lunch_time", length = 40)
+    @Column(name = "lunch_time", length = 40, nullable = false)
     val lunchTime: String,
-    @Column(name = "dinner_time", length = 40)
+    @Column(name = "dinner_time", length = 40, nullable = false)
     val dinnerTime: String,
 )

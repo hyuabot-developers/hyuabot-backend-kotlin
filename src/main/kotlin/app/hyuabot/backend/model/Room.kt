@@ -9,11 +9,11 @@ import jakarta.persistence.Table
 @Table(name = "room")
 data class Room(
     @Id
-    @Column(name = "building_name", length = 30)
+    @Column(name = "building_name", length = 30, nullable = false)
     val buildingName: String,
     @Id
-    @Column(name = "number", length = 30)
+    @Column(name = "number", length = 30, nullable = false)
     val number: String,
-    @Column(name = "name", length = 100)
+    @Column(name = "name", length = 100, nullable = false)
     val name: String,
 )

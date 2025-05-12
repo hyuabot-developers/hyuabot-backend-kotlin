@@ -10,12 +10,12 @@ import java.time.LocalDate
 @Table(name = "shuttle_holiday")
 data class ShuttleHoliday(
     @Id
-    @Column(name = "holiday_date", columnDefinition = "date")
+    @Column(name = "holiday_date", columnDefinition = "date", nullable = false)
     val date: LocalDate,
     @Id
-    @Column(name = "holiday_type", length = 15)
+    @Column(name = "holiday_type", length = 15, nullable = false)
     val type: String,
     @Id
-    @Column(name = "calendar_type", length = 15)
+    @Column(name = "calendar_type", length = 15, nullable = false)
     val calendarType: String,
 )

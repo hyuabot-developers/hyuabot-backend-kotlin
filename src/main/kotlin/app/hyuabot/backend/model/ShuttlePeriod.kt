@@ -10,12 +10,12 @@ import java.time.ZonedDateTime
 @Table(name = "shuttle_period")
 data class ShuttlePeriod(
     @Id
-    @Column(name = "period_type")
+    @Column(name = "period_type", nullable = false)
     val type: String,
     @Id
-    @Column(name = "period_start", columnDefinition = "timestamptz")
+    @Column(name = "period_start", columnDefinition = "timestamptz", nullable = false)
     val start: ZonedDateTime,
     @Id
-    @Column(name = "period_end", columnDefinition = "timestamptz")
+    @Column(name = "period_end", columnDefinition = "timestamptz", nullable = false)
     val end: ZonedDateTime,
 )

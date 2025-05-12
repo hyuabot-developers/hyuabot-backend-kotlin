@@ -16,6 +16,6 @@ data class ContactCategory(
     @Column(name = "category_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "phonebook_category_category_id_seq")
     val id: Int,
-    @Column(name = "category_name", length = 30)
+    @Column(name = "category_name", length = 30, nullable = false)
     val name: String,
 )

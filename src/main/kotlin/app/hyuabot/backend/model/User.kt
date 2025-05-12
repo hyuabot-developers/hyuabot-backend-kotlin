@@ -9,17 +9,17 @@ import jakarta.persistence.Table
 @Table(name = "admin_user")
 data class User(
     @Id
-    @Column(name = "user_id", length = 20)
+    @Column(name = "user_id", length = 20, nullable = false)
     val userID: String,
-    @Column(name = "password", columnDefinition = "bytea")
+    @Column(name = "password", columnDefinition = "bytea", nullable = false)
     val password: ByteArray,
-    @Column(name = "name", length = 20)
+    @Column(name = "name", length = 20, nullable = false)
     val name: String,
-    @Column(name = "email", length = 50)
+    @Column(name = "email", length = 50, nullable = false)
     val email: String,
-    @Column(name = "phone", length = 15)
+    @Column(name = "phone", length = 15, nullable = false)
     val phone: String,
-    @Column(name = "active")
+    @Column(name = "active", nullable = false)
     val active: Boolean,
 ) {
     override fun equals(other: Any?): Boolean {

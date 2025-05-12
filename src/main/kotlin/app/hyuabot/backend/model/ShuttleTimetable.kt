@@ -17,12 +17,12 @@ data class ShuttleTimetable(
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "shuttle_timetable_seq_seq")
     val seq: Int,
-    @Column(name = "period_type", length = 20)
+    @Column(name = "period_type", length = 20, nullable = false)
     val periodType: String,
-    @Column(name = "weekday")
+    @Column(name = "weekday", nullable = false)
     val weekday: Boolean,
-    @Column(name = "route_name", length = 20)
+    @Column(name = "route_name", length = 20, nullable = false)
     val routeName: String,
-    @Column(name = "departure_time", columnDefinition = "timetz")
+    @Column(name = "departure_time", columnDefinition = "timetz", nullable = false)
     val departureTime: LocalTime,
 )

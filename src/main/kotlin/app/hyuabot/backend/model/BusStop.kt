@@ -9,18 +9,18 @@ import jakarta.persistence.Table
 @Table(name = "bus_stop")
 data class BusStop(
     @Id
-    @Column(name = "stop_id", columnDefinition = "integer")
+    @Column(name = "stop_id", columnDefinition = "integer", nullable = false)
     val id: Int,
-    @Column(name = "stop_name", length = 30)
+    @Column(name = "stop_name", length = 30, nullable = false)
     val name: String,
-    @Column(name = "district_code", columnDefinition = "integer")
+    @Column(name = "district_code", columnDefinition = "integer", nullable = false)
     val districtCode: Int,
-    @Column(name = "mobile_number", length = 15)
+    @Column(name = "mobile_number", length = 15, nullable = false)
     val mobileNumber: String,
-    @Column(name = "region_name", length = 10)
+    @Column(name = "region_name", length = 10, nullable = false)
     val regionName: String,
-    @Column(name = "latitude", columnDefinition = "double precision")
+    @Column(name = "latitude", columnDefinition = "double precision", nullable = false)
     val latitude: Double,
-    @Column(name = "longitude", columnDefinition = "double precision")
+    @Column(name = "longitude", columnDefinition = "double precision", nullable = false)
     val longitude: Double,
 )

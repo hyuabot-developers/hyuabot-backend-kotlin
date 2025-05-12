@@ -12,15 +12,15 @@ import kotlin.time.Duration
 @Table(name = "subway_route_station")
 data class SubwayRouteStation(
     @Id
-    @Column(name = "station_id", length = 10)
+    @Column(name = "station_id", length = 10, nullable = false)
     val id: String,
-    @Column(name = "route_id", columnDefinition = "integer")
+    @Column(name = "route_id", columnDefinition = "integer", nullable = false)
     val routeID: Int,
-    @Column(name = "station_name", length = 30)
+    @Column(name = "station_name", length = 30, nullable = false)
     val name: String,
-    @Column(name = "station_sequence", columnDefinition = "integer")
+    @Column(name = "station_sequence", columnDefinition = "integer", nullable = false)
     val order: Int,
     @Type(value = PostgreSQLIntervalType::class)
-    @Column(name = "cumulative_time", columnDefinition = "interval")
+    @Column(name = "cumulative_time", columnDefinition = "interval", nullable = false)
     val cumulativeTime: Duration,
 )

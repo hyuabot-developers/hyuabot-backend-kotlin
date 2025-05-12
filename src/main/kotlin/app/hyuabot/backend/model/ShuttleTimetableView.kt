@@ -10,22 +10,22 @@ import java.time.LocalTime
 @Table(name = "shuttle_timetable_grouped_view")
 data class ShuttleTimetableView(
     @Id
-    @Column(name = "seq", columnDefinition = "integer")
+    @Column(name = "seq", columnDefinition = "integer", nullable = false)
     val seq: Int,
-    @Column(name = "period_type", length = 20)
+    @Column(name = "period_type", length = 20, nullable = false)
     val periodType: String,
-    @Column(name = "weekday")
+    @Column(name = "weekday", nullable = false)
     val weekday: Boolean,
-    @Column(name = "route_name", length = 15)
+    @Column(name = "route_name", length = 15, nullable = false)
     val routeName: String,
-    @Column(name = "route_tag", length = 10)
+    @Column(name = "route_tag", length = 10, nullable = false)
     val routeTag: String,
     @Id
-    @Column(name = "stop_name", length = 15)
+    @Column(name = "stop_name", length = 15, nullable = false)
     val stopName: String,
-    @Column(name = "departure_time", columnDefinition = "timetz")
+    @Column(name = "departure_time", columnDefinition = "timetz", nullable = false)
     val departureTime: LocalTime,
     @Id
-    @Column(name = "destination_group", columnDefinition = "text")
+    @Column(name = "destination_group", columnDefinition = "text", nullable = false)
     val destinationGroup: String,
 )

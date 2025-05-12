@@ -10,15 +10,15 @@ import java.time.LocalTime
 @Table(name = "bus_timetable")
 data class BusTimetable(
     @Id
-    @Column(name = "route_id", columnDefinition = "integer")
+    @Column(name = "route_id", columnDefinition = "integer", nullable = false)
     val routeID: Int,
     @Id
-    @Column(name = "start_stop_id", columnDefinition = "integer")
+    @Column(name = "start_stop_id", columnDefinition = "integer", nullable = false)
     val startStopID: Int,
     @Id
-    @Column(name = "weekday", length = 10)
+    @Column(name = "weekday", length = 10, nullable = false)
     val weekday: String,
     @Id
-    @Column(name = "departure_time", columnDefinition = "timetz")
+    @Column(name = "departure_time", columnDefinition = "timetz", nullable = false)
     val departureTime: LocalTime,
 )

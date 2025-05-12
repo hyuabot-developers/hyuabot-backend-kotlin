@@ -17,8 +17,8 @@ data class ContactVersion(
     @Column(name = "version_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "phonebook_version_version_id_seq")
     val id: Int,
-    @Column(name = "version_name", length = 30)
+    @Column(name = "version_name", length = 30, nullable = false)
     val name: String,
-    @Column(name = "created_at", columnDefinition = "timestamptz")
+    @Column(name = "created_at", columnDefinition = "timestamptz", nullable = false)
     val createdAt: ZonedDateTime,
 )

@@ -10,18 +10,18 @@ import java.time.LocalDate
 @Table(name = "menu")
 data class Menu(
     @Id
-    @Column(name = "restaurant_id", columnDefinition = "integer")
+    @Column(name = "restaurant_id", columnDefinition = "integer", nullable = false)
     val restaurantID: Int,
     @Id
-    @Column(name = "feed_date", columnDefinition = "date")
+    @Column(name = "feed_date", columnDefinition = "date", nullable = false)
     val date: LocalDate,
     @Id
-    @Column(name = "time_type", length = 10)
+    @Column(name = "time_type", length = 10, nullable = false)
     val type: String,
     @Id
-    @Column(name = "menu_food", length = 400)
+    @Column(name = "menu_food", length = 400, nullable = false)
     val food: String,
     @Id
-    @Column(name = "menu_price", length = 30)
+    @Column(name = "menu_price", length = 30, nullable = false)
     val price: String,
 )

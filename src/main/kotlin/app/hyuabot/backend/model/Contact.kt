@@ -16,12 +16,12 @@ data class Contact(
     @Column(name = "phonebook_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "phonebook_phonebook_id_seq")
     val id: Int,
-    @Column(name = "campus_id", columnDefinition = "integer")
+    @Column(name = "campus_id", columnDefinition = "integer", nullable = false)
     val campusID: Int,
-    @Column(name = "category_id", columnDefinition = "integer")
+    @Column(name = "category_id", columnDefinition = "integer", nullable = false)
     val categoryID: Int,
-    @Column(name = "name", columnDefinition = "text")
+    @Column(name = "name", columnDefinition = "text", nullable = false)
     val name: String,
-    @Column(name = "phone", length = 30)
+    @Column(name = "phone", length = 30, nullable = false)
     val phone: String,
 )

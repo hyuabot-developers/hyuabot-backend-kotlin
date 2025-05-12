@@ -16,6 +16,6 @@ data class NoticeCategory(
     @Column(name = "category_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "notice_category_category_id_seq")
     val id: Int,
-    @Column(name = "category_name", length = 20)
+    @Column(name = "category_name", length = 20, nullable = false)
     val name: String,
 )

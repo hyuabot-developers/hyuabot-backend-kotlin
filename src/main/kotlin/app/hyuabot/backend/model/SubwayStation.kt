@@ -9,6 +9,6 @@ import jakarta.persistence.Table
 @Table(name = "subway_station")
 data class SubwayStation(
     @Id
-    @Column(name = "station_name", length = 30)
+    @Column(name = "station_name", length = 30, nullable = false)
     val name: String,
 )

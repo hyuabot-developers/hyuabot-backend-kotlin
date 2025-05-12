@@ -17,16 +17,16 @@ data class Notice(
     @Column(name = "notice_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "notices_notice_id_seq")
     val id: Int,
-    @Column(name = "title", length = 100)
+    @Column(name = "title", length = 100, nullable = false)
     val title: String,
-    @Column(name = "url", length = 200)
+    @Column(name = "url", length = 200, nullable = false)
     val url: String,
-    @Column(name = "expired_at", columnDefinition = "timestamptz")
+    @Column(name = "expired_at", columnDefinition = "timestamptz", nullable = false)
     val expiredAt: ZonedDateTime,
-    @Column(name = "category_id")
+    @Column(name = "category_id", columnDefinition = "integer", nullable = false)
     val categoryID: Int,
-    @Column(name = "user_id", length = 20)
+    @Column(name = "user_id", length = 20, nullable = false)
     val userID: String,
-    @Column(name = "language", length = 10)
+    @Column(name = "language", length = 10, nullable = false)
     val language: String,
 )

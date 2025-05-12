@@ -9,8 +9,8 @@ import jakarta.persistence.Table
 @Table(name = "subway_route")
 data class SubwayRoute(
     @Id
-    @Column(name = "route_id", columnDefinition = "integer")
+    @Column(name = "route_id", columnDefinition = "integer", nullable = false)
     val id: Int,
-    @Column(name = "route_name", length = 30)
+    @Column(name = "route_name", length = 30, nullable = false)
     val name: String,
 )

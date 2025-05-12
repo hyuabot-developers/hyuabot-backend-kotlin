@@ -16,14 +16,14 @@ data class RefreshToken(
     @Column(name = "uuid", columnDefinition = "uuid")
     @GeneratedValue(strategy = GenerationType.UUID)
     val uuid: UUID,
-    @Column(name = "user_id", length = 20)
+    @Column(name = "user_id", length = 20, nullable = false)
     val userID: String,
-    @Column(name = "refresh_token", length = 100)
+    @Column(name = "refresh_token", length = 100, nullable = false)
     val refreshToken: String,
-    @Column(name = "expired_at", columnDefinition = "timestamptz")
+    @Column(name = "expired_at", columnDefinition = "timestamptz", nullable = false)
     val expiredAt: ZonedDateTime,
-    @Column(name = "created_at", columnDefinition = "timestamptz")
+    @Column(name = "created_at", columnDefinition = "timestamptz", nullable = false)
     val createdAt: ZonedDateTime,
-    @Column(name = "updated_at", columnDefinition = "timestamptz")
+    @Column(name = "updated_at", columnDefinition = "timestamptz", nullable = false)
     val updatedAt: ZonedDateTime,
 )

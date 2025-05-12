@@ -12,14 +12,14 @@ import kotlin.time.Duration
 @Table(name = "shuttle_route_stop")
 data class ShuttleRouteStop(
     @Id
-    @Column(name = "route_name", length = 15)
+    @Column(name = "route_name", length = 15, nullable = false)
     val routeName: String,
     @Id
-    @Column(name = "stop_name ", length = 15)
+    @Column(name = "stop_name ", length = 15, nullable = false)
     val stopName: String,
-    @Column(name = "stop_order", columnDefinition = "integer")
+    @Column(name = "stop_order", columnDefinition = "integer", nullable = false)
     val order: Int,
     @Type(PostgreSQLIntervalType::class)
-    @Column(name = "cumulative_time", columnDefinition = "interval")
+    @Column(name = "cumulative_time", columnDefinition = "interval", nullable = false)
     val cumulativeTime: Duration,
 )

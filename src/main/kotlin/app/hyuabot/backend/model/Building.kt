@@ -11,14 +11,14 @@ data class Building(
     @Column(name = "id", length = 15, nullable = true)
     val id: String?,
     @Id
-    @Column(name = "name", length = 30)
+    @Column(name = "name", length = 30, nullable = false)
     val name: String,
-    @Column(name = "campus_id", columnDefinition = "integer")
+    @Column(name = "campus_id", columnDefinition = "integer", nullable = false)
     val campusID: Int,
-    @Column(name = "latitude", columnDefinition = "double precision")
+    @Column(name = "latitude", columnDefinition = "double precision", nullable = false)
     val latitude: Double,
-    @Column(name = "longitude", columnDefinition = "double precision")
+    @Column(name = "longitude", columnDefinition = "double precision", nullable = false)
     val longitude: Double,
-    @Column(name = "url", columnDefinition = "text")
+    @Column(name = "url", columnDefinition = "text", nullable = false)
     val url: String,
 )

@@ -9,6 +9,6 @@ import jakarta.persistence.Table
 @Table(name = "shuttle_period_type")
 data class ShuttlePeriodType(
     @Id
-    @Column(name = "period_type", length = 20)
+    @Column(name = "period_type", length = 20, nullable = false)
     val type: String,
 )
