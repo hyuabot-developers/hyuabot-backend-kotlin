@@ -3,6 +3,7 @@ package app.hyuabot.backend.model
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 
 @Entity(name = "user")
@@ -21,6 +22,10 @@ data class User(
     val phone: String,
     @Column(name = "active", nullable = false)
     val active: Boolean,
+    @OneToMany(mappedBy = "user")
+    val refreshToken: List<RefreshToken> = emptyList(),
+    @OneToMany(mappedBy = "user")
+    val notice: List<Notice> = emptyList(),
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

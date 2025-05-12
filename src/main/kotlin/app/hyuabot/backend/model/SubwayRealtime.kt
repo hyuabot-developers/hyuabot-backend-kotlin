@@ -4,6 +4,9 @@ import io.hypersistence.utils.hibernate.type.interval.PostgreSQLIntervalType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Type
 import java.time.ZonedDateTime
@@ -40,4 +43,10 @@ data class SubwayRealtime(
     val isLast: Boolean,
     @Column(name = "status_code", columnDefinition = "integer", nullable = false)
     val status: Int,
+    @ManyToOne
+    @JoinColumn(name = "station_id", referencedColumnName = "station_id", insertable = false, updatable = false)
+    val station: SubwayRouteStation,
+    @OneToOne
+    @JoinColumn(name = "terminal_station_id", referencedColumnName = "station_id", insertable = false, updatable = false)
+    val terminalStation: SubwayRouteStation,
 )

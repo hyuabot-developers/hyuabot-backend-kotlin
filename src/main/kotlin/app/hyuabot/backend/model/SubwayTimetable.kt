@@ -3,6 +3,9 @@ package app.hyuabot.backend.model
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import java.time.LocalTime
 
@@ -25,4 +28,13 @@ data class SubwayTimetable(
     @Id
     @Column(name = "up_down_type", length = 10, nullable = false)
     val heading: String,
+    @ManyToOne
+    @JoinColumn(name = "station_id", referencedColumnName = "station_id", insertable = false, updatable = false)
+    val station: SubwayRouteStation,
+    @OneToOne
+    @JoinColumn(name = "start_station_id", referencedColumnName = "station_id", insertable = false, updatable = false)
+    val startStation: SubwayRouteStation,
+    @OneToOne
+    @JoinColumn(name = "terminal_station_id", referencedColumnName = "station_id", insertable = false, updatable = false)
+    val terminalStation: SubwayRouteStation,
 )

@@ -5,6 +5,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 
@@ -18,4 +19,6 @@ data class ContactCategory(
     val id: Int,
     @Column(name = "category_name", length = 30, nullable = false)
     val name: String,
+    @OneToMany(mappedBy = "category")
+    val contact: List<Contact> = emptyList(),
 )

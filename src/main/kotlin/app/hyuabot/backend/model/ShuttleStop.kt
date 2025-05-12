@@ -3,6 +3,7 @@ package app.hyuabot.backend.model
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 
 @Entity(name = "shuttle_stop")
@@ -15,4 +16,10 @@ data class ShuttleStop(
     val latitude: Double,
     @Column(name = "longitude", columnDefinition = "double precision", nullable = false)
     val longitude: Double,
+    @OneToMany(mappedBy = "stop")
+    val route: List<ShuttleRouteStop> = emptyList(),
+    @OneToMany(mappedBy = "routeToStart")
+    val routeToStart: List<ShuttleRoute> = emptyList(),
+    @OneToMany(mappedBy = "routeToEnd")
+    val routeToEnd: List<ShuttleRoute> = emptyList(),
 )

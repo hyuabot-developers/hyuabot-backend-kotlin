@@ -5,6 +5,8 @@ import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import java.time.ZonedDateTime
 import java.util.UUID
@@ -26,4 +28,7 @@ data class RefreshToken(
     val createdAt: ZonedDateTime,
     @Column(name = "updated_at", columnDefinition = "timestamptz", nullable = false)
     val updatedAt: ZonedDateTime,
+    @ManyToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "user_id", insertable = false, updatable = false)
+    val user: User,
 )

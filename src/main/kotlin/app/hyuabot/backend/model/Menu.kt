@@ -3,6 +3,8 @@ package app.hyuabot.backend.model
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import java.time.LocalDate
 
@@ -24,4 +26,7 @@ data class Menu(
     @Id
     @Column(name = "menu_price", length = 30, nullable = false)
     val price: String,
+    @JoinColumn(name = "restaurant_id", referencedColumnName = "restaurant_id", insertable = false, updatable = false)
+    @ManyToOne
+    val cafeteria: Cafeteria,
 )

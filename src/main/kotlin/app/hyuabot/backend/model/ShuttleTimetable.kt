@@ -5,6 +5,8 @@ import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import java.time.LocalTime
@@ -25,4 +27,10 @@ data class ShuttleTimetable(
     val routeName: String,
     @Column(name = "departure_time", columnDefinition = "timetz", nullable = false)
     val departureTime: LocalTime,
+    @ManyToOne
+    @JoinColumn(name = "period_type", referencedColumnName = "period_type", insertable = false, updatable = false)
+    val period: ShuttlePeriod,
+    @ManyToOne
+    @JoinColumn(name = "route_name", referencedColumnName = "route_name", insertable = false, updatable = false)
+    val route: ShuttleRoute,
 )

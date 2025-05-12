@@ -4,6 +4,9 @@ import io.hypersistence.utils.hibernate.type.interval.PostgreSQLIntervalType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.JoinColumns
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Type
 import java.time.ZonedDateTime
@@ -32,4 +35,10 @@ data class BusRealtime(
     val isLowFloor: Boolean,
     @Column(name = "last_updated_time", columnDefinition = "timestamptz", nullable = false)
     val updatedAt: ZonedDateTime,
+    @ManyToOne
+    @JoinColumns(
+        JoinColumn(name = "route_id", referencedColumnName = "route_id"),
+        JoinColumn(name = "stop_id", referencedColumnName = "stop_id"),
+    )
+    val routeStop: BusRouteStop,
 )

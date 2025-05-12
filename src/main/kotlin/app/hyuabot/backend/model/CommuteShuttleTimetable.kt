@@ -3,6 +3,8 @@ package app.hyuabot.backend.model
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import java.time.LocalTime
 
@@ -19,4 +21,10 @@ data class CommuteShuttleTimetable(
     val order: Int,
     @Column(name = "departure_time", columnDefinition = "timetz", nullable = false)
     val departureTime: LocalTime,
+    @ManyToOne
+    @JoinColumn(name = "route_name", referencedColumnName = "route_name", insertable = false, updatable = false)
+    val route: CommuteShuttleRoute,
+    @ManyToOne
+    @JoinColumn(name = "stop_name", referencedColumnName = "stop_name", insertable = false, updatable = false)
+    val stop: CommuteShuttleStop,
 )

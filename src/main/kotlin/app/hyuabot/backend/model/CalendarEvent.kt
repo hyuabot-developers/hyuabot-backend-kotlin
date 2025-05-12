@@ -5,6 +5,8 @@ import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import java.time.LocalDate
@@ -27,4 +29,7 @@ data class CalendarEvent(
     val start: LocalDate,
     @Column(name = "end_date", columnDefinition = "date", nullable = false)
     val end: LocalDate,
+    @ManyToOne
+    @JoinColumn(name = "category_id", referencedColumnName = "category_id", insertable = false, updatable = false)
+    val category: CalendarCategory,
 )

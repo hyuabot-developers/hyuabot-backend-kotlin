@@ -3,6 +3,9 @@ package app.hyuabot.backend.model
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import java.time.ZonedDateTime
 
@@ -18,4 +21,9 @@ data class ShuttlePeriod(
     @Id
     @Column(name = "period_end", columnDefinition = "timestamptz", nullable = false)
     val end: ZonedDateTime,
+    @ManyToOne
+    @JoinColumn(name = "period_type", referencedColumnName = "period_type", insertable = false, updatable = false)
+    val periodType: ShuttlePeriodType,
+    @OneToMany(mappedBy = "period")
+    val timetable: List<ShuttleTimetable> = emptyList(),
 )

@@ -3,6 +3,9 @@ package app.hyuabot.backend.model
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 
 @Entity(name = "cafeteria")
@@ -25,4 +28,9 @@ data class Cafeteria(
     val lunchTime: String,
     @Column(name = "dinner_time", length = 40, nullable = false)
     val dinnerTime: String,
+    @ManyToOne
+    @JoinColumn(name = "campus_id", referencedColumnName = "campus_id", insertable = false, updatable = false)
+    val campus: Campus,
+    @OneToMany(mappedBy = "cafeteria")
+    val menu: List<Menu> = emptyList(),
 )

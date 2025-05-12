@@ -3,6 +3,9 @@ package app.hyuabot.backend.model
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.JoinColumns
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import java.time.LocalDate
 import java.time.LocalTime
@@ -24,4 +27,10 @@ data class BusDepartureLog(
     val departureTime: LocalTime,
     @Column(name = "vehicle_id", length = 20, nullable = false)
     val vehicleID: String,
+    @ManyToOne
+    @JoinColumns(
+        JoinColumn(name = "route_id", referencedColumnName = "route_id"),
+        JoinColumn(name = "stop_id", referencedColumnName = "stop_id"),
+    )
+    val routeStop: BusRouteStop,
 )

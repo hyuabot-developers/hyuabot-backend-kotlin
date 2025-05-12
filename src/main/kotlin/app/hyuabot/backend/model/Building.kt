@@ -3,6 +3,9 @@ package app.hyuabot.backend.model
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 
 @Entity(name = "building")
@@ -13,7 +16,7 @@ data class Building(
     @Id
     @Column(name = "name", length = 30, nullable = false)
     val name: String,
-    @Column(name = "campus_id", columnDefinition = "integer", nullable = false)
+    @Column(name = "campus_id", columnDefinition = "integer", nullable = false, insertable = false, updatable = false)
     val campusID: Int,
     @Column(name = "latitude", columnDefinition = "double precision", nullable = false)
     val latitude: Double,
@@ -21,4 +24,9 @@ data class Building(
     val longitude: Double,
     @Column(name = "url", columnDefinition = "text", nullable = false)
     val url: String,
+    @OneToMany(mappedBy = "building")
+    val room: List<Room> = emptyList(),
+    @ManyToOne
+    @JoinColumn(name = "campus_id")
+    val campus: Campus,
 )

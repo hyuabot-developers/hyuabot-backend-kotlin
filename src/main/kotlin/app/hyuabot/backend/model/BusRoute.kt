@@ -3,6 +3,7 @@ package app.hyuabot.backend.model
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import java.time.LocalTime
 
@@ -38,4 +39,6 @@ data class BusRoute(
     val companyName: String,
     @Column(name = "company_telephone", length = 15, nullable = false)
     val companyPhone: String,
+    @OneToMany(mappedBy = "route")
+    val stop: List<BusRouteStop> = emptyList(),
 )

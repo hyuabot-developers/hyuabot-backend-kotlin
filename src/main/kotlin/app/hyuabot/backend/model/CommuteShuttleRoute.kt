@@ -3,6 +3,7 @@ package app.hyuabot.backend.model
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 
 @Entity(name = "commute_shuttle_route")
@@ -15,4 +16,6 @@ data class CommuteShuttleRoute(
     val descriptionKorean: String,
     @Column(name = "route_description_english", length = 100, nullable = false)
     val descriptionEnglish: String,
+    @OneToMany(mappedBy = "route")
+    val timetable: List<CommuteShuttleTimetable> = emptyList(),
 )

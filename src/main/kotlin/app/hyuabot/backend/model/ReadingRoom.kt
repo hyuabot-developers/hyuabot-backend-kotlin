@@ -3,6 +3,8 @@ package app.hyuabot.backend.model
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import java.time.ZonedDateTime
 
@@ -30,4 +32,7 @@ data class ReadingRoom(
     val available: Int,
     @Column(name = "last_updated_time", columnDefinition = "timestamptz", nullable = false)
     val updatedAt: ZonedDateTime,
+    @ManyToOne
+    @JoinColumn(name = "campus_id", referencedColumnName = "campus_id", insertable = false, updatable = false)
+    val campus: Campus,
 )
