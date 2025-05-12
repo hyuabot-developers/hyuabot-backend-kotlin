@@ -5,15 +5,17 @@ import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import java.time.ZonedDateTime
 
 @Entity(name = "notice")
 @Table(name = "notices")
+@SequenceGenerator(name = "notices_notice_id_seq", allocationSize = 1)
 data class Notice(
     @Id
     @Column(name = "notice_id", columnDefinition = "serial")
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "notice_notice_id_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "notices_notice_id_seq")
     val id: Int,
     @Column(name = "title", length = 100)
     val title: String,

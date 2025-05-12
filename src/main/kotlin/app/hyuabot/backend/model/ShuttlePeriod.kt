@@ -13,9 +13,9 @@ data class ShuttlePeriod(
     @Column(name = "period_type")
     val type: String,
     @Id
-    @Column(name = "start_time", columnDefinition = "timestamptz")
+    @Column(name = "period_start", columnDefinition = "timestamptz")
     val start: ZonedDateTime,
     @Id
-    @Column(name = "end_time", columnDefinition = "timestamptz")
+    @Column(name = "period_end", columnDefinition = "timestamptz")
     val end: ZonedDateTime,
 )
