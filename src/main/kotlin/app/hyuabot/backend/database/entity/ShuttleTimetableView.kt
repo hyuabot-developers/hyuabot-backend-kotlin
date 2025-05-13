@@ -1,13 +1,16 @@
 package app.hyuabot.backend.database.entity
 
+import app.hyuabot.backend.database.key.ShuttleTimetableViewID
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.IdClass
 import jakarta.persistence.Table
 import java.time.LocalTime
 
 @Entity(name = "shuttle_timetable_view")
 @Table(name = "shuttle_timetable_grouped_view")
+@IdClass(ShuttleTimetableViewID::class)
 data class ShuttleTimetableView(
     @Id
     @Column(name = "seq", columnDefinition = "integer", nullable = false)

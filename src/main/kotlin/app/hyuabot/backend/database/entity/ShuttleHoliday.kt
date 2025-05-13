@@ -1,13 +1,16 @@
 package app.hyuabot.backend.database.entity
 
+import app.hyuabot.backend.database.key.ShuttleHolidayID
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.IdClass
 import jakarta.persistence.Table
 import java.time.LocalDate
 
 @Entity(name = "shuttle_holiday")
 @Table(name = "shuttle_holiday")
+@IdClass(ShuttleHolidayID::class)
 data class ShuttleHoliday(
     @Id
     @Column(name = "holiday_date", columnDefinition = "date", nullable = false)

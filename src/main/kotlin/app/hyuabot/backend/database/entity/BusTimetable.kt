@@ -1,8 +1,10 @@
 package app.hyuabot.backend.database.entity
 
+import app.hyuabot.backend.database.key.BusTimetableID
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.IdClass
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
@@ -11,6 +13,7 @@ import java.time.LocalTime
 
 @Entity(name = "bus_timetable")
 @Table(name = "bus_timetable")
+@IdClass(BusTimetableID::class)
 data class BusTimetable(
     @Id
     @Column(name = "route_id", columnDefinition = "integer", nullable = false)

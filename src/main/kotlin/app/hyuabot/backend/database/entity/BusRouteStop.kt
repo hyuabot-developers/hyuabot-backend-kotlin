@@ -1,8 +1,10 @@
 package app.hyuabot.backend.database.entity
 
+import app.hyuabot.backend.database.key.BusRouteStopID
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.IdClass
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
@@ -10,6 +12,7 @@ import jakarta.persistence.Table
 
 @Entity(name = "bus_route_stop")
 @Table(name = "bus_route_stop")
+@IdClass(BusRouteStopID::class)
 data class BusRouteStop(
     @Id
     @Column(name = "route_id", columnDefinition = "integer", nullable = false)

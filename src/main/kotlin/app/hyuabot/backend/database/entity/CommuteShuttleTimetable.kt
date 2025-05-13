@@ -1,8 +1,10 @@
 package app.hyuabot.backend.database.entity
 
+import app.hyuabot.backend.database.key.CommuteShuttleTimetableID
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.IdClass
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
@@ -10,6 +12,7 @@ import java.time.LocalTime
 
 @Entity(name = "commute_shuttle_timetable")
 @Table(name = "commute_shuttle_timetable")
+@IdClass(CommuteShuttleTimetableID::class)
 data class CommuteShuttleTimetable(
     @Id
     @Column(name = "route_name", length = 15, nullable = false)

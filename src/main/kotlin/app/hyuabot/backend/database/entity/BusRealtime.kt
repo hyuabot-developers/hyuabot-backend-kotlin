@@ -1,9 +1,11 @@
 package app.hyuabot.backend.database.entity
 
+import app.hyuabot.backend.database.key.BusRealtimeID
 import io.hypersistence.utils.hibernate.type.interval.PostgreSQLIntervalType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.IdClass
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
@@ -14,6 +16,7 @@ import kotlin.time.Duration
 
 @Entity(name = "bus_realtime")
 @Table(name = "bus_realtime")
+@IdClass(BusRealtimeID::class)
 data class BusRealtime(
     @Id
     @Column(name = "route_id", columnDefinition = "integer", nullable = false)

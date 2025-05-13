@@ -1,13 +1,16 @@
 package app.hyuabot.backend.database.entity
 
+import app.hyuabot.backend.database.key.RoomID
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.IdClass
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 
 @Entity(name = "room")
 @Table(name = "room")
+@IdClass(RoomID::class)
 data class Room(
     @Id
     @Column(name = "building_name", length = 30, nullable = false)
