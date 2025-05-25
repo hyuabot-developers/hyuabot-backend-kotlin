@@ -1,3 +1,5 @@
+import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
+
 plugins {
     kotlin("jvm") version "1.9.25"
     kotlin("plugin.spring") version "1.9.25"
@@ -5,6 +7,7 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7"
     id("com.netflix.dgs.codegen") version "7.0.3"
     kotlin("plugin.jpa") version "1.9.25"
+    id("org.jlleitschuh.gradle.ktlint").version("12.2.0")
 }
 
 group = "app.hyuabot"
@@ -39,6 +42,10 @@ dependencies {
     testImplementation("org.springframework.graphql:spring-graphql-test")
     testImplementation("org.springframework.security:spring-security-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    // Encrypt secret variables
+    implementation("com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.5")
+    // Hibernate utilities
+    implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.9.10")
 }
 
 dependencyManagement {
@@ -53,8 +60,14 @@ kotlin {
     }
 }
 
+ktlint {
+    reporters {
+        reporter(ReporterType.JSON)
+    }
+}
+
 tasks.generateJava {
-    schemaPaths.add("${projectDir}/src/main/resources/graphql-client")
+    schemaPaths.add("$projectDir/src/main/resources/graphql-client")
     packageName = "app.hyuabot.backend.codegen"
     generateClient = true
 }

@@ -1,0 +1,21 @@
+name: Check code convention
+on:
+  push:
+    branches-ignore:
+      - main
+jobs:
+  ktlint:
+    name: Check Kotlin code style
+    runs-on: ["self-hosted", "X64"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'zulu'
+          check-latest: 'true'
+      - name: Run ktlint
+        run: |
+          ./gradlew ktlintCheck
