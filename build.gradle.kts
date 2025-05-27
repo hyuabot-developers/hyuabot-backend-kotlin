@@ -46,6 +46,10 @@ dependencies {
     implementation("com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.5")
     // Hibernate utilities
     implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.9.10")
+    // jwt
+    implementation("io.jsonwebtoken:jjwt-api:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 }
 
 dependencyManagement {
