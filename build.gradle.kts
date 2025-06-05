@@ -48,6 +48,8 @@ dependencies {
     implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.9.10")
     // jwt
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")
+    // Swagger
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 }
