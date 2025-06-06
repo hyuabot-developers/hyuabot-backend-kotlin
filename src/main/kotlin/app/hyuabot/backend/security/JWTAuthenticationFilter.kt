@@ -1,5 +1,6 @@
 package app.hyuabot.backend.security
 
+import app.hyuabot.backend.auth.domain.TokenResponse
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -32,7 +33,7 @@ class JWTAuthenticationFilter(
         request
             .getHeader("Authorization")
             ?.takeIf {
-                it.startsWith(JWTTokenInfo.TokenGrantType.BEARER.value)
+                it.startsWith(TokenResponse.TokenGrantType.BEARER.value)
             }?.substring(7)
 
     // 인증 정보를 기반으로 응답 헤더에 JWT 토큰을 설정

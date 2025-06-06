@@ -1,6 +1,6 @@
-package app.hyuabot.backend.security
+package app.hyuabot.backend.auth.domain
 
-data class JWTTokenInfo(
+data class TokenResponse(
     val grantType: TokenGrantType = TokenGrantType.BEARER,
     val accessToken: String,
 ) {

@@ -1,6 +1,8 @@
 package app.hyuabot.backend.auth
 
 import app.hyuabot.backend.auth.domain.CreateUserRequest
+import app.hyuabot.backend.auth.domain.LoginRequest
+import app.hyuabot.backend.auth.domain.TokenResponse
 import app.hyuabot.backend.utility.ResponseBuilder
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -11,7 +13,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.dao.DuplicateKeyException
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.ModelAttribute
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -99,6 +103,41 @@ class AuthController(
             throw ResponseBuilder.exception(HttpStatus.CONFLICT, e.message ?: "")
         } catch (e: Exception) {
             throw ResponseBuilder.exception(HttpStatus.INTERNAL_SERVER_ERROR, e.message ?: "INTERNAL_SERVER_ERROR")
+        }
+    }
+
+    @PostMapping("/token", consumes = [MediaType.APPLICATION_FORM_URLENCODED_VALUE])
+    @Operation(
+        summary = "로그인",
+        description = "사용자 로그인 API. 사용자 ID와 비밀번호를 사용하여 JWT 토큰을 발급합니다.",
+        requestBody =
+            io.swagger.v3.oas.annotations.parameters.RequestBody(
+                required = true,
+                content =
+                    arrayOf(
+                        Content(
+                            mediaType = MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+                            schema = Schema(implementation = LoginRequest::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "LoginRequestExample",
+                                        description = "로그인 요청 예시",
+                                        value = "username=user123&password=securePassword123",
+                                    ),
+                                ),
+                        ),
+                    ),
+            ),
+    )
+    fun login(
+        @ModelAttribute payload: LoginRequest,
+    ): ResponseEntity<TokenResponse> {
+        authService.login(payload.username, payload.password).let {
+            return ResponseBuilder.response(
+                HttpStatus.CREATED,
+                it,
+            )
         }
     }
 }
