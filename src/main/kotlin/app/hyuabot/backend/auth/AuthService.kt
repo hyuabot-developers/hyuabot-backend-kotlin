@@ -51,4 +51,8 @@ class AuthService(
         val accessToken = tokenProvider.createAccessToken(authentication)
         return TokenResponse(accessToken = accessToken)
     }
+
+    fun getUserInfo(userID: String): User =
+        userRepository.findByUserIDAndActiveIsTrue(userID)
+            ?: throw IllegalArgumentException("NO_USER_INFO")
 }

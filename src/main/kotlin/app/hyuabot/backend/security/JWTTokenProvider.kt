@@ -23,7 +23,7 @@ class JWTTokenProvider(
         Jwts
             .builder()
             .issuedAt(Date())
-            .expiration(Date(System.currentTimeMillis() + expiration * 1000))
+            .expiration(Date(System.currentTimeMillis() + expiration * 1000 * 60)) // 만료 시간 설정
             .subject((authentication.principal as JWTUser).username)
             .signWith(key)
             .compact()

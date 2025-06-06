@@ -3,6 +3,8 @@ package app.hyuabot.backend.auth
 import app.hyuabot.backend.auth.domain.CreateUserRequest
 import app.hyuabot.backend.auth.domain.LoginRequest
 import app.hyuabot.backend.auth.domain.TokenResponse
+import app.hyuabot.backend.auth.domain.UserResponse
+import app.hyuabot.backend.security.JWTUser
 import app.hyuabot.backend.utility.ResponseBuilder
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -15,6 +17,8 @@ import org.springframework.dao.DuplicateKeyException
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.ModelAttribute
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -138,6 +142,31 @@ class AuthController(
                 HttpStatus.CREATED,
                 it,
             )
+        }
+    }
+
+    @GetMapping("/profile")
+    @Operation(
+        summary = "사용자 프로필 조회",
+        description = "로그인된 사용자의 프로필 정보를 조회합니다.",
+    )
+    fun getProfile(): ResponseEntity<UserResponse> {
+        val userID = (SecurityContextHolder.getContext().authentication.principal as JWTUser).username
+        return try {
+            authService.getUserInfo(userID).let { user ->
+                ResponseBuilder.response(
+                    HttpStatus.OK,
+                    UserResponse(
+                        username = user.userID,
+                        nickname = user.name,
+                        email = user.email,
+                        phone = user.phone,
+                        active = user.active,
+                    ),
+                )
+            }
+        } catch (e: IllegalArgumentException) {
+            throw ResponseBuilder.exception(HttpStatus.NOT_FOUND, e.message ?: "NO_USER_INFO")
         }
     }
 }
