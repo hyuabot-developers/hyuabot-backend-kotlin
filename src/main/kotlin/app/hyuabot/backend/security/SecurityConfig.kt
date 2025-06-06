@@ -20,7 +20,7 @@ class SecurityConfig(
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) } // 세션 관리 정책을 Stateless로 설정
             .authorizeHttpRequests { requests ->
                 requests // 인증 API, Swagger UI, GraphQL 클라이언트 API는 인증 없이 접근 가능
-                    .requestMatchers("/api/v1/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/graphql/client/**", "/error")
+                    .requestMatchers("/api/v1/user/**", "/swagger-ui/**", "/v3/api-docs/**", "/graphql/client/**", "/error")
                     .permitAll()
                     .anyRequest()
                     .authenticated()

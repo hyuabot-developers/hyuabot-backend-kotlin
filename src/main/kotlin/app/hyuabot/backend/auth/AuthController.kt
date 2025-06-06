@@ -17,13 +17,13 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-@RequestMapping(path = ["/api/v1/auth"])
+@RequestMapping(path = ["/api/v1/user"])
 @RestController
 @Tag(name = "Auth", description = "사용자 인증 및 관리 API")
 class AuthController(
     private val authService: AuthService,
 ) {
-    @PostMapping("/user")
+    @PostMapping("")
     @Operation(summary = "회원가입", description = "사용자 회원가입 API")
     @ApiResponses(
         value = [
