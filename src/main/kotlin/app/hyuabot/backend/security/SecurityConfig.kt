@@ -6,9 +6,12 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
 @Configuration
-class SecurityConfig {
+class SecurityConfig(
+    private val tokenProvider: JWTTokenProvider,
+) {
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain =
         http
@@ -21,7 +24,10 @@ class SecurityConfig {
                     .permitAll()
                     .anyRequest()
                     .authenticated()
-            }.build()
+            }.addFilterBefore(
+                JWTAuthenticationFilter(tokenProvider),
+                UsernamePasswordAuthenticationFilter::class.java,
+            ).build()
 
     @Bean
     fun passwordEncoder() = BCryptPasswordEncoder()
