@@ -6,6 +6,7 @@ import app.hyuabot.backend.database.entity.User
 import app.hyuabot.backend.database.repository.RefreshTokenRepository
 import app.hyuabot.backend.database.repository.UserRepository
 import app.hyuabot.backend.security.JWTTokenProvider
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.transaction.Transactional
 import org.springframework.dao.DuplicateKeyException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -59,7 +60,15 @@ class AuthService(
         userRepository.findByUserIDAndActiveIsTrue(userID)
             ?: throw IllegalArgumentException("NO_USER_INFO")
 
-    fun logout(userInfo: User) {
+    fun logout(
+        userInfo: User,
+        request: HttpServletRequest,
+    ) {
+        // Access token 무효화
+        tokenProvider.invalidateAccessToken(
+            user = userInfo,
+            accessToken = request.getHeader("Authorization")?.substring(7) ?: throw IllegalArgumentException("NO_ACCESS_TOKEN"),
+        )
         refreshTokenRepository.findByUserID(userInfo.userID)?.let { refreshToken ->
             refreshTokenRepository.delete(refreshToken)
         } ?: throw IllegalArgumentException("NO_REFRESH_TOKEN")

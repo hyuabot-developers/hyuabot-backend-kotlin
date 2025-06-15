@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
+import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DuplicateKeyException
 import org.springframework.http.HttpStatus
@@ -155,10 +156,13 @@ class AuthController(
         summary = "로그아웃",
         description = "사용자 로그아웃 API. 현재 로그인된 사용자의 JWT 토큰을 무효화합니다.",
     )
-    fun logout(): ResponseEntity<ResponseBuilder.Message> {
+    fun logout(request: HttpServletRequest): ResponseEntity<ResponseBuilder.Message> {
+        if (SecurityContextHolder.getContext().authentication.principal == "anonymousUser") {
+            throw ResponseBuilder.exception(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
+        }
         val userID = (SecurityContextHolder.getContext().authentication.principal as JWTUser).username
         val userInfo = authService.getUserInfo(userID)
-        authService.logout(userInfo).let {
+        authService.logout(userInfo, request).let {
             return ResponseBuilder.response(HttpStatus.OK, "LOGOUT_SUCCESS")
         }
     }

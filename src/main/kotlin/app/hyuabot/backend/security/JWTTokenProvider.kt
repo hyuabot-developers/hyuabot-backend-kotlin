@@ -1,16 +1,19 @@
 package app.hyuabot.backend.security
 
 import app.hyuabot.backend.database.entity.RefreshToken
+import app.hyuabot.backend.database.entity.User
 import app.hyuabot.backend.database.repository.RefreshTokenRepository
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
+import java.time.Duration
 import java.time.ZonedDateTime
 import java.util.Date
 import java.util.UUID
@@ -21,8 +24,26 @@ class JWTTokenProvider(
     @Value("\${jwt.expiration}") private val expirationMinutes: Long,
     @Value("\${jwt.expiration.refresh}") private val refreshExpirationDays: Long,
     private val refreshTokenRepository: RefreshTokenRepository,
+    private val redisTemplate: RedisTemplate<String, String>,
 ) {
     private val key by lazy { Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret)) }
+
+    // 기존 Access token 무효화
+    fun invalidateAccessToken(
+        user: User,
+        accessToken: String,
+    ) {
+        refreshTokenRepository.findByUserID(user.userID)?.let {
+            redisTemplate.opsForValue().set(
+                "access_token:$accessToken",
+                "logout",
+                Duration.between(
+                    ZonedDateTime.now(),
+                    it.expiredAt,
+                ),
+            )
+        }
+    }
 
     // Access token 생성
     fun createAccessToken(authentication: Authentication): String =

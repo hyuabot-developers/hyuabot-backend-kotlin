@@ -2,6 +2,7 @@ package app.hyuabot.backend.security
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -11,6 +12,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 class SecurityConfig(
     private val tokenProvider: JWTTokenProvider,
+    private val redisTemplate: RedisTemplate<String, String>,
 ) {
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain =
@@ -31,7 +33,7 @@ class SecurityConfig(
                     .anyRequest()
                     .authenticated()
             }.addFilterBefore(
-                JWTAuthenticationFilter(tokenProvider),
+                JWTAuthenticationFilter(tokenProvider, redisTemplate),
                 UsernamePasswordAuthenticationFilter::class.java,
             ).build()
 
