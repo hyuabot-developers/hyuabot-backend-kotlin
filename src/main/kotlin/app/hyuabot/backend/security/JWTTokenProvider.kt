@@ -1,5 +1,7 @@
 package app.hyuabot.backend.security
 
+import app.hyuabot.backend.database.entity.RefreshToken
+import app.hyuabot.backend.database.repository.RefreshTokenRepository
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.io.Decoders
@@ -9,12 +11,16 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
+import java.time.ZonedDateTime
 import java.util.Date
+import java.util.UUID
 
 @Component
 class JWTTokenProvider(
     @Value("\${jwt.secret}") private val secret: String,
-    @Value("\${jwt.expiration}") private val expiration: Long,
+    @Value("\${jwt.expiration}") private val expirationMinutes: Long,
+    @Value("\${jwt.expiration.refresh}") private val refreshExpirationDays: Long,
+    private val refreshTokenRepository: RefreshTokenRepository,
 ) {
     private val key by lazy { Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret)) }
 
@@ -23,10 +29,44 @@ class JWTTokenProvider(
         Jwts
             .builder()
             .issuedAt(Date())
-            .expiration(Date(System.currentTimeMillis() + expiration * 1000 * 60)) // 만료 시간 설정
+            .expiration(Date(System.currentTimeMillis() + expirationMinutes * 1000 * 60)) // 만료 시간 설정
             .subject((authentication.principal as JWTUser).username)
             .signWith(key)
             .compact()
+
+    // Refresh token 생성
+    fun createRefreshToken(authentication: Authentication): String {
+        val userID = (authentication.principal as JWTUser).username
+        val refreshToken =
+            Jwts
+                .builder()
+                .issuedAt(Date())
+                .expiration(Date(System.currentTimeMillis() + refreshExpirationDays * 1000 * 60 * 60 * 24)) // 만료 시간 설정
+                .subject(userID)
+                .signWith(key)
+                .compact()
+        val previousRefreshToken = refreshTokenRepository.findByUserID(userID)
+        if (previousRefreshToken != null) {
+            previousRefreshToken.apply {
+                this.refreshToken = refreshToken
+                this.expiredAt = ZonedDateTime.now().plusDays(refreshExpirationDays)
+                this.updatedAt = ZonedDateTime.now()
+            }
+            refreshTokenRepository.save(previousRefreshToken)
+        } else {
+            refreshTokenRepository.save(
+                RefreshToken(
+                    uuid = UUID.randomUUID(),
+                    userID = userID,
+                    refreshToken = refreshToken,
+                    expiredAt = ZonedDateTime.now().plusMinutes(expirationMinutes),
+                    createdAt = ZonedDateTime.now(),
+                    updatedAt = ZonedDateTime.now(),
+                ),
+            )
+        }
+        return refreshToken
+    }
 
     // 토큰 검증 및 정보 추출
     fun getAuthentication(token: String): Authentication {

@@ -49,7 +49,8 @@ class AuthService(
         val authenticationToken = UsernamePasswordAuthenticationToken(userID, password)
         val authentication = authenticationManagerBuilder.`object`.authenticate(authenticationToken)
         val accessToken = tokenProvider.createAccessToken(authentication)
-        return TokenResponse(accessToken = accessToken)
+        val refreshToken = tokenProvider.createRefreshToken(authentication)
+        return TokenResponse(accessToken = accessToken, refreshToken = refreshToken)
     }
 
     fun getUserInfo(userID: String): User =
