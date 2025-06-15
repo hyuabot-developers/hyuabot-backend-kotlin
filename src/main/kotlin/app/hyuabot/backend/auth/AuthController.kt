@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.ModelAttribute
 import org.springframework.web.bind.annotation.PostMapping
@@ -146,6 +147,19 @@ class AuthController(
                 HttpStatus.CREATED,
                 it,
             )
+        }
+    }
+
+    @DeleteMapping("/token")
+    @Operation(
+        summary = "로그아웃",
+        description = "사용자 로그아웃 API. 현재 로그인된 사용자의 JWT 토큰을 무효화합니다.",
+    )
+    fun logout(): ResponseEntity<ResponseBuilder.Message> {
+        val userID = (SecurityContextHolder.getContext().authentication.principal as JWTUser).username
+        val userInfo = authService.getUserInfo(userID)
+        authService.logout(userInfo).let {
+            return ResponseBuilder.response(HttpStatus.OK, "LOGOUT_SUCCESS")
         }
     }
 

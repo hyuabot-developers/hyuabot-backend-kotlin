@@ -3,6 +3,7 @@ package app.hyuabot.backend.auth
 import app.hyuabot.backend.auth.domain.CreateUserRequest
 import app.hyuabot.backend.auth.domain.TokenResponse
 import app.hyuabot.backend.database.entity.User
+import app.hyuabot.backend.database.repository.RefreshTokenRepository
 import app.hyuabot.backend.database.repository.UserRepository
 import app.hyuabot.backend.security.JWTTokenProvider
 import jakarta.transaction.Transactional
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service
 @Service
 class AuthService(
     private val userRepository: UserRepository,
+    private val refreshTokenRepository: RefreshTokenRepository,
     private val passwordEncoder: PasswordEncoder,
     private val authenticationManagerBuilder: AuthenticationManagerBuilder,
     private val tokenProvider: JWTTokenProvider,
@@ -56,4 +58,10 @@ class AuthService(
     fun getUserInfo(userID: String): User =
         userRepository.findByUserIDAndActiveIsTrue(userID)
             ?: throw IllegalArgumentException("NO_USER_INFO")
+
+    fun logout(userInfo: User) {
+        refreshTokenRepository.findByUserID(userInfo.userID)?.let { refreshToken ->
+            refreshTokenRepository.delete(refreshToken)
+        } ?: throw IllegalArgumentException("NO_REFRESH_TOKEN")
+    }
 }
