@@ -1,10 +1,7 @@
 package app.hyuabot.backend.config
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition
-import io.swagger.v3.oas.annotations.enums.SecuritySchemeType
 import io.swagger.v3.oas.annotations.info.Info
-import io.swagger.v3.oas.annotations.security.SecurityRequirement
-import io.swagger.v3.oas.annotations.security.SecurityScheme
 import io.swagger.v3.oas.annotations.servers.Server
 import org.springdoc.core.models.GroupedOpenApi
 import org.springframework.context.annotation.Bean
@@ -15,13 +12,6 @@ import org.springframework.context.annotation.Bean
         Server(url = "http://localhost:8080", description = "Local Development Server"),
         Server(url = "\${springdoc.swagger-ui.server}", description = "Production Server"),
     ],
-    security = [SecurityRequirement(name = "bearer-auth")],
-)
-@SecurityScheme(
-    name = "bearer-auth",
-    type = SecuritySchemeType.HTTP,
-    scheme = "bearer",
-    bearerFormat = "JWT",
 )
 class SwaggerConfig {
     @Bean

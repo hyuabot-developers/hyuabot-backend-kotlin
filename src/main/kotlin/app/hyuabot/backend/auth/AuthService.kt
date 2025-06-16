@@ -67,7 +67,9 @@ class AuthService(
         // Access token 무효화
         tokenProvider.invalidateAccessToken(
             user = userInfo,
-            accessToken = request.getHeader("Authorization")?.substring(7) ?: throw IllegalArgumentException("NO_ACCESS_TOKEN"),
+            accessToken =
+                request.cookies.firstOrNull { it.name == "access_token" }?.value
+                    ?: throw IllegalArgumentException("NO_ACCESS_TOKEN"),
         )
         refreshTokenRepository.findByUserID(userInfo.userID)?.let { refreshToken ->
             refreshTokenRepository.delete(refreshToken)

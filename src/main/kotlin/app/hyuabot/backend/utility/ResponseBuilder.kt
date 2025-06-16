@@ -3,6 +3,7 @@ package app.hyuabot.backend.utility
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
 import org.springframework.web.server.ResponseStatusException
 
@@ -15,9 +16,14 @@ class ResponseBuilder {
         fun response(
             status: HttpStatus,
             message: String? = null,
+            cookies: List<ResponseCookie> = emptyList(),
         ): ResponseEntity<Message> {
             val message = Message(message)
-            val header = HttpHeaders().apply { contentType = MediaType.APPLICATION_JSON }
+            val header =
+                HttpHeaders().apply {
+                    contentType = MediaType.APPLICATION_JSON
+                    cookies.forEach { add(HttpHeaders.SET_COOKIE, it.toString()) }
+                }
             return ResponseEntity(message, header, status)
         }
 
