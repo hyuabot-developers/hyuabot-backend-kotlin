@@ -192,6 +192,7 @@ class AuthController(
                         .httpOnly(true)
                         .secure(true)
                         .sameSite("None")
+                        .path("/")
                         .build()
                 val refreshTokenCookie =
                     ResponseCookie
@@ -199,6 +200,7 @@ class AuthController(
                         .httpOnly(true)
                         .secure(true)
                         .sameSite("None")
+                        .path("/")
                         .build()
                 return ResponseBuilder
                     .response(
@@ -266,8 +268,30 @@ class AuthController(
         }
         val userID = (SecurityContextHolder.getContext().authentication.principal as JWTUser).username
         val userInfo = authService.getUserInfo(userID)
+        val expireAccessToken =
+            ResponseCookie
+                .from("access_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")
+                .path("/")
+                .maxAge(0)
+                .build()
+        val expireRefreshToken =
+            ResponseCookie
+                .from("refresh_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")
+                .path("/")
+                .maxAge(0)
+                .build()
         authService.logout(userInfo, request).let {
-            return ResponseBuilder.response(HttpStatus.OK, "LOGOUT_SUCCESS")
+            return ResponseBuilder.response(
+                HttpStatus.OK,
+                "LOGOUT_SUCCESS",
+                cookies = listOf(expireAccessToken, expireRefreshToken),
+            )
         }
     }
 
