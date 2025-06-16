@@ -55,6 +55,15 @@ class JWTTokenProvider(
             .signWith(key)
             .compact()
 
+    fun createAccessToken(userID: String): String =
+        Jwts
+            .builder()
+            .issuedAt(Date())
+            .expiration(Date(System.currentTimeMillis() + expirationMinutes * 1000 * 60)) // 만료 시간 설정
+            .subject(userID)
+            .signWith(key)
+            .compact()
+
     // Refresh token 생성
     fun createRefreshToken(authentication: Authentication): String {
         val userID = (authentication.principal as JWTUser).username

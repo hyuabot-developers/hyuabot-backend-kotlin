@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.ModelAttribute
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -215,6 +216,75 @@ class AuthController(
             logger.error("Login failed: ${e.message}", e)
             throw ResponseBuilder.exception(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR")
         }
+    }
+
+    @PutMapping("/token")
+    @Operation(
+        summary = "토큰 갱신",
+        description = "사용자 JWT 토큰을 갱신합니다. 현재 로그인된 사용자의 JWT 토큰을 새로 발급합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "토큰 갱신 성공",
+                content =
+                    arrayOf(
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "TOKEN_REFRESH_SUCCESS",
+                                        description = "토큰 갱신 성공 예시",
+                                        value = "{\"message\": \"TOKEN_REFRESH_SUCCESS\"}",
+                                    ),
+                                ),
+                        ),
+                    ),
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "인증되지 않은 사용자, 로그인이 필요합니다.",
+                content =
+                    arrayOf(
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "UNAUTHORIZED",
+                                        description = "인증되지 않은 사용자 예시",
+                                        value = "{\"message\": \"UNAUTHORIZED\"}",
+                                    ),
+                                ),
+                        ),
+                    ),
+            ),
+        ],
+    )
+    fun refreshToken(request: HttpServletRequest): ResponseEntity<ResponseBuilder.Message> {
+        val refreshToken =
+            request.cookies
+                .firstOrNull {
+                    it.name == "refresh_token"
+                }?.value ?: run {
+                throw ResponseBuilder.exception(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
+            }
+        val newAccessToken = authService.refreshToken(refreshToken)
+        val accessTokenCookie =
+            ResponseCookie
+                .from("access_token", newAccessToken)
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")
+                .path("/")
+                .build()
+        return ResponseBuilder.response(
+            HttpStatus.OK,
+            "TOKEN_REFRESH_SUCCESS",
+            cookies = listOf(accessTokenCookie),
+        )
     }
 
     @DeleteMapping("/token")
