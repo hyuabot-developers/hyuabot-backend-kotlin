@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -140,30 +141,77 @@ class AuthController(
                     ),
             ),
     )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "201",
+                description = "로그인 성공, JWT 토큰 발급",
+                content =
+                    arrayOf(
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "LOGIN_SUCCESS",
+                                        description = "로그인 성공 예시",
+                                        value = "{\"message\": \"LOGIN_SUCCESS\"}",
+                                    ),
+                                ),
+                        ),
+                    ),
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "인증 실패, 잘못된 사용자 ID 또는 비밀번호",
+                content =
+                    arrayOf(
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "UNAUTHORIZED",
+                                        description = "인증 실패 예시",
+                                        value = "{\"message\": \"UNAUTHORIZED\"}",
+                                    ),
+                                ),
+                        ),
+                    ),
+            ),
+        ],
+    )
     fun login(
         @ModelAttribute payload: LoginRequest,
     ): ResponseEntity<ResponseBuilder.Message> {
-        authService.login(payload.username, payload.password).let {
-            val accessTokenCookie =
-                ResponseCookie
-                    .from("access_token", it.accessToken)
-                    .httpOnly(true)
-                    .secure(true)
-                    .sameSite("None")
-                    .build()
-            val refreshTokenCookie =
-                ResponseCookie
-                    .from("refresh_token", it.refreshToken)
-                    .httpOnly(true)
-                    .secure(true)
-                    .sameSite("None")
-                    .build()
-            return ResponseBuilder
-                .response(
-                    HttpStatus.CREATED,
-                    "LOGIN_SUCCESS",
-                    cookies = listOf(accessTokenCookie, refreshTokenCookie),
-                )
+        try {
+            authService.login(payload.username, payload.password).let {
+                val accessTokenCookie =
+                    ResponseCookie
+                        .from("access_token", it.accessToken)
+                        .httpOnly(true)
+                        .secure(true)
+                        .sameSite("None")
+                        .build()
+                val refreshTokenCookie =
+                    ResponseCookie
+                        .from("refresh_token", it.refreshToken)
+                        .httpOnly(true)
+                        .secure(true)
+                        .sameSite("None")
+                        .build()
+                return ResponseBuilder
+                    .response(
+                        HttpStatus.CREATED,
+                        "LOGIN_SUCCESS",
+                        cookies = listOf(accessTokenCookie, refreshTokenCookie),
+                    )
+            }
+        } catch (_: BadCredentialsException) {
+            throw ResponseBuilder.exception(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
+        } catch (e: Exception) {
+            logger.error("Login failed: ${e.message}", e)
+            throw ResponseBuilder.exception(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR")
         }
     }
 
@@ -171,6 +219,46 @@ class AuthController(
     @Operation(
         summary = "로그아웃",
         description = "사용자 로그아웃 API. 현재 로그인된 사용자의 JWT 토큰을 무효화합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "로그아웃 성공",
+                content =
+                    arrayOf(
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "LOGOUT_SUCCESS",
+                                        description = "로그아웃 성공 예시",
+                                        value = "{\"message\": \"LOGOUT_SUCCESS\"}",
+                                    ),
+                                ),
+                        ),
+                    ),
+            ),
+            ApiResponse(
+                responseCode = "401",
+                description = "인증되지 않은 사용자, 로그인이 필요합니다.",
+                content =
+                    arrayOf(
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "UNAUTHORIZED",
+                                        description = "인증되지 않은 사용자 예시",
+                                        value = "{\"message\": \"UNAUTHORIZED\"}",
+                                    ),
+                                ),
+                        ),
+                    ),
+            ),
+        ],
     )
     fun logout(request: HttpServletRequest): ResponseEntity<ResponseBuilder.Message> {
         if (SecurityContextHolder.getContext().authentication.principal == "anonymousUser") {
@@ -187,6 +275,73 @@ class AuthController(
     @Operation(
         summary = "사용자 프로필 조회",
         description = "로그인된 사용자의 프로필 정보를 조회합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "사용자 프로필 조회 성공",
+                content =
+                    arrayOf(
+                        Content(
+                            schema = Schema(implementation = UserResponse::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "USER_PROFILE_SUCCESS",
+                                        description = "사용자 프로필 조회 성공 예시",
+                                        value =
+                                            """
+                                            {
+                                                "username": "user123",
+                                                "nickname": "User",
+                                                "email": "user@example.com",
+                                                "phone": "+821012345678",
+                                                "active": true
+                                            }
+                                            """,
+                                    ),
+                                ),
+                        ),
+                    ),
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "사용자 정보가 존재하지 않음",
+                content =
+                    arrayOf(
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "NO_USER_INFO",
+                                        description = "사용자 정보가 존재하지 않는 경우 예시",
+                                        value = "{\"message\": \"NO_USER_INFO\"}",
+                                    ),
+                                ),
+                        ),
+                    ),
+            ),
+            ApiResponse(
+                responseCode = "500",
+                description = "서버 내부 오류",
+                content =
+                    arrayOf(
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "INTERNAL_SERVER_ERROR",
+                                        description = "서버 내부 오류 예시",
+                                        value = "{\"message\": \"INTERNAL_SERVER_ERROR\"}",
+                                    ),
+                                ),
+                        ),
+                    ),
+            ),
+        ],
     )
     fun getProfile(): ResponseEntity<UserResponse> {
         val userID = (SecurityContextHolder.getContext().authentication.principal as JWTUser).username
