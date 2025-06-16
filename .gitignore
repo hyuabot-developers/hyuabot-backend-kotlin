@@ -40,3 +40,5 @@ out/
 .kotlin
 
 src/main/resources/encrypted.properties
+
+.DS_Store

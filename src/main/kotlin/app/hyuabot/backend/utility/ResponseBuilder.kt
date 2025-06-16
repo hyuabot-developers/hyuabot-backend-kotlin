@@ -7,37 +7,35 @@ import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
 import org.springframework.web.server.ResponseStatusException
 
-class ResponseBuilder {
+object ResponseBuilder {
     data class Message(
-        val message: String? = null,
+        val message: String,
     )
 
-    companion object {
-        fun response(
-            status: HttpStatus,
-            message: String? = null,
-            cookies: List<ResponseCookie> = emptyList(),
-        ): ResponseEntity<Message> {
-            val message = Message(message)
-            val header =
-                HttpHeaders().apply {
-                    contentType = MediaType.APPLICATION_JSON
-                    cookies.forEach { add(HttpHeaders.SET_COOKIE, it.toString()) }
-                }
-            return ResponseEntity(message, header, status)
-        }
-
-        fun <T> response(
-            status: HttpStatus,
-            body: T,
-        ): ResponseEntity<T> {
-            val header = HttpHeaders().apply { contentType = MediaType.APPLICATION_JSON }
-            return ResponseEntity(body, header, status)
-        }
-
-        fun exception(
-            status: HttpStatus,
-            message: String? = null,
-        ): ResponseStatusException = ResponseStatusException(status, message)
+    fun response(
+        status: HttpStatus,
+        message: String,
+        cookies: List<ResponseCookie> = emptyList(),
+    ): ResponseEntity<Message> {
+        val body = Message(message)
+        val header =
+            HttpHeaders().apply {
+                contentType = MediaType.APPLICATION_JSON
+                cookies.forEach { add(HttpHeaders.SET_COOKIE, it.toString()) }
+            }
+        return ResponseEntity(body, header, status)
     }
+
+    fun <T> response(
+        status: HttpStatus,
+        body: T,
+    ): ResponseEntity<T> {
+        val header = HttpHeaders().apply { contentType = MediaType.APPLICATION_JSON }
+        return ResponseEntity(body, header, status)
+    }
+
+    fun exception(
+        status: HttpStatus,
+        message: String,
+    ): ResponseStatusException = ResponseStatusException(status, message)
 }
