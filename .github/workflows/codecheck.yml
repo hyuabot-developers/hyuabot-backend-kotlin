@@ -31,6 +31,28 @@ jobs:
           java-version: 21
           distribution: 'zulu'
           check-latest: 'true'
+      - name: Create application-test.properties
+        run: |
+          echo "spring.datasource.driver-class-name=org.postgresql.Driver" > src/main/resources/application-test.properties
+          echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/application-test.properties
+          echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/application-test.properties
+          echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/application-test.properties
+          echo "spring.sql.init.mode=always" >> src/main/resources/application-test.properties
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      - name: Create encrypted application.properties
+        run: |
+          echo "spring.datasource.driver-class-name=org.postgresql.Driver" > src/main/resources/encrypted.properties
+          echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/encrypted.properties
+          echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/encrypted.properties
+          echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/encrypted.properties
+          echo "spring.sql.init.mode=always" >> src/main/resources/encrypted.properties
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
       - name: Run unit tests
         run: |
           ./gradlew clean test jacocoTestReport
@@ -47,6 +69,28 @@ jobs:
           java-version: 21
           distribution: 'zulu'
           check-latest: 'true'
+      - name: Create application-test.properties
+        run: |
+          echo "spring.datasource.driver-class-name=org.postgresql.Driver" > src/main/resources/application-test.properties
+          echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/application-test.properties
+          echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/application-test.properties
+          echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/application-test.properties
+          echo "spring.sql.init.mode=always" >> src/main/resources/application-test.properties
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      - name: Create encrypted application.properties
+        run: |
+          echo "spring.datasource.driver-class-name=org.postgresql.Driver" > src/main/resources/encrypted.properties
+          echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/encrypted.properties
+          echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/encrypted.properties
+          echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/encrypted.properties
+          echo "spring.sql.init.mode=always" >> src/main/resources/encrypted.properties
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
       - name: Check unit test coverage
         run: |
           ./gradlew clean test jacocoTestReport jacocoTestCoverageVerification
