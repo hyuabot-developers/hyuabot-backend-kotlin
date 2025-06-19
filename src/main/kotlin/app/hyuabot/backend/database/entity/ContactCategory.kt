@@ -16,9 +16,9 @@ data class ContactCategory(
     @Id
     @Column(name = "category_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "phonebook_category_category_id_seq")
-    val id: Int,
+    val id: Int? = null,
     @Column(name = "category_name", length = 30, nullable = false)
     val name: String,
     @OneToMany(mappedBy = "category")
-    val contact: List<Contact> = emptyList(),
+    val contact: List<Contact>,
 )

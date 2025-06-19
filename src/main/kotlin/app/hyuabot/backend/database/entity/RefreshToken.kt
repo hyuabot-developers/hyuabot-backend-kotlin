@@ -27,5 +27,5 @@ data class RefreshToken(
     var updatedAt: ZonedDateTime,
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "user_id", insertable = false, updatable = false)
-    val user: User? = null,
+    val user: User?,
 )

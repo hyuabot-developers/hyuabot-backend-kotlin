@@ -17,7 +17,7 @@ data class Contact(
     @Id
     @Column(name = "phonebook_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "phonebook_phonebook_id_seq")
-    val id: Int,
+    val id: Int? = null,
     @Column(name = "campus_id", columnDefinition = "integer", nullable = false)
     val campusID: Int,
     @Column(name = "category_id", columnDefinition = "integer", nullable = false)

@@ -32,8 +32,8 @@ data class BusDepartureLog(
     val vehicleID: String,
     @ManyToOne
     @JoinColumns(
-        JoinColumn(name = "route_id", referencedColumnName = "route_id"),
-        JoinColumn(name = "stop_id", referencedColumnName = "stop_id"),
+        JoinColumn(name = "route_id", referencedColumnName = "route_id", insertable = false, updatable = false),
+        JoinColumn(name = "stop_id", referencedColumnName = "stop_id", insertable = false, updatable = false),
     )
     val routeStop: BusRouteStop,
 )

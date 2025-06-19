@@ -25,7 +25,7 @@ data class BusStop(
     @Column(name = "longitude", columnDefinition = "double precision", nullable = false)
     val longitude: Double,
     @OneToMany(mappedBy = "stop")
-    val busRoutes: List<BusRouteStop> = emptyList(),
+    val busRoutes: List<BusRouteStop>,
     @OneToMany(mappedBy = "startStop")
-    val startBusRoutes: List<BusRouteStop> = emptyList(),
+    val startBusRoutes: List<BusRouteStop>,
 )

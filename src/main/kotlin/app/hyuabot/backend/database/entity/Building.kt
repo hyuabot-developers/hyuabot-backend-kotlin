@@ -16,7 +16,7 @@ data class Building(
     @Id
     @Column(name = "name", length = 30, nullable = false)
     val name: String,
-    @Column(name = "campus_id", columnDefinition = "integer", nullable = false, insertable = false, updatable = false)
+    @Column(name = "campus_id", columnDefinition = "integer", nullable = false)
     val campusID: Int,
     @Column(name = "latitude", columnDefinition = "double precision", nullable = false)
     val latitude: Double,
@@ -27,6 +27,6 @@ data class Building(
     @OneToMany(mappedBy = "building")
     val room: List<Room> = emptyList(),
     @ManyToOne
-    @JoinColumn(name = "campus_id")
+    @JoinColumn(name = "campus_id", referencedColumnName = "campus_id", insertable = false, updatable = false)
     val campus: Campus,
 )

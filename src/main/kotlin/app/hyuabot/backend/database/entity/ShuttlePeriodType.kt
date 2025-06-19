@@ -13,5 +13,5 @@ data class ShuttlePeriodType(
     @Column(name = "period_type", length = 20, nullable = false)
     val type: String,
     @OneToMany(mappedBy = "periodType")
-    val period: List<ShuttlePeriod> = emptyList(),
+    val period: List<ShuttlePeriod>,
 )

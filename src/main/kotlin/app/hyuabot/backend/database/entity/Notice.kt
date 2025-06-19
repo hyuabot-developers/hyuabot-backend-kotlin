@@ -18,7 +18,7 @@ data class Notice(
     @Id
     @Column(name = "notice_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "notices_notice_id_seq")
-    val id: Int,
+    val id: Int? = null,
     @Column(name = "title", length = 100, nullable = false)
     val title: String,
     @Column(name = "url", length = 200, nullable = false)

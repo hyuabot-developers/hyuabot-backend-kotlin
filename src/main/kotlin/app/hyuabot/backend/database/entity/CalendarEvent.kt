@@ -18,7 +18,7 @@ data class CalendarEvent(
     @Id
     @Column(name = "academic_calendar_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "academic_calendar_academic_calendar_id_seq")
-    val id: Int,
+    val id: Int? = null,
     @Column(name = "category_id", columnDefinition = "integer", nullable = false)
     val categoryID: Int,
     @Column(name = "title", length = 100, nullable = false)

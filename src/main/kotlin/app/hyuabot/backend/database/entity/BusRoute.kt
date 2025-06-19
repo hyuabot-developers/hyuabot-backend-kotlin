@@ -40,5 +40,5 @@ data class BusRoute(
     @Column(name = "company_telephone", length = 15, nullable = false)
     val companyPhone: String,
     @OneToMany(mappedBy = "route")
-    val stop: List<BusRouteStop> = emptyList(),
+    val stop: List<BusRouteStop>,
 )

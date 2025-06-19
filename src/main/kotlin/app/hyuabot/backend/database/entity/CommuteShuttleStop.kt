@@ -19,5 +19,5 @@ data class CommuteShuttleStop(
     @Column(name = "longitude", columnDefinition = "double precision", nullable = false)
     val longitude: Double,
     @OneToMany(mappedBy = "stop")
-    val timetable: List<CommuteShuttleTimetable> = emptyList(),
+    val timetable: List<CommuteShuttleTimetable>,
 )

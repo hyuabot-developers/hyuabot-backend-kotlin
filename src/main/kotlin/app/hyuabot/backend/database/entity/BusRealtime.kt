@@ -11,8 +11,8 @@ import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Type
+import java.time.Duration
 import java.time.ZonedDateTime
-import kotlin.time.Duration
 
 @Entity(name = "bus_realtime")
 @Table(name = "bus_realtime")
@@ -40,8 +40,8 @@ data class BusRealtime(
     val updatedAt: ZonedDateTime,
     @ManyToOne
     @JoinColumns(
-        JoinColumn(name = "route_id", referencedColumnName = "route_id"),
-        JoinColumn(name = "stop_id", referencedColumnName = "stop_id"),
+        JoinColumn(name = "route_id", referencedColumnName = "route_id", insertable = false, updatable = false),
+        JoinColumn(name = "stop_id", referencedColumnName = "stop_id", insertable = false, updatable = false),
     )
     val routeStop: BusRouteStop,
 )

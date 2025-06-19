@@ -16,9 +16,9 @@ data class NoticeCategory(
     @Id
     @Column(name = "category_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "notice_category_category_id_seq")
-    val id: Int,
+    val id: Int? = null,
     @Column(name = "category_name", length = 20, nullable = false)
     val name: String,
     @OneToMany(mappedBy = "category")
-    val notice: List<Notice> = emptyList(),
+    val notice: List<Notice>,
 )

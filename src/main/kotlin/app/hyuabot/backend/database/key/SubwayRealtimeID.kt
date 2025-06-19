@@ -3,7 +3,7 @@ package app.hyuabot.backend.database.key
 import java.io.Serializable
 
 data class SubwayRealtimeID(
-    val stationID: String,
-    val heading: String,
-    val order: Int,
+    val stationID: String = "",
+    val heading: String = "",
+    val order: Int = 0,
 ) : Serializable

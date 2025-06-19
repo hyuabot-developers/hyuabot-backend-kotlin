@@ -18,7 +18,7 @@ data class ShuttleTimetable(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "shuttle_timetable_seq_seq")
-    val seq: Int,
+    val seq: Int? = null,
     @Column(name = "period_type", length = 20, nullable = false)
     val periodType: String,
     @Column(name = "weekday", nullable = false)
@@ -28,9 +28,6 @@ data class ShuttleTimetable(
     @Column(name = "departure_time", columnDefinition = "timetz", nullable = false)
     val departureTime: LocalTime,
     @ManyToOne
-    @JoinColumn(name = "period_type", referencedColumnName = "period_type", insertable = false, updatable = false)
-    val period: ShuttlePeriod,
-    @ManyToOne
     @JoinColumn(name = "route_name", referencedColumnName = "route_name", insertable = false, updatable = false)
-    val route: ShuttleRoute,
+    val route: ShuttleRoute?,
 )

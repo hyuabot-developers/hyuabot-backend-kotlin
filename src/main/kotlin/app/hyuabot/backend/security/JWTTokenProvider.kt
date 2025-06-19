@@ -92,6 +92,7 @@ class JWTTokenProvider(
                     expiredAt = ZonedDateTime.now().plusMinutes(expirationMinutes),
                     createdAt = ZonedDateTime.now(),
                     updatedAt = ZonedDateTime.now(),
+                    user = null,
                 ),
             )
         }

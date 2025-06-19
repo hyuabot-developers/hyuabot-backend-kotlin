@@ -5,6 +5,7 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.IdClass
+import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 
@@ -21,5 +22,6 @@ data class Room(
     @Column(name = "name", length = 100, nullable = false)
     val name: String,
     @ManyToOne
+    @JoinColumn(name = "building_name", referencedColumnName = "name", insertable = false, updatable = false)
     val building: Building,
 )
