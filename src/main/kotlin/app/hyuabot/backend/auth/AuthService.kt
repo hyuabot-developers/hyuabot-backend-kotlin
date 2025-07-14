@@ -2,13 +2,14 @@ package app.hyuabot.backend.auth
 
 import app.hyuabot.backend.auth.domain.CreateUserRequest
 import app.hyuabot.backend.auth.domain.TokenResponse
+import app.hyuabot.backend.auth.exception.DuplicateEmailException
+import app.hyuabot.backend.auth.exception.DuplicateUserIDException
 import app.hyuabot.backend.database.entity.User
 import app.hyuabot.backend.database.repository.RefreshTokenRepository
 import app.hyuabot.backend.database.repository.UserRepository
 import app.hyuabot.backend.security.JWTTokenProvider
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.transaction.Transactional
-import org.springframework.dao.DuplicateKeyException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -25,11 +26,11 @@ class AuthService(
     fun signUp(payload: CreateUserRequest) {
         // 사용자 이름 중복 확인
         userRepository.findByUserID(payload.userID)?.let {
-            throw DuplicateKeyException("DUPLICATE_USER_ID")
+            throw DuplicateUserIDException()
         }
         // 이메일 중복 확인
         userRepository.findByEmail(payload.email)?.let {
-            throw DuplicateKeyException("DUPLICATE_EMAIL")
+            throw DuplicateEmailException()
         }
         // 사용자 생성
         val user =

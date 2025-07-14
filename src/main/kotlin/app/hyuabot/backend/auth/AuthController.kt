@@ -3,6 +3,8 @@ package app.hyuabot.backend.auth
 import app.hyuabot.backend.auth.domain.CreateUserRequest
 import app.hyuabot.backend.auth.domain.LoginRequest
 import app.hyuabot.backend.auth.domain.UserResponse
+import app.hyuabot.backend.auth.exception.DuplicateEmailException
+import app.hyuabot.backend.auth.exception.DuplicateUserIDException
 import app.hyuabot.backend.security.JWTUser
 import app.hyuabot.backend.utility.ResponseBuilder
 import io.swagger.v3.oas.annotations.Operation
@@ -14,7 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
-import org.springframework.dao.DuplicateKeyException
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseCookie
@@ -34,9 +36,8 @@ import kotlin.jvm.javaClass
 @RequestMapping(path = ["/api/v1/user"])
 @RestController
 @Tag(name = "Auth", description = "사용자 인증 및 관리 API")
-class AuthController(
-    private val authService: AuthService,
-) {
+class AuthController {
+    @Autowired private lateinit var authService: AuthService
     private val logger = LoggerFactory.getLogger(javaClass)
 
     @PostMapping("")
@@ -111,10 +112,12 @@ class AuthController(
         try {
             authService.signUp(payload)
             return ResponseBuilder.response(HttpStatus.CREATED, "USER_CREATED_SUCCESSFULLY")
-        } catch (e: DuplicateKeyException) {
-            throw ResponseBuilder.exception(HttpStatus.CONFLICT, e.message ?: "")
-        } catch (e: Exception) {
-            throw ResponseBuilder.exception(HttpStatus.INTERNAL_SERVER_ERROR, e.message ?: "INTERNAL_SERVER_ERROR")
+        } catch (_: DuplicateUserIDException) {
+            return ResponseBuilder.response(HttpStatus.CONFLICT, "DUPLICATE_USER_ID")
+        } catch (_: DuplicateEmailException) {
+            return ResponseBuilder.response(HttpStatus.CONFLICT, "DUPLICATE_EMAIL")
+        } catch (_: Exception) {
+            return ResponseBuilder.response(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR")
         }
     }
 
@@ -211,10 +214,10 @@ class AuthController(
                     )
             }
         } catch (_: BadCredentialsException) {
-            throw ResponseBuilder.exception(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
+            return ResponseBuilder.response(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
         } catch (e: Exception) {
             logger.error("Login failed: ${e.message}", e)
-            throw ResponseBuilder.exception(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR")
+            return ResponseBuilder.response(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR")
         }
     }
 
@@ -264,13 +267,10 @@ class AuthController(
         ],
     )
     fun refreshToken(request: HttpServletRequest): ResponseEntity<ResponseBuilder.Message> {
-        val refreshToken =
-            request.cookies
-                .firstOrNull {
-                    it.name == "refresh_token"
-                }?.value ?: run {
-                throw ResponseBuilder.exception(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
-            }
+        if (request.cookies == null || request.cookies.firstOrNull { it.name == "refresh_token" } == null) {
+            return ResponseBuilder.response(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
+        }
+        val refreshToken = request.cookies.first { it.name == "refresh_token" }.value
         val newAccessToken = authService.refreshToken(refreshToken)
         val accessTokenCookie =
             ResponseCookie
@@ -334,7 +334,7 @@ class AuthController(
     )
     fun logout(request: HttpServletRequest): ResponseEntity<ResponseBuilder.Message> {
         if (SecurityContextHolder.getContext().authentication.principal == "anonymousUser") {
-            throw ResponseBuilder.exception(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
+            return ResponseBuilder.response(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
         }
         val userID = (SecurityContextHolder.getContext().authentication.principal as JWTUser).username
         val userInfo = authService.getUserInfo(userID)
@@ -437,7 +437,7 @@ class AuthController(
             ),
         ],
     )
-    fun getProfile(): ResponseEntity<UserResponse> {
+    fun getProfile(): ResponseEntity<*> {
         val userID = (SecurityContextHolder.getContext().authentication.principal as JWTUser).username
         return try {
             authService.getUserInfo(userID).let { user ->
@@ -453,7 +453,7 @@ class AuthController(
                 )
             }
         } catch (e: IllegalArgumentException) {
-            throw ResponseBuilder.exception(HttpStatus.NOT_FOUND, e.message ?: "NO_USER_INFO")
+            return ResponseBuilder.response(HttpStatus.NOT_FOUND, "NO_USER_INFO")
         }
     }
 }
