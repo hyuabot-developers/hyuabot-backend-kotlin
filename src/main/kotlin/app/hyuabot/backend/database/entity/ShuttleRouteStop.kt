@@ -10,7 +10,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Type
-import kotlin.time.Duration
+import java.time.Duration
 
 @Entity(name = "shuttle_route_stop")
 @Table(name = "shuttle_route_stop")

@@ -11,8 +11,8 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.annotations.Type
+import java.time.Duration
 import java.time.ZonedDateTime
-import kotlin.time.Duration
 
 @Entity(name = "subway_realtime")
 @Table(name = "subway_realtime")

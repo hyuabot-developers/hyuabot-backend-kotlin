@@ -28,8 +28,8 @@ data class ReadingRoom(
     val active: Int,
     @Column(name = "occupied", columnDefinition = "integer", nullable = false)
     val occupied: Int,
-    @Column(name = "available", columnDefinition = "integer", nullable = false)
-    val available: Int,
+    @Column(name = "available", columnDefinition = "integer", nullable = false, insertable = false, updatable = false)
+    val available: Int?,
     @Column(name = "last_updated_time", columnDefinition = "timestamptz", nullable = false)
     val updatedAt: ZonedDateTime,
     @ManyToOne

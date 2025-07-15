@@ -16,7 +16,7 @@ data class CalendarVersion(
     @Id
     @Column(name = "version_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "academic_calendar_version_version_id_seq")
-    val id: Int,
+    val id: Int? = null,
     @Column(name = "version_name", length = 30, nullable = false)
     val name: String,
     @Column(name = "created_at", columnDefinition = "timestamptz", nullable = false)

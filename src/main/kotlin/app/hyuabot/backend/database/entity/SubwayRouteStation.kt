@@ -9,7 +9,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.annotations.Type
-import kotlin.time.Duration
+import java.time.Duration
 
 @Entity(name = "subway_route_station")
 @Table(name = "subway_route_station")
@@ -33,7 +33,7 @@ data class SubwayRouteStation(
     @JoinColumn(name = "station_name", referencedColumnName = "station_name", insertable = false, updatable = false)
     val stationName: SubwayStation,
     @OneToMany(mappedBy = "station")
-    val realtime: List<SubwayRealtime> = emptyList(),
+    val realtime: List<SubwayRealtime>,
     @OneToMany(mappedBy = "station")
-    val timetable: List<SubwayTimetable> = emptyList(),
+    val timetable: List<SubwayTimetable>,
 )

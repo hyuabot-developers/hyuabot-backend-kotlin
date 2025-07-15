@@ -25,13 +25,13 @@ data class ShuttleRoute(
     @Column(name = "end_stop", length = 15, nullable = false)
     val endStopID: String,
     @OneToMany(mappedBy = "route")
-    val timetable: List<ShuttleTimetable> = emptyList(),
+    val timetable: List<ShuttleTimetable>,
     @OneToMany(mappedBy = "route")
-    val stop: List<ShuttleRouteStop> = emptyList(),
+    val stop: List<ShuttleRouteStop>,
     @ManyToOne
     @JoinColumn(name = "start_stop", referencedColumnName = "stop_name", insertable = false, updatable = false)
-    val routeToStart: ShuttleStop,
+    val startStop: ShuttleStop,
     @ManyToOne
     @JoinColumn(name = "end_stop", referencedColumnName = "stop_name", insertable = false, updatable = false)
-    val routeToEnd: ShuttleStop,
+    val endStop: ShuttleStop,
 )

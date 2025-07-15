@@ -3,15 +3,20 @@ import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 plugins {
     kotlin("jvm") version "1.9.25"
     kotlin("plugin.spring") version "1.9.25"
+    kotlin("plugin.jpa") version "1.9.25"
     id("org.springframework.boot") version "3.4.5"
     id("io.spring.dependency-management") version "1.1.7"
     id("com.netflix.dgs.codegen") version "7.0.3"
-    kotlin("plugin.jpa") version "1.9.25"
     id("org.jlleitschuh.gradle.ktlint").version("12.2.0")
+    id("jacoco")
 }
 
 group = "app.hyuabot"
 version = "0.0.1-SNAPSHOT"
+
+jacoco {
+    toolVersion = "0.8.13"
+}
 
 java {
     toolchain {
@@ -37,6 +42,7 @@ dependencies {
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
     testImplementation("com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.springframework.graphql:spring-graphql-test")
@@ -46,6 +52,14 @@ dependencies {
     implementation("com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.5")
     // Hibernate utilities
     implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.9.10")
+    // jwt
+    implementation("io.jsonwebtoken:jjwt-api:0.12.6")
+    // Swagger
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
+    // Redis
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 }
 
 dependencyManagement {
@@ -80,4 +94,37 @@ allOpen {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.test)
+    violationRules {
+        rule {
+            limit {
+                minimum = "0.8".toBigDecimal() // 80% coverage
+            }
+        }
+    }
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+//    finalizedBy(tasks.jacocoTestCoverageVerification)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+    classDirectories.setFrom(
+        files(
+            classDirectories.files.map {
+                fileTree(it) {
+                    exclude(
+                        "**/app/hyuabot/backend/HyuabotBackendKotlinApplication**",
+                        "**/app/hyuabot/backend/database/key/**",
+                    )
+                }
+            },
+        ),
+    )
 }

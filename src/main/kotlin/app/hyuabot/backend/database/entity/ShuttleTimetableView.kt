@@ -6,11 +6,13 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.IdClass
 import jakarta.persistence.Table
+import org.hibernate.annotations.Immutable
 import java.time.LocalTime
 
 @Entity(name = "shuttle_timetable_view")
 @Table(name = "shuttle_timetable_grouped_view")
 @IdClass(ShuttleTimetableViewID::class)
+@Immutable
 data class ShuttleTimetableView(
     @Id
     @Column(name = "seq", columnDefinition = "integer", nullable = false)

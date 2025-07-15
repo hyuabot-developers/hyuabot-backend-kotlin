@@ -36,9 +36,7 @@ data class BusRouteStop(
     @JoinColumn(name = "start_stop_id", insertable = false, updatable = false)
     val startStop: BusStop,
     @OneToMany(mappedBy = "routeStop")
-    val log: List<BusDepartureLog> = emptyList(),
+    val log: List<BusDepartureLog>,
     @OneToMany(mappedBy = "routeStop")
-    val realtime: List<BusRealtime> = emptyList(),
-    @OneToMany(mappedBy = "routeStop")
-    val timetable: List<BusTimetable> = emptyList(),
+    val realtime: List<BusRealtime>,
 )

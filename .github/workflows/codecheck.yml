@@ -3,6 +3,9 @@ on:
   push:
     branches-ignore:
       - main
+  pull_request:
+    branches:
+      - main
 jobs:
   ktlint:
     name: Check Kotlin code style
@@ -19,3 +22,82 @@ jobs:
       - name: Run ktlint
         run: |
           ./gradlew ktlintCheck
+  junit:
+    name: Run unit tests
+    runs-on: ["self-hosted", "X64"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'zulu'
+          check-latest: 'true'
+      - name: Create application-test.properties
+        run: |
+          echo "spring.datasource.driver-class-name=org.postgresql.Driver" > src/main/resources/application-test.properties
+          echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/application-test.properties
+          echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/application-test.properties
+          echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/application-test.properties
+          echo "spring.sql.init.mode=always" >> src/main/resources/application-test.properties
+          echo "jwt.secret=secret" >> src/main/resources/application-test.properties
+          echo "jwt.expiration=3600" >> src/main/resources/application-test.properties
+          echo "jwt.expiration.refresh=604800" >> src/main/resources/application-test.properties
+          echo "jasypt.encryptor.password=secret" >> src/main/resources/application-test.properties
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      - name: Create encrypted application.properties
+        run: |
+          echo "spring.datasource.driver-class-name=org.postgresql.Driver" > src/main/resources/encrypted.properties
+          echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/encrypted.properties
+          echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/encrypted.properties
+          echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/encrypted.properties
+          echo "spring.sql.init.mode=always" >> src/main/resources/encrypted.properties
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      - name: Run unit tests
+        run: |
+          ./gradlew clean test jacocoTestReport
+  junit-coverage:
+    name: Check unit test coverage
+    runs-on: ["self-hosted", "X64"]
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'zulu'
+          check-latest: 'true'
+      - name: Create application-test.properties
+        run: |
+          echo "spring.datasource.driver-class-name=org.postgresql.Driver" > src/main/resources/application-test.properties
+          echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/application-test.properties
+          echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/application-test.properties
+          echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/application-test.properties
+          echo "spring.sql.init.mode=always" >> src/main/resources/application-test.properties
+          echo "jwt.secret=secret" >> src/main/resources/application-test.properties
+          echo "jwt.expiration=3600" >> src/main/resources/application-test.properties
+          echo "jwt.expiration.refresh=604800" >> src/main/resources/application-test.properties
+          echo "jasypt.encryptor.password=secret" >> src/main/resources/application-test.properties
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      - name: Create encrypted application.properties
+        run: |
+          echo "spring.datasource.driver-class-name=org.postgresql.Driver" > src/main/resources/encrypted.properties
+          echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/encrypted.properties
+          echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/encrypted.properties
+          echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/encrypted.properties
+          echo "spring.sql.init.mode=always" >> src/main/resources/encrypted.properties
+      - name: Check unit test coverage
+        run: |
+          ./gradlew clean test jacocoTestReport jacocoTestCoverageVerification

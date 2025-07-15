@@ -9,9 +9,9 @@ interface RoomRepository : JpaRepository<Room, RoomID> {
     fun findByBuildingNameAndNumber(
         buildingName: String,
         number: String,
-    ): Room
+    ): Room?
 
-    fun deleteByNameAndNumber(
+    fun deleteByBuildingNameAndNumber(
         buildingName: String,
         number: String,
     ): Int

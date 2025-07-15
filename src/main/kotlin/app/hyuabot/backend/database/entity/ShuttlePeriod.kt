@@ -7,7 +7,6 @@ import jakarta.persistence.Id
 import jakarta.persistence.IdClass
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import java.time.ZonedDateTime
 
@@ -26,7 +25,5 @@ data class ShuttlePeriod(
     val end: ZonedDateTime,
     @ManyToOne
     @JoinColumn(name = "period_type", referencedColumnName = "period_type", insertable = false, updatable = false)
-    val periodType: ShuttlePeriodType,
-    @OneToMany(mappedBy = "period")
-    val timetable: List<ShuttleTimetable> = emptyList(),
+    val periodType: ShuttlePeriodType?,
 )

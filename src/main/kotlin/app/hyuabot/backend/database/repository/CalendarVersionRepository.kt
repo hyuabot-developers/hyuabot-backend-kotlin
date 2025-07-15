@@ -3,4 +3,6 @@ package app.hyuabot.backend.database.repository
 import app.hyuabot.backend.database.entity.CalendarVersion
 import org.springframework.data.jpa.repository.JpaRepository
 
-interface CalendarVersionRepository : JpaRepository<CalendarVersion, Int>
+interface CalendarVersionRepository : JpaRepository<CalendarVersion, Int> {
+    fun findTopByOrderByCreatedAtDesc(): CalendarVersion?
+}

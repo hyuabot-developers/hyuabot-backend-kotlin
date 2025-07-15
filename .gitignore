@@ -40,3 +40,7 @@ out/
 .kotlin
 
 src/main/resources/encrypted.properties
+
+.DS_Store
+
+src/main/resources/application-test.properties

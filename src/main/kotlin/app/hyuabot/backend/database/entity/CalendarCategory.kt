@@ -16,9 +16,9 @@ data class CalendarCategory(
     @Id
     @Column(name = "category_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "academic_calendar_category_category_id_seq")
-    val id: Int,
+    val id: Int? = null,
     @Column(name = "category_name", length = 30, nullable = false)
     val name: String,
     @OneToMany(mappedBy = "category")
-    val event: List<CalendarEvent> = emptyList(),
+    val event: List<CalendarEvent>,
 )

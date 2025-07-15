@@ -4,7 +4,7 @@ import java.io.Serializable
 import java.time.ZonedDateTime
 
 data class ShuttlePeriodID(
-    val type: String,
-    val start: ZonedDateTime,
-    val end: ZonedDateTime,
+    val type: String = "",
+    val start: ZonedDateTime = ZonedDateTime.now(),
+    val end: ZonedDateTime = ZonedDateTime.now(),
 ) : Serializable

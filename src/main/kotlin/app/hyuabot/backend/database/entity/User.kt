@@ -28,11 +28,7 @@ data class User(
     val notice: List<Notice> = emptyList(),
 ) {
     override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
         other as User
-
         if (active != other.active) return false
         if (userID != other.userID) return false
         if (!password.contentEquals(other.password)) return false

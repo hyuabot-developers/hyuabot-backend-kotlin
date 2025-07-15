@@ -15,5 +15,5 @@ data class SubwayRoute(
     @Column(name = "route_name", length = 30, nullable = false)
     val name: String,
     @OneToMany(mappedBy = "route")
-    val station: List<SubwayRouteStation> = emptyList(),
+    val station: List<SubwayRouteStation>,
 )
