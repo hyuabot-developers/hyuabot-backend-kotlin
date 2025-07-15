@@ -35,14 +35,16 @@ class JWTAuthenticationFilter(
     }
 
     // Authentication 헤더에서 JWT 토큰을 추출
-    private fun resolveToken(request: HttpServletRequest): String? =
-        request
-            .cookies
-            ?.firstOrNull { it.name == "access_token" }
-            ?.value
+    fun resolveToken(request: HttpServletRequest): String? {
+        val token = request.cookies?.firstOrNull { it.name == "access_token" }
+        if (token != null) {
+            return token.value
+        }
+        return null
+    }
 
     // 인증 정보를 기반으로 응답 헤더에 JWT 토큰을 설정
-    private fun responseHandler(
+    fun responseHandler(
         request: HttpServletRequest,
         response: HttpServletResponse,
         resolveAuthInfo: () -> Pair<Authentication, String>,
@@ -55,7 +57,7 @@ class JWTAuthenticationFilter(
     }
 
     // Logout 여부 확인
-    private fun checkLogout(accessToken: String): Boolean {
+    fun checkLogout(accessToken: String): Boolean {
         redisTemplate.opsForValue().get("access_token:$accessToken")?.let {
             if (it == "logout") {
                 return true
