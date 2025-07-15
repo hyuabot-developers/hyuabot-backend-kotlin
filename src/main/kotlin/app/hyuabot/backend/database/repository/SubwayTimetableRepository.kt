@@ -4,7 +4,7 @@ import app.hyuabot.backend.database.entity.SubwayTimetable
 import org.springframework.data.jpa.repository.JpaRepository
 import java.time.LocalTime
 
-interface SubwayTimetableRepository : JpaRepository<SubwayTimetable, SubwayTimetableID> {
+interface SubwayTimetableRepository : JpaRepository<SubwayTimetable, Int> {
     fun findByStationID(stationID: String): List<SubwayTimetable>
 
     fun findByStationIDAndDepartureTimeAfter(

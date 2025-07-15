@@ -4,7 +4,7 @@ import app.hyuabot.backend.database.entity.ShuttlePeriod
 import org.springframework.data.jpa.repository.JpaRepository
 import java.time.ZonedDateTime
 
-interface ShuttlePeriodRepository : JpaRepository<ShuttlePeriod, ShuttlePeriodID> {
+interface ShuttlePeriodRepository : JpaRepository<ShuttlePeriod, Int> {
     fun findByStartBeforeAndEndAfter(
         start: ZonedDateTime,
         end: ZonedDateTime,
