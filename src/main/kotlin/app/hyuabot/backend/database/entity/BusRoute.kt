@@ -23,13 +23,13 @@ data class BusRoute(
     val startStopID: Int,
     @Column(name = "end_stop_id", columnDefinition = "integer", nullable = false)
     val endStopID: Int,
-    @Column(name = "up_first_time", columnDefinition = "timetz", nullable = false)
+    @Column(name = "up_first_time", columnDefinition = "time", nullable = false)
     val upFirstTime: LocalTime,
-    @Column(name = "up_last_time", columnDefinition = "timetz", nullable = false)
+    @Column(name = "up_last_time", columnDefinition = "time", nullable = false)
     val upLastTime: LocalTime,
-    @Column(name = "down_first_time", columnDefinition = "timetz", nullable = false)
+    @Column(name = "down_first_time", columnDefinition = "time", nullable = false)
     val downFirstTime: LocalTime,
-    @Column(name = "down_last_time", columnDefinition = "timetz", nullable = false)
+    @Column(name = "down_last_time", columnDefinition = "time", nullable = false)
     val downLastTime: LocalTime,
     @Column(name = "district_code", columnDefinition = "integer", nullable = false)
     val districtCode: Int,

@@ -26,7 +26,7 @@ data class BusDepartureLog(
     @Column(name = "departure_date", columnDefinition = "date", nullable = false)
     val departureDate: LocalDate,
     @Id
-    @Column(name = "departure_time", columnDefinition = "timetz", nullable = false)
+    @Column(name = "departure_time", columnDefinition = "time", nullable = false)
     val departureTime: LocalTime,
     @Column(name = "vehicle_id", length = 20, nullable = false)
     val vehicleID: String,

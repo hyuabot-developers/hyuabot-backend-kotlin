@@ -22,6 +22,6 @@ data class BusTimetable(
     @Column(name = "weekday", length = 10, nullable = false)
     val weekday: String,
     @Id
-    @Column(name = "departure_time", columnDefinition = "timetz", nullable = false)
+    @Column(name = "departure_time", columnDefinition = "time", nullable = false)
     val departureTime: LocalTime,
 )

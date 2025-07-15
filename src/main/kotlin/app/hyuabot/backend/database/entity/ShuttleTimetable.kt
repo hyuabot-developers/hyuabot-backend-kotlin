@@ -25,7 +25,7 @@ data class ShuttleTimetable(
     val weekday: Boolean,
     @Column(name = "route_name", length = 20, nullable = false)
     val routeName: String,
-    @Column(name = "departure_time", columnDefinition = "timetz", nullable = false)
+    @Column(name = "departure_time", columnDefinition = "time", nullable = false)
     val departureTime: LocalTime,
     @ManyToOne
     @JoinColumn(name = "route_name", referencedColumnName = "route_name", insertable = false, updatable = false)

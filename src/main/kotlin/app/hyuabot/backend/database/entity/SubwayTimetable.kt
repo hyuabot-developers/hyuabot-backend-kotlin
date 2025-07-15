@@ -23,7 +23,7 @@ data class SubwayTimetable(
     @Column(name = "terminal_station_id", length = 10, nullable = false)
     val terminalStationID: String,
     @Id
-    @Column(name = "departure_time", columnDefinition = "timetz", nullable = false)
+    @Column(name = "departure_time", columnDefinition = "time", nullable = false)
     val departureTime: LocalTime,
     @Id
     @Column(name = "weekday", length = 10, nullable = false)
