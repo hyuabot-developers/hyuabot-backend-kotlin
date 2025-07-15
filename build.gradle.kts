@@ -120,6 +120,7 @@ tasks.jacocoTestReport {
             classDirectories.files.map {
                 fileTree(it) {
                     exclude(
+                        "**/app/hyuabot/backend/HyuabotBackendKotlinApplication**",
                         "**/app/hyuabot/backend/database/key/**",
                     )
                 }
