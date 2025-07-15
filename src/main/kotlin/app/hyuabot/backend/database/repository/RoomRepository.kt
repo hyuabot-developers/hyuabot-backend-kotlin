@@ -1,7 +1,6 @@
 package app.hyuabot.backend.database.repository
 
 import app.hyuabot.backend.database.entity.Room
-import app.hyuabot.backend.database.key.RoomID
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface RoomRepository : JpaRepository<Room, RoomID> {

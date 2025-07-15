@@ -1,7 +1,6 @@
 package app.hyuabot.backend.database.repository
 
 import app.hyuabot.backend.database.entity.BusDepartureLog
-import app.hyuabot.backend.database.key.BusDepartureLogID
 import org.springframework.data.jpa.repository.JpaRepository
 import java.time.LocalDate
 

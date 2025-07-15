@@ -1,7 +1,6 @@
 package app.hyuabot.backend.database.repository
 
 import app.hyuabot.backend.database.entity.Menu
-import app.hyuabot.backend.database.key.MenuID
 import org.springframework.data.jpa.repository.JpaRepository
 import java.time.LocalDate
 
