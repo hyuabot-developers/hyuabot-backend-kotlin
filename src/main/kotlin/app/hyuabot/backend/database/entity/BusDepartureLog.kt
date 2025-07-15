@@ -26,7 +26,7 @@ data class BusDepartureLog(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "bus_departure_log_seq_seq")
-    val seq: Int,
+    val seq: Int? = null,
     @Column(name = "route_id", columnDefinition = "integer", nullable = false)
     val routeID: Int,
     @Column(name = "stop_id", columnDefinition = "integer", nullable = false)

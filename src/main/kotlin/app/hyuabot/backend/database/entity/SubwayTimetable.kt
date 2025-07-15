@@ -29,7 +29,7 @@ data class SubwayTimetable(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "subway_timetable_seq_seq")
-    val seq: Int,
+    val seq: Int? = null,
     @Column(name = "station_id", length = 10, nullable = false)
     val stationID: String,
     @Column(name = "start_station_id", length = 10, nullable = false)

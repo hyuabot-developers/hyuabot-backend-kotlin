@@ -26,7 +26,7 @@ data class ShuttleRouteStop(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "shuttle_route_stop_seq_seq")
-    val seq: Int,
+    val seq: Int? = null,
     @Column(name = "route_name", length = 15, nullable = false)
     val routeName: String,
     @Column(name = "stop_name ", length = 15, nullable = false)

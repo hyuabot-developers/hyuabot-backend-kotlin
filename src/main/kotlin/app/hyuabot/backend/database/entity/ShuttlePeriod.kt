@@ -24,7 +24,7 @@ data class ShuttlePeriod(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "shuttle_period_seq_seq")
-    val seq: Int,
+    val seq: Int? = null,
     @Column(name = "period_type", nullable = false)
     val type: String,
     @Column(name = "period_start", columnDefinition = "timestamptz", nullable = false)

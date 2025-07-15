@@ -24,7 +24,7 @@ data class Menu(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "menu_seq_seq")
-    val seq: Int,
+    val seq: Int? = null,
     @Column(name = "restaurant_id", columnDefinition = "integer", nullable = false)
     val restaurantID: Int,
     @Column(name = "feed_date", columnDefinition = "date", nullable = false)

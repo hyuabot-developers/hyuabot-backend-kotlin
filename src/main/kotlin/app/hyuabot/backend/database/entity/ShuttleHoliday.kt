@@ -22,7 +22,7 @@ data class ShuttleHoliday(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "shuttle_holiday_seq_seq")
-    val seq: Int,
+    val seq: Int? = null,
     @Column(name = "holiday_date", columnDefinition = "date", nullable = false)
     val date: LocalDate,
     @Column(name = "holiday_type", length = 15, nullable = false)

@@ -23,7 +23,7 @@ data class Room(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "room_seq_seq")
-    val seq: Int,
+    val seq: Int? = null,
     @Column(name = "building_name", length = 30, nullable = false)
     val buildingName: String,
     @Column(name = "number", length = 30, nullable = false)
