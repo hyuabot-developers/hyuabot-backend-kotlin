@@ -71,8 +71,8 @@ class SubwayRepositoryTest {
     val timetable =
         (1..9).map {
             SubwayTimetable(
-                "K1",
-                "K1",
+                stationID = "K1",
+                startStationID = "K1",
                 terminalStationID = "K10",
                 departureTime = LocalTime.parse("09:0$it:00"),
                 weekday = "weekdays",
@@ -87,7 +87,7 @@ class SubwayRepositoryTest {
     fun setup() {
         stationNameRepository.saveAll(stationName)
         routeRepository.save(route)
-        stationRepository.saveAll(station)
+        stationRepository.saveAllAndFlush(station)
         realtimeRepository.saveAll(realtime)
         timetableRepository.saveAll(timetable)
     }
@@ -160,6 +160,8 @@ class SubwayRepositoryTest {
         val found = timetableRepository.findByStationID("K1")
         assert(found.isNotEmpty())
         found.forEach {
+            assert(it.seq != null)
+            assert(it.stationID == "K1")
             assert(it.station.id == "K1")
             assert(it.startStationID == "K1")
             assert(it.terminalStationID == "K10")
