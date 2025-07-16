@@ -89,7 +89,7 @@ class CommuteShuttleRepositoryTest {
     @BeforeEach
     fun setUp() {
         shuttleRouteRepository.save(route)
-        shuttleStopRepository.saveAll(stops)
+        shuttleStopRepository.saveAllAndFlush(stops)
         shuttleTimetableRepository.saveAll(timetables)
     }
 
@@ -133,6 +133,8 @@ class CommuteShuttleRepositoryTest {
         val foundTimetables = shuttleTimetableRepository.findByRouteName("TEST_ROUTE_1")
         assert(foundTimetables.isNotEmpty())
         foundTimetables.forEach {
+            assert(it.seq != null)
+            assert(it.stopName in setOf("TEST_STOP_1", "TEST_STOP_2", "TEST_STOP_3"))
             assert(it.routeName == "TEST_ROUTE_1")
             assert(it.order < 3)
             assert(it.departureTime >= LocalTime.parse("10:00:00"))

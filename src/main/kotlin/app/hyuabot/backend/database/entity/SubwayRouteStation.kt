@@ -21,7 +21,7 @@ data class SubwayRouteStation(
     val routeID: Int,
     @Column(name = "station_name", length = 30, nullable = false)
     val name: String,
-    @Column(name = "station_sequence", columnDefinition = "integer", nullable = false)
+    @Column(name = "station_seq", columnDefinition = "integer", nullable = false)
     val order: Int,
     @Type(value = PostgreSQLIntervalType::class)
     @Column(name = "cumulative_time", columnDefinition = "interval", nullable = false)

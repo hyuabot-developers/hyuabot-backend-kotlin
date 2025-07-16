@@ -25,7 +25,7 @@ data class SubwayRealtime(
     @Column(name = "up_down_type", length = 10, nullable = false)
     val heading: String,
     @Id
-    @Column(name = "arrival_sequence", columnDefinition = "integer", nullable = false)
+    @Column(name = "arrival_seq", columnDefinition = "integer", nullable = false)
     val order: Int,
     @Column(name = "current_station_name", length = 30)
     val location: String,

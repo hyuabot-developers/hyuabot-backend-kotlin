@@ -80,14 +80,12 @@ class CafeteriaRepositoryTest {
                 ),
             )
         campusRepository.save(campus)
-        cafeteriaRepository.saveAll(cafeteriaList)
+        cafeteriaRepository.saveAllAndFlush(cafeteriaList)
         menuRepository.saveAll(menuList)
     }
 
     @AfterEach
     fun tearDown() {
-        menuRepository.deleteAll()
-        cafeteriaRepository.deleteAll()
         campusRepository.deleteAll()
     }
 
@@ -144,6 +142,9 @@ class CafeteriaRepositoryTest {
         assert(foundMenus.isNotEmpty())
         assert(foundMenus.size == 1)
         foundMenus.first().let {
+            assert(it.seq != null)
+            assert(it.food == "Menu A")
+            assert(it.price == "5000")
             assert(it.restaurantID == 1)
             assert(it.date == LocalDate.now())
             assert(it.type == "중식")

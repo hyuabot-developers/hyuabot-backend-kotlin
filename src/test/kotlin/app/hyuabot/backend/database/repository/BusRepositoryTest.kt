@@ -131,9 +131,9 @@ class BusRepositoryTest {
 
     @BeforeEach
     fun setup() {
-        busStopRepository.saveAll(stops)
-        busRouteRepository.save(route)
-        busRouteStopRepository.saveAll(routeStops)
+        busStopRepository.saveAllAndFlush(stops)
+        busRouteRepository.saveAndFlush(route)
+        busRouteStopRepository.saveAllAndFlush(routeStops)
         busRealtimeRepository.saveAll(realtimeList)
         busTimetableRepository.saveAll(timetableList)
         busDepartureLogRepository.saveAll(logs)
@@ -198,6 +198,7 @@ class BusRepositoryTest {
         assert(foundStops.isNotEmpty())
         assert(foundStops.size == 10)
         foundStops.forEachIndexed { index, routeStop ->
+            assert(routeStop.seq != null)
             assert(routeStop.routeID == 1)
             assert(routeStop.stopID == stops[index].id)
             assert(routeStop.startStopID == stops[0].id)
@@ -232,6 +233,7 @@ class BusRepositoryTest {
         assert(foundTimetables.isNotEmpty())
         assert(foundTimetables.size == 10)
         foundTimetables.forEachIndexed { index, timetable ->
+            assert(timetable.seq != null)
             assert(timetable.routeID == 1)
             assert(timetable.startStopID == stops[0].id)
             assert(timetable.weekday == "weekdays")
@@ -280,6 +282,7 @@ class BusRepositoryTest {
         val foundLogs = busDepartureLogRepository.findByRouteIDAndStopID(1, stops[0].id)
         assert(foundLogs.isNotEmpty())
         foundLogs.forEach { log ->
+            assert(log.seq != null)
             assert(log.routeID == 1)
             assert(log.stopID == stops[0].id)
             assert(log.departureDate == LocalDate.now())

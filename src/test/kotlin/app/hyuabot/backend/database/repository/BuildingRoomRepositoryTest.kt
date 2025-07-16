@@ -79,7 +79,7 @@ class BuildingRoomRepositoryTest {
                 ),
             )
         campusRepository.save(campus)
-        buildingRepository.saveAll(buildingList)
+        buildingRepository.saveAllAndFlush(buildingList)
         roomRepository.saveAll(roomList)
     }
 
@@ -154,6 +154,7 @@ class BuildingRoomRepositoryTest {
     fun testFindByBuildingNameAndNumber() {
         val room = roomRepository.findByBuildingNameAndNumber("Building A", "101")
         assert(room != null)
+        assert(room?.seq != null)
         assert(room?.buildingName == "Building A")
         assert(room?.number == "101")
         assert(room?.name == "Room 101")

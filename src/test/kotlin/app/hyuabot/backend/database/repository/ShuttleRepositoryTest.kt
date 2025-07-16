@@ -48,9 +48,9 @@ class ShuttleRepositoryTest {
 
     private val holidays =
         listOf(
-            ShuttleHoliday(LocalDate.of(2025, 1, 1), "halt", "solar"),
-            ShuttleHoliday(LocalDate.of(2025, 1, 1), "halt", "lunar"),
-            ShuttleHoliday(LocalDate.of(2025, 8, 15), "weekends", "solar"),
+            ShuttleHoliday(date = LocalDate.of(2025, 1, 1), type = "halt", calendarType = "solar"),
+            ShuttleHoliday(date = LocalDate.of(2025, 1, 1), type = "halt", calendarType = "lunar"),
+            ShuttleHoliday(date = LocalDate.of(2025, 8, 15), type = "weekends", calendarType = "solar"),
         )
 
     private val periodTypes =
@@ -63,40 +63,40 @@ class ShuttleRepositoryTest {
     private val periods =
         listOf(
             ShuttlePeriod(
-                "semester",
-                ZonedDateTime.parse("2025-03-02T00:00:00+09:00"),
-                ZonedDateTime.parse("2025-06-24T23:59:59+09:00"),
-                null,
+                type = "semester",
+                start = ZonedDateTime.parse("2025-03-02T00:00:00+09:00"),
+                end = ZonedDateTime.parse("2025-06-24T23:59:59+09:00"),
+                periodType = periodTypes[0],
             ),
             ShuttlePeriod(
-                "vacation_session",
-                ZonedDateTime.parse("2025-06-25T00:00:00+09:00"),
-                ZonedDateTime.parse("2025-07-15T23:59:59+09:00"),
-                null,
+                type = "vacation_session",
+                start = ZonedDateTime.parse("2025-06-25T00:00:00+09:00"),
+                end = ZonedDateTime.parse("2025-07-15T23:59:59+09:00"),
+                periodType = periodTypes[1],
             ),
             ShuttlePeriod(
-                "vacation",
-                ZonedDateTime.parse("2025-07-16T00:00:00+09:00"),
-                ZonedDateTime.parse("2025-08-31T23:59:59+09:00"),
-                null,
+                type = "vacation",
+                start = ZonedDateTime.parse("2025-07-16T00:00:00+09:00"),
+                end = ZonedDateTime.parse("2025-08-31T23:59:59+09:00"),
+                periodType = periodTypes[2],
             ),
             ShuttlePeriod(
-                "semester",
-                ZonedDateTime.parse("2025-09-01T00:00:00+09:00"),
-                ZonedDateTime.parse("2025-12-23T23:59:59+09:00"),
-                null,
+                type = "semester",
+                start = ZonedDateTime.parse("2025-09-01T00:00:00+09:00"),
+                end = ZonedDateTime.parse("2025-12-23T23:59:59+09:00"),
+                periodType = periodTypes[0],
             ),
             ShuttlePeriod(
-                "vacation_session",
-                ZonedDateTime.parse("2025-12-24T00:00:00+09:00"),
-                ZonedDateTime.parse("2026-01-14T23:59:59+09:00"),
-                null,
+                type = "vacation_session",
+                start = ZonedDateTime.parse("2025-12-24T00:00:00+09:00"),
+                end = ZonedDateTime.parse("2026-01-14T23:59:59+09:00"),
+                periodType = periodTypes[1],
             ),
             ShuttlePeriod(
-                "vacation",
-                ZonedDateTime.parse("2026-01-15T00:00:00+09:00"),
-                ZonedDateTime.parse("2026-03-01T23:59:59+09:00"),
-                null,
+                type = "vacation",
+                start = ZonedDateTime.parse("2026-01-15T00:00:00+09:00"),
+                end = ZonedDateTime.parse("2026-03-01T23:59:59+09:00"),
+                periodType = periodTypes[2],
             ),
         )
     private val stops =
@@ -142,28 +142,28 @@ class ShuttleRepositoryTest {
     private val routeStops =
         listOf(
             ShuttleRouteStop(
-                "CDD",
-                "dormitory_o",
-                0,
-                Duration.ofMinutes(-5),
-                route,
-                stops[0],
+                routeName = "CDD",
+                stopName = "dormitory_o",
+                order = 0,
+                cumulativeTime = Duration.ofMinutes(-5),
+                route = route,
+                stop = stops[0],
             ),
             ShuttleRouteStop(
-                "CDD",
-                "shuttlecock_o",
-                1,
-                Duration.ofMinutes(0),
-                route,
-                stops[1],
+                routeName = "CDD",
+                stopName = "shuttlecock_o",
+                order = 1,
+                cumulativeTime = Duration.ofMinutes(0),
+                route = route,
+                stop = stops[1],
             ),
             ShuttleRouteStop(
-                "CDD",
-                "dormitory_i",
-                2,
-                Duration.ofMinutes(5),
-                route,
-                stops[2],
+                routeName = "CDD",
+                stopName = "dormitory_i",
+                order = 2,
+                cumulativeTime = Duration.ofMinutes(5),
+                route = route,
+                stop = stops[2],
             ),
         )
     private val timetable =
@@ -194,10 +194,10 @@ class ShuttleRepositoryTest {
     @BeforeEach
     fun setUp() {
         holidayRepository.saveAll(holidays)
-        periodTypeRepository.saveAll(periodTypes)
-        periodRepository.saveAll(periods)
-        stopRepository.saveAll(stops)
-        routeRepository.save(route)
+        periodTypeRepository.saveAllAndFlush(periodTypes)
+        periodRepository.saveAllAndFlush(periods)
+        stopRepository.saveAllAndFlush(stops)
+        routeRepository.saveAndFlush(route)
         routeStopRepository.saveAll(routeStops)
         timetableRepository.saveAll(timetable)
         entityManager
@@ -225,6 +225,8 @@ class ShuttleRepositoryTest {
         val holidays = holidayRepository.findByDateAndCalendarType(date, calendarType)
         assert(holidays != null)
         holidays?.let {
+            assert(it.seq != null)
+            assert(listOf("halt", "weekends").contains(it.type))
             assert(it.date == date)
             assert(it.calendarType == calendarType)
         }
@@ -237,6 +239,7 @@ class ShuttleRepositoryTest {
         val currentPeriods = periodRepository.findByStartBeforeAndEndAfter(currentTime, currentTime)
         assert(currentPeriods != null)
         currentPeriods?.let {
+            assert(it.seq != null)
             assert(it.start.isBefore(currentTime))
             assert(it.end.isAfter(currentTime))
             assert(it.type == "semester")
@@ -288,6 +291,8 @@ class ShuttleRepositoryTest {
         val routeStops = routeStopRepository.findByRouteName(routeName)
         assert(routeStops.isNotEmpty())
         routeStops.forEach { routeStop ->
+            assert(routeStop.seq != null)
+            assert(routeStop.stopName in listOf("dormitory_o", "shuttlecock_o", "dormitory_i"))
             assert(routeStop.routeName == routeName)
             assert(routeStop.stop.name in listOf("dormitory_o", "shuttlecock_o", "dormitory_i"))
             assert(routeStop.order in 0..2)

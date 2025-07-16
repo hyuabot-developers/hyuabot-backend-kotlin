@@ -25,7 +25,7 @@ data class BusRealtime(
     @Column(name = "stop_id", columnDefinition = "integer", nullable = false)
     val stopID: Int,
     @Id
-    @Column(name = "arrival_sequence", columnDefinition = "integer", nullable = false)
+    @Column(name = "arrival_seq", columnDefinition = "integer", nullable = false)
     val order: Int,
     @Column(name = "remaining_stop_count", columnDefinition = "integer", nullable = false)
     val remainingStop: Int,
