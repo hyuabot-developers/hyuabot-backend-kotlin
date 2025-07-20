@@ -2,18 +2,24 @@ package app.hyuabot.backend.campus
 
 import app.hyuabot.backend.campus.domain.CampusListResponse
 import app.hyuabot.backend.campus.domain.CampusResponse
+import app.hyuabot.backend.campus.domain.CreateCampusRequest
+import app.hyuabot.backend.campus.exception.DuplicateCampusException
 import app.hyuabot.backend.utility.ResponseBuilder
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -61,8 +67,115 @@ class CampusController {
             ResponseBuilder.response(
                 HttpStatus.OK,
                 CampusListResponse(
-                    result = campusList.map { CampusResponse(it.id, it.name) },
+                    result = campusList.map { CampusResponse(it.id!!, it.name) },
                 ),
+            )
+        }
+
+    @PostMapping("", consumes = [MediaType.APPLICATION_JSON_VALUE])
+    @Operation(
+        summary = "캠퍼스 등록",
+        description = "새로운 캠퍼스를 등록합니다.",
+        requestBody =
+            io.swagger.v3.oas.annotations.parameters.RequestBody(
+                required = true,
+                content = [
+                    Content(
+                        mediaType = MediaType.APPLICATION_JSON_VALUE,
+                        schema = Schema(implementation = CreateCampusRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "테스트 캠퍼스 등록 예시",
+                                value = """
+                                {
+                                    "name": "테스트 캠퍼스"
+                                }
+                            """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "201",
+                description = "캠퍼스 등록 성공",
+                content =
+                    [
+                        Content(
+                            schema = Schema(implementation = CampusResponse::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "캠퍼스 등록 성공 예시",
+                                        value = """
+                                        {
+                                            "seq": 3,
+                                            "name": "신규 캠퍼스"
+                                        }
+                                        """,
+                                    ),
+                                ),
+                        ),
+                    ],
+            ),
+            ApiResponse(
+                responseCode = "409",
+                description = "캠퍼스 이름 중복",
+                content =
+                    [
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "캠퍼스 이름 중복 예시",
+                                        value = "{\"message\": \"DUPLICATE_CAMPUS_NAME\"}",
+                                    ),
+                                ),
+                        ),
+                    ],
+            ),
+            ApiResponse(
+                responseCode = "500",
+                description = "서버 내부 오류",
+                content =
+                    [
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "서버 오류 예시",
+                                        value = "{\"message\": \"INTERNAL_SERVER_ERROR\"}",
+                                    ),
+                                ),
+                        ),
+                    ],
+            ),
+        ],
+    )
+    fun createCampus(
+        @RequestBody payload: CreateCampusRequest,
+    ): ResponseEntity<*> =
+        try {
+            campusService.createCampus(payload).let { campus ->
+                ResponseBuilder.response(
+                    HttpStatus.CREATED,
+                    CampusResponse(campus.id!!, campus.name),
+                )
+            }
+        } catch (_: DuplicateCampusException) {
+            ResponseBuilder.response(
+                HttpStatus.CONFLICT,
+                "DUPLICATE_CAMPUS_NAME",
+            )
+        } catch (_: Exception) {
+            ResponseBuilder.response(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "INTERNAL_SERVER_ERROR",
             )
         }
 }
