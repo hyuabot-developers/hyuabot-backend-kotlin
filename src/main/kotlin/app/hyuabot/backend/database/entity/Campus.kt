@@ -18,7 +18,7 @@ data class Campus(
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "campus_campus_id_seq")
     val id: Int? = null,
     @Column(name = "campus_name", length = 30, nullable = false)
-    val name: String,
+    var name: String,
     @OneToMany(mappedBy = "campus")
     val building: List<Building> = emptyList(),
     @OneToMany(mappedBy = "campus")

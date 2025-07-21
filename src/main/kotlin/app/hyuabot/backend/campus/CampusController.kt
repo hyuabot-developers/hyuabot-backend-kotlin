@@ -21,6 +21,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -246,4 +247,118 @@ class CampusController {
             )
         }
     }
+
+    @PutMapping("/{seq}", consumes = [MediaType.APPLICATION_JSON_VALUE])
+    @Operation(
+        summary = "캠퍼스 수정",
+        description = "등록된 캠퍼스의 이름을 수정합니다.",
+        requestBody =
+            io.swagger.v3.oas.annotations.parameters.RequestBody(
+                required = true,
+                content = [
+                    Content(
+                        mediaType = MediaType.APPLICATION_JSON_VALUE,
+                        schema = Schema(implementation = CreateCampusRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "테스트 캠퍼스 등록 예시",
+                                value = """
+                                {
+                                    "name": "테스트 캠퍼스"
+                                }
+                            """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "캠퍼스 수정 성공",
+                content =
+                    [
+                        Content(
+                            schema = Schema(implementation = CampusResponse::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "캠퍼스 수정 성공 예시",
+                                        value = """
+                                        {
+                                            "seq": 3,
+                                            "name": "신규 캠퍼스"
+                                        }
+                                        """,
+                                    ),
+                                ),
+                        ),
+                    ],
+            ),
+            ApiResponse(
+                responseCode = "409",
+                description = "캠퍼스 이름 중복",
+                content =
+                    [
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "캠퍼스 이름 중복 예시",
+                                        value = "{\"message\": \"DUPLICATE_CAMPUS_NAME\"}",
+                                    ),
+                                ),
+                        ),
+                    ],
+            ),
+            ApiResponse(
+                responseCode = "500",
+                description = "서버 내부 오류",
+                content =
+                    [
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "서버 오류 예시",
+                                        value = "{\"message\": \"INTERNAL_SERVER_ERROR\"}",
+                                    ),
+                                ),
+                        ),
+                    ],
+            ),
+        ],
+    )
+    fun updateCampus(
+        @PathVariable seq: Int,
+        @RequestBody payload: CreateCampusRequest,
+    ): ResponseEntity<*> =
+        try {
+            campusService.updateCampus(seq, payload).let { campus ->
+                ResponseBuilder.response(
+                    HttpStatus.OK,
+                    CampusResponse(campus.id!!, campus.name),
+                )
+            }
+        } catch (_: DuplicateCampusException) {
+            ResponseBuilder.response(
+                HttpStatus.CONFLICT,
+                "DUPLICATE_CAMPUS_NAME",
+            )
+        } catch (_: CampusNotFoundException) {
+            ResponseBuilder.response(
+                HttpStatus.NOT_FOUND,
+                "CAMPUS_NOT_FOUND",
+            )
+        } catch (e: Exception) {
+            logger.error("캠퍼스 수정 실패: ${e.message}", e)
+            ResponseBuilder.response(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "INTERNAL_SERVER_ERROR",
+            )
+        }
 }

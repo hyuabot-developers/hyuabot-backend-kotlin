@@ -25,4 +25,20 @@ class CampusService(
     }
 
     fun getCampusById(id: Int): Campus = campusRepository.findById(id).orElseThrow { CampusNotFoundException() }
+
+    fun updateCampus(
+        id: Int,
+        payload: CreateCampusRequest,
+    ): Campus {
+        campusRepository.findById(id).orElseThrow { CampusNotFoundException() }.let { campus ->
+            // 캠퍼스 이름 중복 확인
+            campusRepository.findByName(payload.name).let {
+                if (it.isNotEmpty() && it[0].id != id) {
+                    throw DuplicateCampusException()
+                }
+            }
+            campus.name = payload.name
+            return campusRepository.save(campus)
+        }
+    }
 }
