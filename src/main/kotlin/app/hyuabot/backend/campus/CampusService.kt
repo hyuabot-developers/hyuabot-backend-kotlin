@@ -33,7 +33,7 @@ class CampusService(
         campusRepository.findById(id).orElseThrow { CampusNotFoundException() }.let { campus ->
             // 캠퍼스 이름 중복 확인
             campusRepository.findByName(payload.name).let {
-                if (it.isNotEmpty() && it[0].id != id) {
+                if (it.isNotEmpty() && it.any { campus.id != it.id }) {
                     throw DuplicateCampusException()
                 }
             }

@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @Tag(name = "Campus", description = "캠퍼스 관련 API")
 class CampusController {
-    @Autowired lateinit var campusService: CampusService
+    @Autowired private lateinit var campusService: CampusService
     private val logger = LoggerFactory.getLogger(javaClass)
 
     @GetMapping("")
