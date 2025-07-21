@@ -23,33 +23,28 @@ class ReadingRoomRepositoryTest {
     @Autowired lateinit var readingRoomRepository: ReadingRoomRepository
 
     private val currentTime = ZonedDateTime.now()
-    private val campus =
-        Campus(
-            id = 1,
-            name = "Main Campus",
-        )
-
-    private val rooms =
-        (1..10).map {
-            ReadingRoom(
-                id = it,
-                name = "Reading Room $it",
-                campusID = campus.id,
-                isActive = true,
-                isReservable = true,
-                total = 100,
-                active = 100,
-                occupied = 0,
-                available = null,
-                updatedAt = currentTime,
-                campus = campus,
-            )
-        }
+    private val campus = Campus(name = "Main Campus")
 
     @BeforeEach
     fun setUp() {
         campusRepository.save(campus)
-        readingRoomRepository.saveAll(rooms)
+        readingRoomRepository.saveAll(
+            (1..10).map {
+                ReadingRoom(
+                    id = it,
+                    name = "Reading Room $it",
+                    campusID = campus.id!!,
+                    isActive = true,
+                    isReservable = true,
+                    total = 100,
+                    active = 100,
+                    occupied = 0,
+                    available = null,
+                    updatedAt = currentTime,
+                    campus = campus,
+                )
+            },
+        )
     }
 
     @AfterEach
@@ -69,8 +64,8 @@ class ReadingRoomRepositoryTest {
             assert(room.name.contains(keyword))
             assert(room.isActive)
             assert(room.isReservable)
-            assert(room.campusID == campus.id)
-            assert(room.campus.id == campus.id)
+            assert(room.campusID == campus.id!!)
+            assert(room.campus.id == campus.id!!)
             assert(room.updatedAt == currentTime)
             assert(room.isReservable)
             assert(room.isActive)
@@ -84,7 +79,7 @@ class ReadingRoomRepositoryTest {
     @Test
     @DisplayName("캠퍼스 ID로 열람실 목록 조회")
     fun testFindByCampusID() {
-        val foundRooms = readingRoomRepository.findByCampusId(campus.id)
+        val foundRooms = readingRoomRepository.findByCampusId(campus.id!!)
         assert(foundRooms.size == 10)
         assert(foundRooms.all { it.campusID == campus.id })
     }
@@ -93,7 +88,7 @@ class ReadingRoomRepositoryTest {
     @DisplayName("캠퍼스 ID 및 이름 키워드로 열람실 목록 조회")
     fun testFindByCampusIDAndNameContaining() {
         val keyword = "Reading Room"
-        val foundRooms = readingRoomRepository.findByCampusIdAndNameContaining(campus.id, keyword)
+        val foundRooms = readingRoomRepository.findByCampusIdAndNameContaining(campus.id!!, keyword)
         assert(foundRooms.size == 10)
         assert(foundRooms.all { it.name.contains(keyword) })
     }

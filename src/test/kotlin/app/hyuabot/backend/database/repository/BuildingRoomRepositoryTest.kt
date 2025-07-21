@@ -23,16 +23,13 @@ class BuildingRoomRepositoryTest {
     @Autowired lateinit var buildingRepository: BuildingRepository
 
     @Autowired lateinit var roomRepository: RoomRepository
-    private val campus =
-        Campus(
-            id = 1,
-            name = "Main Campus",
-        )
+    private val campus = Campus(name = "Main Campus")
     private lateinit var buildingList: MutableList<Building>
     private lateinit var roomList: MutableList<Room>
 
     @BeforeEach
     fun setUp() {
+        campusRepository.save(campus)
         buildingList =
             mutableListOf(
                 Building(
@@ -42,7 +39,7 @@ class BuildingRoomRepositoryTest {
                     longitude = -122.4194,
                     url = "http://example.com/building_a.jpg",
                     campus = campus,
-                    campusID = campus.id,
+                    campusID = campus.id!!,
                 ),
                 Building(
                     id = "B",
@@ -51,7 +48,7 @@ class BuildingRoomRepositoryTest {
                     longitude = -122.4195,
                     url = "http://example.com/building_b.jpg",
                     campus = campus,
-                    campusID = campus.id,
+                    campusID = campus.id!!,
                 ),
                 Building(
                     id = "C",
@@ -60,7 +57,7 @@ class BuildingRoomRepositoryTest {
                     longitude = -122.4196,
                     url = "http://example.com/building_c.jpg",
                     campus = campus,
-                    campusID = campus.id,
+                    campusID = campus.id!!,
                 ),
             )
         roomList =
@@ -78,7 +75,6 @@ class BuildingRoomRepositoryTest {
                     buildingName = buildingList[0].name,
                 ),
             )
-        campusRepository.save(campus)
         buildingRepository.saveAllAndFlush(buildingList)
         roomRepository.saveAll(roomList)
     }
@@ -100,8 +96,8 @@ class BuildingRoomRepositoryTest {
         assert(building?.latitude == 37.7749)
         assert(building?.longitude == -122.4194)
         assert(building?.url == "http://example.com/building_a.jpg")
-        assert(building?.campusID == 1)
-        assert(building?.campus?.id == 1)
+        assert(building?.campusID == campus.id!!)
+        assert(building?.campus?.id == campus.id!!)
         assert(building?.campus?.name == "Main Campus")
         assert(building?.room?.isEmpty() == true)
     }
@@ -126,7 +122,7 @@ class BuildingRoomRepositoryTest {
     @Test
     @DisplayName("건물 목록 키워드 검색 및 캠퍼스 ID 필터링")
     fun testFindByCampusIDAndNameContaining() {
-        val buildings = buildingRepository.findByCampusIDAndNameContaining(1, "Building")
+        val buildings = buildingRepository.findByCampusIDAndNameContaining(campus.id!!, "Building")
         assert(buildings.size == 3)
         assert(buildings.any { it.name == "Building A" })
         assert(buildings.any { it.name == "Building B" })

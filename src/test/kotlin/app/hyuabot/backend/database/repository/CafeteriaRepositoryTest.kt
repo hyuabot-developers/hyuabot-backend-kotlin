@@ -25,16 +25,13 @@ class CafeteriaRepositoryTest {
 
     @Autowired lateinit var menuRepository: MenuRepository
 
-    private val campus =
-        Campus(
-            id = 1,
-            name = "Main Campus",
-        )
+    private val campus = Campus(name = "Main Campus")
     private lateinit var cafeteriaList: MutableList<Cafeteria>
     private lateinit var menuList: MutableList<Menu>
 
     @BeforeEach
     fun setUp() {
+        campusRepository.save(campus)
         cafeteriaList =
             mutableListOf(
                 Cafeteria(
@@ -46,7 +43,7 @@ class CafeteriaRepositoryTest {
                     lunchTime = "11:00-14:00",
                     dinnerTime = "17:00-20:00",
                     campus = campus,
-                    campusID = campus.id,
+                    campusID = campus.id!!,
                 ),
                 Cafeteria(
                     id = 2,
@@ -57,7 +54,7 @@ class CafeteriaRepositoryTest {
                     lunchTime = "11:30-14:30",
                     dinnerTime = "17:30-20:30",
                     campus = campus,
-                    campusID = campus.id,
+                    campusID = campus.id!!,
                 ),
             )
         menuList =
@@ -79,7 +76,6 @@ class CafeteriaRepositoryTest {
                     cafeteria = cafeteriaList[0],
                 ),
             )
-        campusRepository.save(campus)
         cafeteriaRepository.saveAllAndFlush(cafeteriaList)
         menuRepository.saveAll(menuList)
     }
@@ -97,14 +93,14 @@ class CafeteriaRepositoryTest {
         assert(foundCafeteria.size == 1)
         foundCafeteria.first().let {
             assert(it.id == 1)
-            assert(it.campusID == 1)
+            assert(it.campusID == campus.id!!)
             assert(it.name == "Cafeteria A")
             assert(it.latitude == 37.7749)
             assert(it.longitude == -122.4194)
             assert(it.breakfastTime == "07:00-10:00")
             assert(it.lunchTime == "11:00-14:00")
             assert(it.dinnerTime == "17:00-20:00")
-            assert(it.campus.id == campus.id)
+            assert(it.campus.id == campus.id!!)
             assert(it.campus.name == campus.name)
             assert(it.menu.isEmpty())
         }
@@ -113,11 +109,11 @@ class CafeteriaRepositoryTest {
     @Test
     @DisplayName("식당 목록 캠퍼스 ID로 검색")
     fun testFindByCampusID() {
-        val foundCafeterias = cafeteriaRepository.findByCampusID(campus.id)
+        val foundCafeterias = cafeteriaRepository.findByCampusID(campus.id!!)
         assert(foundCafeterias.isNotEmpty())
         assert(foundCafeterias.size == 2)
         foundCafeterias.forEach {
-            assert(it.campus.id == campus.id)
+            assert(it.campus.id == campus.id!!)
             assert(it.campus.name == campus.name)
         }
     }
