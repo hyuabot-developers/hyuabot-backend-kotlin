@@ -1,6 +1,7 @@
 package app.hyuabot.backend.campus
 
 import app.hyuabot.backend.campus.domain.CreateCampusRequest
+import app.hyuabot.backend.campus.exception.CampusNotFoundException
 import app.hyuabot.backend.campus.exception.DuplicateCampusException
 import app.hyuabot.backend.database.entity.Campus
 import app.hyuabot.backend.database.repository.CampusRepository
@@ -22,4 +23,6 @@ class CampusService(
         val campus = Campus(name = payload.name)
         return campusRepository.save(campus)
     }
+
+    fun getCampusById(id: Int): Campus = campusRepository.findById(id).orElseThrow { CampusNotFoundException() }
 }
