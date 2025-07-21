@@ -17,11 +17,7 @@ import org.springframework.test.context.TestPropertySource
 @TestPropertySource("classpath:application-test.properties")
 class CampusRepositoryTest {
     @Autowired lateinit var campusRepository: CampusRepository
-    private val campus =
-        Campus(
-            id = 1,
-            name = "Main Campus",
-        )
+    private val campus = Campus(name = "Main Campus")
 
     @BeforeEach
     fun setUp() {
@@ -40,7 +36,7 @@ class CampusRepositoryTest {
         assert(campus.isNotEmpty())
         campus.first().let {
             assert(it.name.contains("Main Campus"))
-            assert(it.id == 1)
+            assert(it.id == this.campus.id)
             assert(it.cafeteria.isEmpty())
             assert(it.building.isEmpty())
             assert(it.readingRoom.isEmpty())

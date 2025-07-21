@@ -17,7 +17,7 @@ data class RefreshToken(
     val uuid: UUID,
     @Column(name = "user_id", length = 20, nullable = false)
     val userID: String,
-    @Column(name = "refresh_token", length = 100, nullable = false)
+    @Column(name = "refresh_token", length = 200, nullable = false)
     var refreshToken: String,
     @Column(name = "expired_at", columnDefinition = "timestamptz", nullable = false)
     var expiredAt: ZonedDateTime,

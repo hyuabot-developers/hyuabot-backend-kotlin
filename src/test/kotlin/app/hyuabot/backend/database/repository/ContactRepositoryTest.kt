@@ -34,11 +34,7 @@ class ContactRepositoryTest {
             contact = listOf(),
         )
 
-    val campus =
-        Campus(
-            id = 1,
-            name = "Main Campus",
-        )
+    private val campus = Campus(name = "Main Campus")
 
     val contactVersion =
         ContactVersion(
@@ -54,7 +50,7 @@ class ContactRepositoryTest {
         contactRepository.saveAll(
             listOf(
                 Contact(
-                    campusID = 1,
+                    campusID = campus.id!!,
                     categoryID = category.id ?: 0,
                     name = "Contact 1",
                     phone = "1234567890",
@@ -80,7 +76,7 @@ class ContactRepositoryTest {
         assert(contacts[0].id != null)
         assert(contacts[0].categoryID == category.id)
         assert(contacts[0].category.id == category.id)
-        assert(contacts[0].campusID == campus.id)
+        assert(contacts[0].campusID == campus.id!!)
         assert(contacts[0].name == "Contact 1")
         assert(contacts[0].phone == "1234567890")
     }
@@ -88,9 +84,9 @@ class ContactRepositoryTest {
     @Test
     @DisplayName("캠퍼스 ID로 연락처 목록 조회")
     fun testFindContactByCampusID() {
-        val contacts = contactRepository.findByCampusID(campus.id)
+        val contacts = contactRepository.findByCampusID(campus.id!!)
         assert(contacts.isNotEmpty())
-        assert(contacts[0].campusID == campus.id)
+        assert(contacts[0].campusID == campus.id!!)
     }
 
     @Test
