@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -298,6 +299,23 @@ class CampusController {
                     ],
             ),
             ApiResponse(
+                responseCode = "404",
+                description = "캠퍼스가 존재하지 않음",
+                content =
+                    [
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "캠퍼스 존재하지 않음 예시",
+                                        value = "{\"message\": \"CAMPUS_NOT_FOUND\"}",
+                                    ),
+                                ),
+                        ),
+                    ],
+            ),
+            ApiResponse(
                 responseCode = "409",
                 description = "캠퍼스 이름 중복",
                 content =
@@ -356,6 +374,72 @@ class CampusController {
             )
         } catch (e: Exception) {
             logger.error("캠퍼스 수정 실패: ${e.message}", e)
+            ResponseBuilder.response(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "INTERNAL_SERVER_ERROR",
+            )
+        }
+
+    @DeleteMapping("/{seq}")
+    @Operation(
+        summary = "캠퍼스 삭제",
+        description = "등록된 캠퍼스를 삭제합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "204",
+                description = "캠퍼스 수정 성공",
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "캠퍼스가 존재하지 않음",
+                content =
+                    [
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "캠퍼스 존재하지 않음 예시",
+                                        value = "{\"message\": \"CAMPUS_NOT_FOUND\"}",
+                                    ),
+                                ),
+                        ),
+                    ],
+            ),
+            ApiResponse(
+                responseCode = "500",
+                description = "서버 내부 오류",
+                content =
+                    [
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "서버 오류 예시",
+                                        value = "{\"message\": \"INTERNAL_SERVER_ERROR\"}",
+                                    ),
+                                ),
+                        ),
+                    ],
+            ),
+        ],
+    )
+    fun deleteCampus(
+        @PathVariable seq: Int,
+    ): ResponseEntity<*> =
+        try {
+            campusService.deleteCampusById(seq)
+            ResponseEntity.noContent().build<Any>()
+        } catch (_: CampusNotFoundException) {
+            ResponseBuilder.response(
+                HttpStatus.NOT_FOUND,
+                "CAMPUS_NOT_FOUND",
+            )
+        } catch (e: Exception) {
+            logger.error("캠퍼스 삭제 실패: ${e.message}", e)
             ResponseBuilder.response(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "INTERNAL_SERVER_ERROR",

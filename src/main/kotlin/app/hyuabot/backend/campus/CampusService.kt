@@ -41,4 +41,10 @@ class CampusService(
             return campusRepository.save(campus)
         }
     }
+
+    fun deleteCampusById(id: Int) {
+        campusRepository.findById(id).orElseThrow { CampusNotFoundException() }.let { campus ->
+            campusRepository.delete(campus)
+        }
+    }
 }
