@@ -3,6 +3,7 @@ package app.hyuabot.backend.readingRoom
 import app.hyuabot.backend.readingRoom.domain.CreateReadingRoomRequest
 import app.hyuabot.backend.readingRoom.domain.ReadingRoomListResponse
 import app.hyuabot.backend.readingRoom.domain.ReadingRoomResponse
+import app.hyuabot.backend.readingRoom.domain.UpdateReadingRoomRequest
 import app.hyuabot.backend.readingRoom.exception.DuplicateReadingRoomException
 import app.hyuabot.backend.readingRoom.exception.ReadingRoomNotFoundException
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
@@ -22,6 +23,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -344,6 +346,141 @@ class ReadingRoomController {
             )
         } catch (e: Exception) {
             logger.error("Error fetching reading room detail: ${e.message}", e)
+            ResponseBuilder.response(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "INTERNAL_SERVER_ERROR",
+            )
+        }
+
+    @PutMapping("/{seq}", consumes = [MediaType.APPLICATION_JSON_VALUE])
+    @Operation(
+        summary = "열람실 정보 수정",
+        description = "열람실의 정보를 수정합니다.",
+        requestBody =
+            io.swagger.v3.oas.annotations.parameters.RequestBody(
+                content = [
+                    Content(
+                        mediaType = MediaType.APPLICATION_JSON_VALUE,
+                        schema = Schema(implementation = UpdateReadingRoomRequest::class),
+                        examples = [
+                            ExampleObject(
+                                name = "열람실 정보 수정 예시",
+                                value = """
+                                {
+                                    "campusID": 1,
+                                    "name": "수정된 열람실",
+                                    "total": 60,
+                                    "active": 60,
+                                    "isActive": true,
+                                    "isReservable": true
+                                }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "열람실 정보 수정 성공",
+                content =
+                    [
+                        Content(
+                            schema = Schema(implementation = ReadingRoomResponse::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "열람실 정보 수정 성공 예시",
+                                        value = """
+                                        {
+                                            "seq": 61,
+                                            "name": "수정된 열람실",
+                                            "campusID": 1,
+                                            "isActive": true,
+                                            "isReservable": true,
+                                            "total": 60,
+                                            "active": 60,
+                                            "occupied": 0,
+                                            "available": 60,
+                                            "updatedAt": "2025-07-22 16:06:03"
+                                        }
+                                        """,
+                                    ),
+                                ),
+                        ),
+                    ],
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "열람실을 찾을 수 없음",
+                content =
+                    [
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "열람실을 찾을 수 없음 예시",
+                                        value = "{\"message\": \"READING_ROOM_NOT_FOUND\"}",
+                                    ),
+                                ),
+                        ),
+                    ],
+            ),
+            ApiResponse(
+                responseCode = "500",
+                description = "서버 내부 오류",
+                content =
+                    [
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "서버 오류 예시",
+                                        value = "{\"message\": \"INTERNAL_SERVER_ERROR\"}",
+                                    ),
+                                ),
+                        ),
+                    ],
+            ),
+        ],
+    )
+    fun updateReadingRoom(
+        @PathVariable seq: Int,
+        @RequestBody payload: UpdateReadingRoomRequest,
+    ): ResponseEntity<*> =
+        try {
+            readingRoomService.updateReadingRoom(seq, payload).let {
+                ResponseBuilder.response(
+                    HttpStatus.OK,
+                    ReadingRoomResponse(
+                        seq = it.id,
+                        name = it.name,
+                        campusID = it.campusID,
+                        isActive = it.isActive,
+                        isReservable = it.isReservable,
+                        total = it.total,
+                        active = it.active,
+                        occupied = it.occupied,
+                        available = it.available ?: 0,
+                        updatedAt =
+                            LocalDateTimeBuilder.convertLocalDateTimeToString(
+                                LocalDateTimeBuilder.convertAsServiceTimezone(it.updatedAt),
+                            ),
+                    ),
+                )
+            }
+        } catch (_: ReadingRoomNotFoundException) {
+            ResponseBuilder.response(
+                HttpStatus.NOT_FOUND,
+                "READING_ROOM_NOT_FOUND",
+            )
+        } catch (e: Exception) {
+            logger.error("Error updating reading room: ${e.message}", e)
             ResponseBuilder.response(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "INTERNAL_SERVER_ERROR",
