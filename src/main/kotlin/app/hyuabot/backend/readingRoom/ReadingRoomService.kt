@@ -17,14 +17,14 @@ class ReadingRoomService(
 
     fun createReadingRoom(payload: CreateReadingRoomRequest): ReadingRoom {
         // Reading Room 이름 중복 확인
-        readingRoomRepository.findById(payload.readingRoomID).let {
+        readingRoomRepository.findById(payload.id).let {
             if (it.isPresent) {
                 throw DuplicateReadingRoomException()
             }
         }
         return readingRoomRepository.save(
             ReadingRoom(
-                id = payload.readingRoomID,
+                id = payload.id,
                 name = payload.name,
                 campusID = payload.campusID,
                 isActive = true,
