@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -481,6 +482,72 @@ class ReadingRoomController {
             )
         } catch (e: Exception) {
             logger.error("Error updating reading room: ${e.message}", e)
+            ResponseBuilder.response(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "INTERNAL_SERVER_ERROR",
+            )
+        }
+
+    @DeleteMapping("/{seq}")
+    @Operation(
+        summary = "열람실 삭제",
+        description = "열람실을 삭제합니다.",
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "204",
+                description = "열람실 삭제 성공",
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "열람실을 찾을 수 없음",
+                content =
+                    [
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "열람실을 찾을 수 없음 예시",
+                                        value = "{\"message\": \"READING_ROOM_NOT_FOUND\"}",
+                                    ),
+                                ),
+                        ),
+                    ],
+            ),
+            ApiResponse(
+                responseCode = "500",
+                description = "서버 내부 오류",
+                content =
+                    [
+                        Content(
+                            schema = Schema(implementation = ResponseBuilder.Message::class),
+                            examples =
+                                arrayOf(
+                                    ExampleObject(
+                                        name = "서버 오류 예시",
+                                        value = "{\"message\": \"INTERNAL_SERVER_ERROR\"}",
+                                    ),
+                                ),
+                        ),
+                    ],
+            ),
+        ],
+    )
+    fun deleteReadingRoom(
+        @PathVariable seq: Int,
+    ): ResponseEntity<*> =
+        try {
+            readingRoomService.deleteReadingRoomById(seq)
+            ResponseBuilder.response(HttpStatus.NO_CONTENT, null)
+        } catch (_: ReadingRoomNotFoundException) {
+            ResponseBuilder.response(
+                HttpStatus.NOT_FOUND,
+                "READING_ROOM_NOT_FOUND",
+            )
+        } catch (e: Exception) {
+            logger.error("Error deleting reading room: ${e.message}", e)
             ResponseBuilder.response(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "INTERNAL_SERVER_ERROR",
