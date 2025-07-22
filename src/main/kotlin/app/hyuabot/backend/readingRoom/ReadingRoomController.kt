@@ -4,6 +4,7 @@ import app.hyuabot.backend.readingRoom.domain.CreateReadingRoomRequest
 import app.hyuabot.backend.readingRoom.domain.ReadingRoomListResponse
 import app.hyuabot.backend.readingRoom.domain.ReadingRoomResponse
 import app.hyuabot.backend.readingRoom.exception.DuplicateReadingRoomException
+import app.hyuabot.backend.readingRoom.exception.ReadingRoomNotFoundException
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import app.hyuabot.backend.utility.ResponseBuilder
 import io.swagger.v3.oas.annotations.Operation
@@ -19,6 +20,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -260,4 +262,91 @@ class ReadingRoomController {
             )
         }
     }
+
+    @GetMapping("/{seq}")
+    @Operation(
+        summary = "열람실 상세 조회",
+        description = "열람실의 상세 정보를 조회합니다.",
+        responses = [
+            ApiResponse(
+                responseCode = "200",
+                description = "열람실 상세 조회 성공",
+                content = [
+                    Content(
+                        schema = Schema(implementation = ReadingRoomResponse::class),
+                        examples = [
+                            ExampleObject(
+                                name = "열람실 상세 조회 성공 예시",
+                                value = """
+                                    {
+                                        "seq": 61,
+                                        "name": "제1열람실 (2F)",
+                                        "campusID": 2,
+                                        "isActive": true,
+                                        "isReservable": true,
+                                        "total": 320,
+                                        "active": 320,
+                                        "occupied": 18,
+                                        "available": 302,
+                                        "updatedAt": "2025-07-22 16:06:03"
+                                    }
+                                """,
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "열람실을 찾을 수 없음",
+                content = [
+                    Content(
+                        schema = Schema(implementation = ResponseBuilder.Message::class),
+                        examples = [
+                            ExampleObject(
+                                name = "열람실을 찾을 수 없음 예시",
+                                value = "{\"message\": \"READING_ROOM_NOT_FOUND\"}",
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun getReadingRoomDetail(
+        @PathVariable seq: Int,
+    ): ResponseEntity<*> =
+        try {
+            readingRoomService.getReadingRoomById(seq).let {
+                ResponseBuilder.response(
+                    HttpStatus.OK,
+                    ReadingRoomResponse(
+                        seq = it.id,
+                        name = it.name,
+                        campusID = it.campusID,
+                        isActive = it.isActive,
+                        isReservable = it.isReservable,
+                        total = it.total,
+                        active = it.active,
+                        occupied = it.occupied,
+                        available = it.available ?: 0,
+                        updatedAt =
+                            LocalDateTimeBuilder.convertLocalDateTimeToString(
+                                LocalDateTimeBuilder.convertAsServiceTimezone(it.updatedAt),
+                            ),
+                    ),
+                )
+            }
+        } catch (_: ReadingRoomNotFoundException) {
+            ResponseBuilder.response(
+                HttpStatus.NOT_FOUND,
+                "READING_ROOM_NOT_FOUND",
+            )
+        } catch (e: Exception) {
+            logger.error("Error fetching reading room detail: ${e.message}", e)
+            ResponseBuilder.response(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "INTERNAL_SERVER_ERROR",
+            )
+        }
 }
