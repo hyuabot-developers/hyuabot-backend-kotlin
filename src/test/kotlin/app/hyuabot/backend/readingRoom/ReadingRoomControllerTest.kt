@@ -86,7 +86,7 @@ class ReadingRoomControllerTest {
                     campus = Campus(id = 2, name = "ERICA"),
                 ),
             ),
-        ).whenever(readingRoomService).getReadingRoomList()
+        ).whenever(readingRoomService).getReadingRoomList(null)
 
         // Perform GET request and verify response
         mockMvc
@@ -96,6 +96,38 @@ class ReadingRoomControllerTest {
             .andExpect(jsonPath("$.result[0].name").value("열람실 A"))
             .andExpect(jsonPath("$.result[1].seq").value(2))
             .andExpect(jsonPath("$.result[1].name").value("열람실 B"))
+    }
+
+    @Test
+    @DisplayName("열람실 목록 조회 테스트 (키워드 검색)")
+    @WithCustomMockUser(username = "test_user")
+    fun testGetReadingRoomListWithKeyword() {
+        // Mocking the service method
+        val now = ZonedDateTime.now(ZoneId.of("Asia/Seoul"))
+        doReturn(
+            listOf(
+                ReadingRoom(
+                    id = 1,
+                    name = "열람실 A",
+                    campusID = 1,
+                    isActive = true,
+                    isReservable = true,
+                    total = 10,
+                    active = 10,
+                    occupied = 0,
+                    available = 10,
+                    updatedAt = now,
+                    campus = Campus(id = 1, name = "서울"),
+                ),
+            ),
+        ).whenever(readingRoomService).getReadingRoomList("A")
+
+        // Perform GET request and verify response
+        mockMvc
+            .perform(get("/api/v1/reading-room").param("name", "A"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.result[0].seq").value(1))
+            .andExpect(jsonPath("$.result[0].name").value("열람실 A"))
     }
 
     @Test

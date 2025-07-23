@@ -13,7 +13,12 @@ import java.time.ZonedDateTime
 class ReadingRoomService(
     private val readingRoomRepository: ReadingRoomRepository,
 ) {
-    fun getReadingRoomList(): List<ReadingRoom> = readingRoomRepository.findAll().sortedBy { it.id }
+    fun getReadingRoomList(name: String?): List<ReadingRoom> {
+        if (name != null) {
+            return readingRoomRepository.findByNameContaining(name).sortedBy { it.id }
+        }
+        return readingRoomRepository.findAll().sortedBy { it.id }
+    }
 
     fun createReadingRoom(payload: CreateReadingRoomRequest): ReadingRoom {
         // Reading Room 이름 중복 확인
