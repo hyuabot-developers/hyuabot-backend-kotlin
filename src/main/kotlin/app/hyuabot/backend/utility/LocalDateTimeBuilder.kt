@@ -5,14 +5,11 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
-class LocalDateTimeBuilder {
-    companion object {
-        val serviceTimezone = ZoneId.of("Asia/Seoul")
-        val datetimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+object LocalDateTimeBuilder {
+    private val serviceTimezone: ZoneId = ZoneId.of("Asia/Seoul")
+    private val datetimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
-        fun convertAsServiceTimezone(dateTime: ZonedDateTime): LocalDateTime =
-            dateTime.withZoneSameInstant(serviceTimezone).toLocalDateTime()
+    fun convertAsServiceTimezone(dateTime: ZonedDateTime): LocalDateTime = dateTime.withZoneSameInstant(serviceTimezone).toLocalDateTime()
 
-        fun convertLocalDateTimeToString(dateTime: LocalDateTime): String = dateTime.atZone(serviceTimezone).format(datetimeFormatter)
-    }
+    fun convertLocalDateTimeToString(dateTime: LocalDateTime): String = dateTime.atZone(serviceTimezone).format(datetimeFormatter)
 }

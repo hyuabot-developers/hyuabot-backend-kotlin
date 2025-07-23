@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @Tag(name = "Reading Room", description = "도서관 열람실 관련 API")
 class ReadingRoomController {
-    @Autowired lateinit var readingRoomService: ReadingRoomService
+    @Autowired private lateinit var readingRoomService: ReadingRoomService
     private val logger = LoggerFactory.getLogger(javaClass)
 
     @GetMapping("")
@@ -111,7 +111,6 @@ class ReadingRoomController {
             result =
                 readingRoomService
                     .getReadingRoomList()
-                    .filter { it.available != null }
                     .map {
                         ReadingRoomResponse(
                             seq = it.id,
@@ -122,7 +121,7 @@ class ReadingRoomController {
                             total = it.total,
                             active = it.active,
                             occupied = it.occupied,
-                            available = it.available ?: 0,
+                            available = it.available,
                             updatedAt =
                                 LocalDateTimeBuilder.convertLocalDateTimeToString(
                                     LocalDateTimeBuilder.convertAsServiceTimezone(it.updatedAt),
@@ -244,7 +243,7 @@ class ReadingRoomController {
                             total = it.total,
                             active = it.active,
                             occupied = it.occupied,
-                            available = it.available ?: 0,
+                            available = it.available,
                             updatedAt =
                                 LocalDateTimeBuilder.convertLocalDateTimeToString(
                                     LocalDateTimeBuilder.convertAsServiceTimezone(it.updatedAt),
@@ -332,7 +331,7 @@ class ReadingRoomController {
                         total = it.total,
                         active = it.active,
                         occupied = it.occupied,
-                        available = it.available ?: 0,
+                        available = it.available,
                         updatedAt =
                             LocalDateTimeBuilder.convertLocalDateTimeToString(
                                 LocalDateTimeBuilder.convertAsServiceTimezone(it.updatedAt),
@@ -467,7 +466,7 @@ class ReadingRoomController {
                         total = it.total,
                         active = it.active,
                         occupied = it.occupied,
-                        available = it.available ?: 0,
+                        available = it.available,
                         updatedAt =
                             LocalDateTimeBuilder.convertLocalDateTimeToString(
                                 LocalDateTimeBuilder.convertAsServiceTimezone(it.updatedAt),

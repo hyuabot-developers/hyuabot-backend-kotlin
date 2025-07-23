@@ -32,7 +32,7 @@ class ReadingRoomService(
                 total = payload.total,
                 active = payload.total,
                 occupied = 0,
-                available = null,
+                available = payload.total,
                 updatedAt = ZonedDateTime.now(),
                 campus = null,
             ),
