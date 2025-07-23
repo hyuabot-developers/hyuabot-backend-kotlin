@@ -11,7 +11,7 @@ data class UpdateReadingRoomRequest(
     val total: Int,
     @Schema(description = "Active Seats", example = "50")
     val active: Int,
-    @Schema(description = "Reading Roo Active Status", example = "true")
+    @Schema(description = "Reading Room Active Status", example = "true")
     val isActive: Boolean,
     @Schema(description = "Reading Room Reservable Status", example = "true")
     val isReservable: Boolean,

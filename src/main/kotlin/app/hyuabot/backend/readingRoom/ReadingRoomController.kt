@@ -172,7 +172,7 @@ class ReadingRoomController {
                             examples =
                                 arrayOf(
                                     ExampleObject(
-                                        name = "캠퍼스 등록 성공 예시",
+                                        name = "열람 등록 성공 예시",
                                         value = """
                                         {
                                             "seq": 100,
@@ -202,7 +202,7 @@ class ReadingRoomController {
                             examples =
                                 arrayOf(
                                     ExampleObject(
-                                        name = "캠퍼스 이름 중복 예시",
+                                        name = "열람실 ID 중복 예시",
                                         value = "{\"message\": \"DUPLICATE_READING_ROOM_ID\"}",
                                     ),
                                 ),

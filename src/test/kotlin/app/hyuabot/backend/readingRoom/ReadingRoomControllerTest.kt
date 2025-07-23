@@ -367,7 +367,7 @@ class ReadingRoomControllerTest {
                 ),
             )
 
-        // Perform POST request to update campus and verify response
+        // Perform PUT request to update reading room and verify response
         mockMvc
             .perform(
                 put("/api/v1/reading-room/1")
@@ -413,7 +413,7 @@ class ReadingRoomControllerTest {
                 ),
             )
 
-        // Perform POST request to update campus and verify response
+        // Perform PUT request to update reading room and verify response
         mockMvc
             .perform(
                 put("/api/v1/reading-room/999")
@@ -453,7 +453,7 @@ class ReadingRoomControllerTest {
                 ),
             )
 
-        // Perform POST request to update campus and verify response
+        // Perform PUT request to update reading room and verify response
         mockMvc
             .perform(
                 put("/api/v1/reading-room/999")
@@ -499,7 +499,7 @@ class ReadingRoomControllerTest {
             .perform(delete("/api/v1/reading-room/1"))
             .andExpect(status().isNoContent)
 
-        // Verify that the campus was deleted
+        // Verify that the reading room was deleted
         verify(readingRoomService).deleteReadingRoomById(1)
     }
 
