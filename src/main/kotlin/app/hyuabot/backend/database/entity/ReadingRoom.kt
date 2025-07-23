@@ -15,24 +15,24 @@ data class ReadingRoom(
     @Column(name = "room_id", columnDefinition = "integer", nullable = false)
     val id: Int,
     @Column(name = "room_name", length = 20, nullable = false)
-    val name: String,
+    var name: String,
     @Column(name = "campus_id", columnDefinition = "integer", nullable = false)
-    val campusID: Int,
+    var campusID: Int,
     @Column(name = "is_active", columnDefinition = "boolean", nullable = false)
-    val isActive: Boolean,
+    var isActive: Boolean,
     @Column(name = "is_reservable", columnDefinition = "boolean", nullable = false)
-    val isReservable: Boolean,
+    var isReservable: Boolean,
     @Column(name = "total", columnDefinition = "integer", nullable = false)
-    val total: Int,
+    var total: Int,
     @Column(name = "active_total", columnDefinition = "integer", nullable = false)
-    val active: Int,
+    var active: Int,
     @Column(name = "occupied", columnDefinition = "integer", nullable = false)
     val occupied: Int,
     @Column(name = "available", columnDefinition = "integer", nullable = false, insertable = false, updatable = false)
-    val available: Int?,
+    val available: Int = active - occupied,
     @Column(name = "last_updated_time", columnDefinition = "timestamptz", nullable = false)
     val updatedAt: ZonedDateTime,
     @ManyToOne
     @JoinColumn(name = "campus_id", referencedColumnName = "campus_id", insertable = false, updatable = false)
-    val campus: Campus,
+    val campus: Campus?,
 )
