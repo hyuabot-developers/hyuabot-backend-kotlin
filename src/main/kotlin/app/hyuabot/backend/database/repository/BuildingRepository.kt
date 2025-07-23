@@ -12,6 +12,8 @@ interface BuildingRepository : JpaRepository<Building, String> {
     // List Query
     fun findByNameContaining(name: String): List<Building>
 
+    fun findByCampusID(campusID: Int): List<Building>
+
     fun findByCampusIDAndNameContaining(
         campusID: Int,
         name: String,
