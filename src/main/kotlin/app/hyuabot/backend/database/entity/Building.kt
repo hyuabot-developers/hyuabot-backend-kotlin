@@ -22,8 +22,8 @@ data class Building(
     var latitude: Double,
     @Column(name = "longitude", columnDefinition = "double precision", nullable = false)
     var longitude: Double,
-    @Column(name = "url", columnDefinition = "text", nullable = false)
-    var url: String,
+    @Column(name = "url", columnDefinition = "text", nullable = true)
+    var url: String? = null,
     @OneToMany(mappedBy = "building")
     val room: List<Room> = emptyList(),
     @ManyToOne

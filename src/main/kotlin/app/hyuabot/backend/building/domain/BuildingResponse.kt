@@ -6,5 +6,5 @@ data class BuildingResponse(
     val campusID: Int,
     val latitude: Double,
     val longitude: Double,
-    val url: String,
+    val url: String?,
 )
