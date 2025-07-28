@@ -17,4 +17,11 @@ interface RoomRepository : JpaRepository<Room, Int> {
 
     // List Query
     fun findByNameContaining(buildingName: String): List<Room>
+
+    fun findByBuildingName(buildingName: String): List<Room>
+
+    fun findByBuildingNameAndNameContaining(
+        buildingName: String,
+        number: String,
+    ): List<Room>
 }
