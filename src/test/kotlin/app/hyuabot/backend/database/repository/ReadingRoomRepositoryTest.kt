@@ -39,7 +39,6 @@ class ReadingRoomRepositoryTest {
                     total = 100,
                     active = 100,
                     occupied = 0,
-                    available = null,
                     updatedAt = currentTime,
                     campus = campus,
                 )
@@ -65,14 +64,14 @@ class ReadingRoomRepositoryTest {
             assert(room.isActive)
             assert(room.isReservable)
             assert(room.campusID == campus.id!!)
-            assert(room.campus.id == campus.id!!)
+            assert(room.campus?.id == campus.id!!)
             assert(room.updatedAt == currentTime)
             assert(room.isReservable)
             assert(room.isActive)
             assert(room.total == 100)
             assert(room.active == 100)
             assert(room.occupied == 0)
-            assert(room.available == null || (room.available ?: 0) < 100)
+            assert(room.available >= 0)
         }
     }
 
