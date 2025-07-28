@@ -82,7 +82,7 @@ class RoomController {
                         .getRoomList(building, name)
                         .map {
                             RoomResponse(
-                                seq = it.seq ?: 0,
+                                seq = it.seq!!,
                                 buildingName = it.buildingName,
                                 number = it.number,
                                 name = it.name,
@@ -185,7 +185,7 @@ class RoomController {
                 HttpStatus.CREATED,
                 roomService.createRoom(payload).let {
                     RoomResponse(
-                        seq = it.seq ?: 0,
+                        seq = it.seq!!,
                         buildingName = it.buildingName,
                         number = it.number,
                         name = it.name,
@@ -292,7 +292,7 @@ class RoomController {
                 HttpStatus.OK,
                 roomService.getRoomByID(seq).let {
                     RoomResponse(
-                        seq = it.seq ?: 0,
+                        seq = it.seq!!,
                         buildingName = it.buildingName,
                         number = it.number,
                         name = it.name,
@@ -415,7 +415,7 @@ class RoomController {
                 HttpStatus.OK,
                 roomService.updateRoom(seq, payload).let {
                     RoomResponse(
-                        seq = it.seq ?: 0,
+                        seq = it.seq!!,
                         buildingName = it.buildingName,
                         number = it.number,
                         name = it.name,

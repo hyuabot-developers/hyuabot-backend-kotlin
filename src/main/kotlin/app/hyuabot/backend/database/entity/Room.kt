@@ -21,7 +21,7 @@ import jakarta.persistence.Table
 @SequenceGenerator(name = "room_seq_seq", allocationSize = 1)
 data class Room(
     @Id
-    @Column(name = "seq", columnDefinition = "serial")
+    @Column(name = "seq", columnDefinition = "serial", nullable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "room_seq_seq")
     val seq: Int? = null,
     @Column(name = "building_name", length = 30, nullable = false)
