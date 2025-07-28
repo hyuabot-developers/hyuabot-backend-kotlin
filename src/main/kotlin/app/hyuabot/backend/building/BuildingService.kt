@@ -27,7 +27,7 @@ class BuildingService(
         buildingRepository.findByName(name)
             ?: throw BuildingNotFoundException()
 
-    fun createBuilding(payload: CreateBuildingRequest) {
+    fun createBuilding(payload: CreateBuildingRequest): Building =
         buildingRepository.let {
             it.findByName(payload.name)?.let { throw DuplicateBuildingNameException() }
             it.save(
@@ -41,13 +41,12 @@ class BuildingService(
                 ),
             )
         }
-    }
 
     fun updateBuilding(
         name: String,
         payload: UpdateBuildingRequest,
-    ) {
-        buildingRepository.findByName(name)?.let { building ->
+    ): Building =
+        buildingRepository.findById(name).orElseThrow { BuildingNotFoundException() }.let { building ->
             building.apply {
                 id = payload.id
                 campusID = payload.campusID
@@ -56,8 +55,7 @@ class BuildingService(
                 url = payload.url
             }
             buildingRepository.save(building)
-        } ?: throw BuildingNotFoundException()
-    }
+        }
 
     fun deleteBuildingByName(name: String) {
         buildingRepository.findByName(name)?.let { building ->
