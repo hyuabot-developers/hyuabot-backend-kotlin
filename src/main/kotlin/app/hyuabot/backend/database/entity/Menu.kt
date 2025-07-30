@@ -26,16 +26,16 @@ data class Menu(
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "menu_seq_seq")
     val seq: Int? = null,
     @Column(name = "restaurant_id", columnDefinition = "integer", nullable = false)
-    val restaurantID: Int,
+    var restaurantID: Int,
     @Column(name = "feed_date", columnDefinition = "date", nullable = false)
-    val date: LocalDate,
+    var date: LocalDate,
     @Column(name = "time_type", length = 10, nullable = false)
-    val type: String,
+    var type: String,
     @Column(name = "menu_food", length = 400, nullable = false)
-    val food: String,
+    var food: String,
     @Column(name = "menu_price", length = 30, nullable = false)
-    val price: String,
+    var price: String,
     @JoinColumn(name = "restaurant_id", referencedColumnName = "restaurant_id", insertable = false, updatable = false)
     @ManyToOne
-    val cafeteria: Cafeteria,
+    val cafeteria: Cafeteria?,
 )
