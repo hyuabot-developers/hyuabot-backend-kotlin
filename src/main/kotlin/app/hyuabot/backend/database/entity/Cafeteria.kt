@@ -15,22 +15,22 @@ data class Cafeteria(
     @Column(name = "restaurant_id", columnDefinition = "integer", nullable = false)
     val id: Int,
     @Column(name = "campus_id", columnDefinition = "integer", nullable = false)
-    val campusID: Int,
+    var campusID: Int,
     @Column(name = "restaurant_name", length = 50, nullable = false)
-    val name: String,
+    var name: String,
     @Column(name = "latitude", columnDefinition = "double precision", nullable = false)
-    val latitude: Double,
+    var latitude: Double,
     @Column(name = "longitude", columnDefinition = "double precision", nullable = false)
-    val longitude: Double,
+    var longitude: Double,
     @Column(name = "breakfast_time", length = 40, nullable = false)
-    val breakfastTime: String,
+    var breakfastTime: String,
     @Column(name = "lunch_time", length = 40, nullable = false)
-    val lunchTime: String,
+    var lunchTime: String,
     @Column(name = "dinner_time", length = 40, nullable = false)
-    val dinnerTime: String,
+    var dinnerTime: String,
     @ManyToOne
     @JoinColumn(name = "campus_id", referencedColumnName = "campus_id", insertable = false, updatable = false)
-    val campus: Campus,
+    val campus: Campus?,
     @OneToMany(mappedBy = "cafeteria")
     val menu: List<Menu> = emptyList(),
 )

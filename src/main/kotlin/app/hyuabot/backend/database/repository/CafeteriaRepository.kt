@@ -7,4 +7,9 @@ interface CafeteriaRepository : JpaRepository<Cafeteria, Int> {
     fun findByNameContaining(name: String): List<Cafeteria>
 
     fun findByCampusID(campusID: Int): List<Cafeteria>
+
+    fun findByCampusIDAndNameContaining(
+        campusID: Int,
+        name: String,
+    ): List<Cafeteria>
 }
