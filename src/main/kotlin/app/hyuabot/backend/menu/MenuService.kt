@@ -1,6 +1,5 @@
 package app.hyuabot.backend.menu
 
-import app.hyuabot.backend.cafeteria.CafeteriaService
 import app.hyuabot.backend.cafeteria.exception.CafeteriaNotFoundException
 import app.hyuabot.backend.database.entity.Menu
 import app.hyuabot.backend.database.repository.CafeteriaRepository
@@ -15,7 +14,6 @@ import java.time.format.DateTimeFormatter
 class MenuService(
     private val cafeteriaRepository: CafeteriaRepository,
     private val menuRepository: MenuRepository,
-    private val cafeteriaService: CafeteriaService,
 ) {
     private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 

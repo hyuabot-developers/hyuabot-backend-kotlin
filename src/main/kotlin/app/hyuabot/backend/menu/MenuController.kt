@@ -36,7 +36,7 @@ class MenuController {
     @Autowired private lateinit var menuService: MenuService
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    @GetMapping
+    @GetMapping("")
     @Operation(
         summary = "메뉴 목록 조회",
         description = "메뉴 목록을 조회합니다. 필터링을 위해 쿼리 파라미터를 사용할 수 있습니다.",
