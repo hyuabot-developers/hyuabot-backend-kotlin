@@ -55,7 +55,7 @@ class CafeteriaService(
         payload: UpdateCafeteriaRequest,
     ): Cafeteria {
         cafeteriaRepository.findById(id).orElseThrow { CafeteriaNotFoundException() }.let { cafeteria ->
-            if (payload.campusID != cafeteria.campusID && !campusRepository.existsById(payload.campusID)) {
+            if (!campusRepository.existsById(payload.campusID)) {
                 throw CampusNotFoundException()
             }
             cafeteria.apply {
