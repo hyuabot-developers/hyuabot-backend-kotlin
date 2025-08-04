@@ -100,8 +100,8 @@ class CafeteriaRepositoryTest {
             assert(it.breakfastTime == "07:00-10:00")
             assert(it.lunchTime == "11:00-14:00")
             assert(it.dinnerTime == "17:00-20:00")
-            assert(it.campus.id == campus.id!!)
-            assert(it.campus.name == campus.name)
+            assert(it.campus!!.id == campus.id!!)
+            assert(it.campus!!.name == campus.name)
             assert(it.menu.isEmpty())
         }
     }
@@ -113,8 +113,8 @@ class CafeteriaRepositoryTest {
         assert(foundCafeterias.isNotEmpty())
         assert(foundCafeterias.size == 2)
         foundCafeterias.forEach {
-            assert(it.campus.id == campus.id!!)
-            assert(it.campus.name == campus.name)
+            assert(it.campus!!.id == campus.id!!)
+            assert(it.campus!!.name == campus.name)
         }
     }
 
@@ -126,7 +126,7 @@ class CafeteriaRepositoryTest {
         assert(foundMenus.size == 2)
         foundMenus.forEach {
             assert(it.restaurantID == 1)
-            assert(it.cafeteria.id == 1)
+            assert(it.cafeteria!!.id == 1)
             assert(it.date == LocalDate.now())
         }
     }
