@@ -10,6 +10,11 @@ interface RoomRepository : JpaRepository<Room, Int> {
         number: String,
     ): Room?
 
+    fun findByBuildingNameAndSeq(
+        buildingName: String,
+        seq: Int,
+    ): Room?
+
     fun deleteByBuildingNameAndNumber(
         buildingName: String,
         number: String,

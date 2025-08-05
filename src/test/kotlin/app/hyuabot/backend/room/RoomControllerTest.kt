@@ -1,11 +1,12 @@
 package app.hyuabot.backend.room
 
+import app.hyuabot.backend.building.RoomService
+import app.hyuabot.backend.building.domain.RoomRequest
 import app.hyuabot.backend.building.exception.BuildingNotFoundException
+import app.hyuabot.backend.building.exception.DuplicateRoomException
+import app.hyuabot.backend.building.exception.RoomNotFoundException
 import app.hyuabot.backend.database.entity.Room
 import app.hyuabot.backend.database.repository.RoomRepository
-import app.hyuabot.backend.room.domain.RoomRequest
-import app.hyuabot.backend.room.exception.DuplicateRoomException
-import app.hyuabot.backend.room.exception.RoomNotFoundException
 import app.hyuabot.backend.security.WithCustomMockUser
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.BeforeEach

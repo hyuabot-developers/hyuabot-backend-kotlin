@@ -1,4 +1,4 @@
-package app.hyuabot.backend.room.domain
+package app.hyuabot.backend.building.domain
 
 data class RoomListResponse(
     val result: List<RoomResponse>,
