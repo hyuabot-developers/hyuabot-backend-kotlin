@@ -1,13 +1,12 @@
-package app.hyuabot.backend.menu
+package app.hyuabot.backend.cafeteria
 
-import app.hyuabot.backend.cafeteria.MenuService
 import app.hyuabot.backend.cafeteria.domain.MenuRequest
 import app.hyuabot.backend.cafeteria.exception.CafeteriaNotFoundException
 import app.hyuabot.backend.cafeteria.exception.MenuNotFoundException
 import app.hyuabot.backend.database.entity.Menu
 import app.hyuabot.backend.database.repository.CafeteriaRepository
 import app.hyuabot.backend.database.repository.MenuRepository
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -18,7 +17,6 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.LocalDate
-import java.util.Optional
 
 @ExtendWith(MockitoExtension::class)
 class MenuServiceTest {
@@ -59,24 +57,8 @@ class MenuServiceTest {
                 }
             }
         // Mocking the repository call
-        whenever(menuRepository.findAll()).thenReturn(menus)
-        whenever(menuRepository.findByDate(LocalDate.of(2025, 8, 10))).thenReturn(
-            menus.filter { it.date == LocalDate.of(2025, 8, 10) },
-        )
         whenever(menuRepository.findByRestaurantID(1)).thenReturn(
             menus.filter { it.restaurantID == 1 },
-        )
-
-        whenever(menuRepository.findByType("조식")).thenReturn(
-            menus.filter { it.type == "조식" },
-        )
-        whenever(
-            menuRepository.findByDateAndType(
-                LocalDate.of(2025, 8, 10),
-                "조식",
-            ),
-        ).thenReturn(
-            menus.filter { it.date == LocalDate.of(2025, 8, 10) && it.type == "조식" },
         )
         whenever(
             menuRepository.findByRestaurantIDAndType(
@@ -104,55 +86,30 @@ class MenuServiceTest {
             menus.filter { it.restaurantID == 1 && it.date == LocalDate.of(2025, 8, 10) && it.type == "조식" },
         )
         // Call the service method
-        menuService.getMenuList(null, null, null).let {
-            assertEquals(27, it.size)
-            assertEquals(menus, it)
-        }
         menuService.getMenuList(1, null, null).let {
-            assertEquals(9, it.size)
-            assertEquals(
+            Assertions.assertEquals(9, it.size)
+            Assertions.assertEquals(
                 menus.filter { menu -> menu.restaurantID == 1 },
                 it,
             )
         }
-        menuService.getMenuList(null, LocalDate.of(2025, 8, 10), null).let {
-            assertEquals(9, it.size)
-            assertEquals(
-                menus.filter { menu -> menu.date == LocalDate.of(2025, 8, 10) },
-                it,
-            )
-        }
-        menuService.getMenuList(null, null, "조식").let {
-            assertEquals(9, it.size)
-            assertEquals(
-                menus.filter { menu -> menu.type == "조식" },
-                it,
-            )
-        }
         menuService.getMenuList(1, LocalDate.of(2025, 8, 10), null).let {
-            assertEquals(3, it.size)
-            assertEquals(
+            Assertions.assertEquals(3, it.size)
+            Assertions.assertEquals(
                 menus.filter { menu -> menu.restaurantID == 1 && menu.date == LocalDate.of(2025, 8, 10) },
                 it,
             )
         }
         menuService.getMenuList(1, null, "조식").let {
-            assertEquals(3, it.size)
-            assertEquals(
+            Assertions.assertEquals(3, it.size)
+            Assertions.assertEquals(
                 menus.filter { menu -> menu.restaurantID == 1 && menu.type == "조식" },
                 it,
             )
         }
-        menuService.getMenuList(null, LocalDate.of(2025, 8, 10), "조식").let {
-            assertEquals(3, it.size)
-            assertEquals(
-                menus.filter { menu -> menu.date == LocalDate.of(2025, 8, 10) && menu.type == "조식" },
-                it,
-            )
-        }
         menuService.getMenuList(1, LocalDate.of(2025, 8, 10), "조식").let {
-            assertEquals(1, it.size)
-            assertEquals(
+            Assertions.assertEquals(1, it.size)
+            Assertions.assertEquals(
                 menus.filter { menu ->
                     menu.restaurantID == 1 && menu.date == LocalDate.of(2025, 8, 10) && menu.type == "조식"
                 },
@@ -175,21 +132,21 @@ class MenuServiceTest {
                 cafeteria = null,
             )
         // Mocking the repository call
-        whenever(menuRepository.findById(1)).thenReturn(Optional.of(menu))
+        whenever(menuRepository.findByRestaurantIDAndSeq(1, 1)).thenReturn(menu)
 
         // Call the service method
-        val foundMenu = menuService.getMenuById(1)
-        assertEquals(menu, foundMenu)
+        val foundMenu = menuService.getMenuById(1, 1)
+        Assertions.assertEquals(menu, foundMenu)
     }
 
     @Test
     @DisplayName("학식 메뉴 ID로 조회 실패 테스트")
     fun getMenuByIdNotFoundTest() {
         // Mocking the repository call to return empty
-        whenever(menuRepository.findById(1)).thenReturn(Optional.empty())
+        whenever(menuRepository.findByRestaurantIDAndSeq(1, 1)).thenReturn(null)
 
         // Call the service method and expect an exception
-        assertThrows<MenuNotFoundException> { menuService.getMenuById(1) }
+        assertThrows<MenuNotFoundException> { menuService.getMenuById(1, 1) }
     }
 
     @Test
@@ -197,8 +154,7 @@ class MenuServiceTest {
     fun createMenuTest() {
         val menuRequest =
             MenuRequest(
-                cafeteriaID = 1,
-                date = "2025-08-10",
+                date = LocalDate.parse("2025-08-10"),
                 type = "조식",
                 food = "Sample Menu",
                 price = "Sample Price",
@@ -230,8 +186,8 @@ class MenuServiceTest {
         ).thenReturn(menu)
 
         // Call the service method
-        val createdMenu = menuService.createMenu(menuRequest)
-        assertEquals(menu, createdMenu)
+        val createdMenu = menuService.createMenu(1, menuRequest)
+        Assertions.assertEquals(menu, createdMenu)
     }
 
     @Test
@@ -239,8 +195,7 @@ class MenuServiceTest {
     fun createMenuNotFoundTest() {
         val menuRequest =
             MenuRequest(
-                cafeteriaID = 1,
-                date = "2025-08-10",
+                date = LocalDate.of(2025, 8, 10),
                 type = "조식",
                 food = "Sample Menu",
                 price = "Sample Price",
@@ -250,7 +205,7 @@ class MenuServiceTest {
         whenever(cafeteriaRepository.existsById(1)).thenReturn(false)
 
         // Call the service method and expect an exception
-        assertThrows<CafeteriaNotFoundException> { menuService.createMenu(menuRequest) }
+        assertThrows<CafeteriaNotFoundException> { menuService.createMenu(1, menuRequest) }
     }
 
     @Test
@@ -258,8 +213,7 @@ class MenuServiceTest {
     fun updateMenuTest() {
         val menuRequest =
             MenuRequest(
-                cafeteriaID = 1,
-                date = "2025-08-10",
+                date = LocalDate.of(2025, 8, 10),
                 type = "조식",
                 food = "Updated Menu",
                 price = "Updated Price",
@@ -281,7 +235,7 @@ class MenuServiceTest {
             )
 
         // Mocking the repository call
-        whenever(menuRepository.findById(1)).thenReturn(Optional.of(existingMenu))
+        whenever(menuRepository.findByRestaurantIDAndSeq(1, 1)).thenReturn(existingMenu)
         whenever(cafeteriaRepository.existsById(1)).thenReturn(true)
         whenever(
             menuRepository.save(
@@ -298,8 +252,8 @@ class MenuServiceTest {
         ).thenReturn(updatedMenu)
 
         // Call the service method
-        val result = menuService.updateMenu(1, menuRequest)
-        assertEquals(updatedMenu, result)
+        val result = menuService.updateMenu(1, 1, menuRequest)
+        Assertions.assertEquals(updatedMenu, result)
     }
 
     @Test
@@ -307,18 +261,17 @@ class MenuServiceTest {
     fun updateMenuNotFoundTest() {
         val menuRequest =
             MenuRequest(
-                cafeteriaID = 1,
-                date = "2025-08-10",
+                date = LocalDate.of(2025, 8, 10),
                 type = "조식",
                 food = "Updated Menu",
                 price = "Updated Price",
             )
 
         // Mocking the repository call
-        whenever(menuRepository.findById(1)).thenReturn(Optional.empty())
+        whenever(menuRepository.findByRestaurantIDAndSeq(1, 1)).thenReturn(null)
 
         // Call the service method and expect an exception
-        assertThrows<MenuNotFoundException> { menuService.updateMenu(1, menuRequest) }
+        assertThrows<MenuNotFoundException> { menuService.updateMenu(1, 1, menuRequest) }
     }
 
     @Test
@@ -326,8 +279,7 @@ class MenuServiceTest {
     fun updateMenuCafeteriaNotFoundTest() {
         val menuRequest =
             MenuRequest(
-                cafeteriaID = 1,
-                date = "2025-08-10",
+                date = LocalDate.of(2025, 8, 10),
                 type = "조식",
                 food = "Updated Menu",
                 price = "Updated Price",
@@ -344,28 +296,38 @@ class MenuServiceTest {
             )
 
         // Mocking the repository call
-        whenever(menuRepository.findById(1)).thenReturn(Optional.of(existingMenu))
+        whenever(menuRepository.findByRestaurantIDAndSeq(1, 1)).thenReturn(existingMenu)
         whenever(cafeteriaRepository.existsById(1)).thenReturn(false)
 
         // Call the service method and expect an exception
-        assertThrows<CafeteriaNotFoundException> { menuService.updateMenu(1, menuRequest) }
+        assertThrows<CafeteriaNotFoundException> { menuService.updateMenu(1, 1, menuRequest) }
     }
 
     @Test
     @DisplayName("학식 메뉴 삭제 테스트")
     fun deleteMenuTest() {
-        whenever(menuRepository.existsById(1)).thenReturn(true)
+        val existingMenu =
+            Menu(
+                seq = 1,
+                restaurantID = 1,
+                date = LocalDate.of(2025, 8, 10),
+                type = "조식",
+                food = "Sample Menu",
+                price = "Sample Price",
+                cafeteria = null,
+            )
+        whenever(menuRepository.findByRestaurantIDAndSeq(1, 1)).thenReturn(existingMenu)
         // Call the service method
-        menuService.deleteMenuById(1)
-        verify(menuRepository).deleteById(1)
+        menuService.deleteMenuById(1, 1)
+        verify(menuRepository).delete(existingMenu)
     }
 
     @Test
     @DisplayName("학식 메뉴 삭제 실패 테스트 (메뉴 없음)")
     fun deleteMenuNotFoundTest() {
-        whenever(menuRepository.existsById(1)).thenReturn(false)
+        whenever(menuRepository.findByRestaurantIDAndSeq(1, 1)).thenReturn(null)
 
         // Call the service method and expect an exception
-        assertThrows<MenuNotFoundException> { menuService.deleteMenuById(1) }
+        assertThrows<MenuNotFoundException> { menuService.deleteMenuById(1, 1) }
     }
 }
