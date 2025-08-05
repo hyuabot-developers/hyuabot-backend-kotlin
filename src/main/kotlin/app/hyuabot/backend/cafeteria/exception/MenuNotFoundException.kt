@@ -1,3 +1,3 @@
-package app.hyuabot.backend.menu.exception
+package app.hyuabot.backend.cafeteria.exception
 
 class MenuNotFoundException : IllegalArgumentException()

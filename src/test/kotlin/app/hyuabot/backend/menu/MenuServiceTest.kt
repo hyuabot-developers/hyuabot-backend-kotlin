@@ -1,11 +1,12 @@
 package app.hyuabot.backend.menu
 
+import app.hyuabot.backend.cafeteria.MenuService
+import app.hyuabot.backend.cafeteria.domain.MenuRequest
 import app.hyuabot.backend.cafeteria.exception.CafeteriaNotFoundException
+import app.hyuabot.backend.cafeteria.exception.MenuNotFoundException
 import app.hyuabot.backend.database.entity.Menu
 import app.hyuabot.backend.database.repository.CafeteriaRepository
 import app.hyuabot.backend.database.repository.MenuRepository
-import app.hyuabot.backend.menu.domain.MenuRequest
-import app.hyuabot.backend.menu.exception.MenuNotFoundException
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test

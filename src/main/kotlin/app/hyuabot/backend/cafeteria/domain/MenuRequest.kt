@@ -1,7 +1,6 @@
-package app.hyuabot.backend.menu.domain
+package app.hyuabot.backend.cafeteria.domain
 
 data class MenuRequest(
-    val cafeteriaID: Int,
     val date: String,
     val type: String,
     val food: String,
