@@ -8,15 +8,12 @@ import app.hyuabot.backend.database.repository.CafeteriaRepository
 import app.hyuabot.backend.database.repository.MenuRepository
 import org.springframework.stereotype.Service
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @Service
 class MenuService(
     private val cafeteriaRepository: CafeteriaRepository,
     private val menuRepository: MenuRepository,
 ) {
-    private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-
     fun getMenuList(
         cafeteriaID: Int,
         date: LocalDate?,
@@ -54,7 +51,7 @@ class MenuService(
         return menuRepository.save(
             Menu(
                 restaurantID = seq,
-                date = LocalDate.parse(payload.date, dateFormatter),
+                date = payload.date,
                 type = payload.type,
                 food = payload.food,
                 price = payload.price,
@@ -75,7 +72,7 @@ class MenuService(
                 }
                 it.apply {
                     restaurantID = seq
-                    date = LocalDate.parse(payload.date, dateFormatter)
+                    date = payload.date
                     type = payload.type
                     food = payload.food
                     price = payload.price

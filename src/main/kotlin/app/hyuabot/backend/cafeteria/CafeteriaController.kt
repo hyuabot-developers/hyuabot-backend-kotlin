@@ -266,7 +266,7 @@ class CafeteriaController {
         summary = "학식 식당 상세 조회",
         description = "학식 식당의 상세 정보를 조회합니다.",
         parameters = [
-            io.swagger.v3.oas.annotations.Parameter(
+            Parameter(
                 name = "seq",
                 description = "학식 식당의 고유 ID",
                 required = true,
@@ -512,7 +512,7 @@ class CafeteriaController {
         summary = "학식 식당 삭제",
         description = "학식 식당을 삭제합니다. 해당 ID의 학식 식당이 존재하지 않으면 404 오류를 반환합니다.",
         parameters = [
-            io.swagger.v3.oas.annotations.Parameter(
+            Parameter(
                 name = "seq",
                 description = "삭제할 학식 식당의 고유 ID",
                 required = true,
@@ -638,7 +638,7 @@ class CafeteriaController {
     )
     fun getMenuList(
         @PathVariable("seq") seq: Int,
-        @Parameter(description = "날짜 (yyyy-MM-dd 형식)", required = false) date: String?,
+        @Parameter(description = "날짜 (yyyy-MM-dd 형식)", required = false) date: LocalDate?,
         @Parameter(description = "식사 종류 (예: 조식, 중식, 석식)", required = false) type: String?,
     ): ResponseEntity<*> =
         try {
@@ -646,7 +646,7 @@ class CafeteriaController {
             val menuList =
                 menuService.getMenuList(
                     cafeteriaID = seq,
-                    date = date?.let { LocalDate.parse(it) },
+                    date = date,
                     type = type,
                 )
             ResponseBuilder.response(
@@ -657,7 +657,7 @@ class CafeteriaController {
                             MenuResponse(
                                 seq = it.seq!!,
                                 cafeteriaID = it.restaurantID,
-                                date = it.date.toString(),
+                                date = it.date,
                                 type = it.type,
                                 food = it.food,
                                 price = it.price,
@@ -782,7 +782,7 @@ class CafeteriaController {
                     MenuResponse(
                         seq = it.seq!!,
                         cafeteriaID = it.restaurantID,
-                        date = it.date.toString(),
+                        date = it.date,
                         type = it.type,
                         food = it.food,
                         price = it.price,
@@ -877,7 +877,7 @@ class CafeteriaController {
                 MenuResponse(
                     seq = menu.seq!!,
                     cafeteriaID = menu.restaurantID,
-                    date = menu.date.toString(),
+                    date = menu.date,
                     type = menu.type,
                     food = menu.food,
                     price = menu.price,
@@ -1032,7 +1032,7 @@ class CafeteriaController {
                     MenuResponse(
                         seq = it.seq!!,
                         cafeteriaID = it.restaurantID,
-                        date = it.date.toString(),
+                        date = it.date,
                         type = it.type,
                         food = it.food,
                         price = it.price,
