@@ -1,3 +1,3 @@
-package app.hyuabot.backend.room.exception
+package app.hyuabot.backend.building.exception
 
 class RoomNotFoundException : IllegalArgumentException()

@@ -1,9 +1,11 @@
-package app.hyuabot.backend.menu.domain
+package app.hyuabot.backend.cafeteria.domain
+
+import java.time.LocalDate
 
 data class MenuResponse(
     val seq: Int,
     val cafeteriaID: Int,
-    val date: String,
+    val date: LocalDate,
     val type: String,
     val food: String,
     val price: String,

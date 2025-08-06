@@ -5,6 +5,11 @@ import org.springframework.data.jpa.repository.JpaRepository
 import java.time.LocalDate
 
 interface MenuRepository : JpaRepository<Menu, Int> {
+    fun findByRestaurantIDAndSeq(
+        restaurantID: Int,
+        seq: Int,
+    ): Menu?
+
     fun findByRestaurantID(restaurantID: Int): List<Menu>
 
     fun findByDate(date: LocalDate): List<Menu>

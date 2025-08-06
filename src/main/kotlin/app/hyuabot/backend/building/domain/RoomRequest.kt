@@ -1,7 +1,6 @@
-package app.hyuabot.backend.room.domain
+package app.hyuabot.backend.building.domain
 
 data class RoomRequest(
-    val buildingName: String,
     val number: String,
     val name: String,
 )

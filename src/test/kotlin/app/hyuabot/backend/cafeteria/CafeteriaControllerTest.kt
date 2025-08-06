@@ -1,11 +1,15 @@
 package app.hyuabot.backend.cafeteria
 
+import app.hyuabot.backend.cafeteria.domain.MenuRequest
 import app.hyuabot.backend.cafeteria.domain.UpdateCafeteriaRequest
 import app.hyuabot.backend.cafeteria.exception.CafeteriaNotFoundException
 import app.hyuabot.backend.cafeteria.exception.DuplicateCafeteriaIDException
+import app.hyuabot.backend.cafeteria.exception.MenuNotFoundException
 import app.hyuabot.backend.campus.exception.CampusNotFoundException
 import app.hyuabot.backend.database.entity.Cafeteria
+import app.hyuabot.backend.database.entity.Menu
 import app.hyuabot.backend.database.repository.CafeteriaRepository
+import app.hyuabot.backend.database.repository.MenuRepository
 import app.hyuabot.backend.security.WithCustomMockUser
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.BeforeEach
@@ -29,6 +33,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.time.LocalDate
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -36,6 +41,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 class CafeteriaControllerTest {
     @MockitoBean
     private lateinit var cafeteriaService: CafeteriaService
+
+    @MockitoBean
+    private lateinit var menuService: MenuService
 
     @Autowired
     private lateinit var mockMvc: MockMvc
@@ -46,8 +54,12 @@ class CafeteriaControllerTest {
     @Autowired
     private lateinit var cafeteriaRepository: CafeteriaRepository
 
+    @Autowired
+    private lateinit var menuRepository: MenuRepository
+
     @BeforeEach
     fun setUp() {
+        menuRepository.deleteAll()
         cafeteriaRepository.deleteAll()
     }
 
@@ -442,6 +454,433 @@ class CafeteriaControllerTest {
         doThrow(RuntimeException("Unexpected error")).whenever(cafeteriaService).deleteCafeteriaById(1)
         mockMvc
             .perform(delete("/api/v1/cafeteria/1"))
+            .andExpect {
+                status().isInternalServerError
+                content().contentType("application/json")
+                jsonPath("$.message").value("INTERNAL_SERVER_ERROR")
+            }
+    }
+
+    @Test
+    @DisplayName("메뉴 목록 조회")
+    @WithCustomMockUser(username = "test_user")
+    fun getMenuList() {
+        doReturn(
+            listOf(
+                Menu(
+                    seq = 1,
+                    restaurantID = 1,
+                    date = LocalDate.now(),
+                    type = "lunch",
+                    food = "Spaghetti",
+                    price = "$10",
+                    cafeteria = null,
+                ),
+                Menu(
+                    seq = 2,
+                    restaurantID = 1,
+                    date = LocalDate.now(),
+                    type = "dinner",
+                    food = "Pizza",
+                    price = "$12",
+                    cafeteria = null,
+                ),
+                Menu(
+                    seq = 3,
+                    restaurantID = 1,
+                    date = LocalDate.now(),
+                    type = "breakfast",
+                    food = "Pancakes",
+                    price = "$8",
+                    cafeteria = null,
+                ),
+            ),
+        ).whenever(menuService).getMenuList(
+            cafeteriaID = 1,
+            date = null,
+            type = null,
+        )
+        // With date and cafeteriaID parameters
+        mockMvc
+            .perform(get("/api/v1/cafeteria/1/menu"))
+            .andExpect {
+                status().isOk
+                content().contentType("application/json")
+                jsonPath("$.result[0].seq").value(1)
+                jsonPath("$.result[0].restaurantID").value(1)
+                jsonPath("$.result[0].date").value(LocalDate.now().toString())
+                jsonPath("$.result[0].type").value("lunch")
+                jsonPath("$.result[0].food").value("Spaghetti")
+                jsonPath("$.result[0].price").value("$10")
+                jsonPath("$.result[1].seq").value(2)
+                jsonPath("$.result[1].restaurantID").value(1)
+                jsonPath("$.result[1].date").value(LocalDate.now().toString())
+                jsonPath("$.result[1].type").value("dinner")
+                jsonPath("$.result[1].food").value("Pizza")
+                jsonPath("$.result[1].price").value("$12")
+                jsonPath("$.result[2].seq").value(3)
+                jsonPath("$.result[2].restaurantID").value(1)
+                jsonPath("$.result[2].date").value(LocalDate.now().toString())
+                jsonPath("$.result[2].type").value("breakfast")
+                jsonPath("$.result[2].food").value("Pancakes")
+                jsonPath("$.result[2].price").value("$8")
+            }
+    }
+
+    @Test
+    @DisplayName("메뉴 목록 조회 (존재하지 않는 식당 ID)")
+    @WithCustomMockUser(username = "test_user")
+    fun getMenuListWithNonExistentCafeteria() {
+        doThrow(CafeteriaNotFoundException::class).whenever(menuService).getMenuList(
+            cafeteriaID = 1,
+            date = null,
+            type = null,
+        )
+        // With date and cafeteriaID parameters
+        mockMvc
+            .perform(get("/api/v1/cafeteria/1/menu"))
+            .andExpect {
+                status().isNotFound
+                content().contentType("application/json")
+                jsonPath("$.message").value("CAFETERIA_NOT_FOUND")
+            }
+    }
+
+    @Test
+    @DisplayName("메뉴 목록 조회 (예외 처리)")
+    @WithCustomMockUser(username = "test_user")
+    fun getMenuListException() {
+        doThrow(
+            RuntimeException("Unexpected error"),
+        ).whenever(menuService).getMenuList(
+            cafeteriaID = 1,
+            date = null,
+            type = null,
+        )
+        // With date and cafeteriaID parameters
+        mockMvc
+            .perform(get("/api/v1/cafeteria/1/menu"))
+            .andExpect {
+                status().isInternalServerError
+                content().contentType("application/json")
+                jsonPath("$.message").value("INTERNAL_SERVER_ERROR")
+            }
+    }
+
+    @Test
+    @DisplayName("메뉴 생성 성공")
+    @WithCustomMockUser(username = "test_user")
+    fun createMenu() {
+        val menuRequest =
+            MenuRequest(
+                date = LocalDate.now(),
+                type = "lunch",
+                food = "Burger",
+                price = "$6",
+            )
+
+        val createdMenu =
+            Menu(
+                seq = 1,
+                restaurantID = 1,
+                date = menuRequest.date,
+                type = menuRequest.type,
+                food = menuRequest.food,
+                price = menuRequest.price,
+                cafeteria = null,
+            )
+        doReturn(createdMenu).whenever(menuService).createMenu(1, menuRequest)
+        mockMvc
+            .perform(
+                post("/api/v1/cafeteria/1/menu")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(menuRequest)),
+            ).andExpect {
+                status().isCreated
+                content().contentType("application/json")
+                jsonPath("$.seq").value(1)
+                jsonPath("$.restaurantID").value(1)
+                jsonPath("$.date").value(menuRequest.date.toString())
+                jsonPath("$.type").value(menuRequest.type)
+                jsonPath("$.food").value(menuRequest.food)
+                jsonPath("$.price").value(menuRequest.price)
+            }
+    }
+
+    @Test
+    @DisplayName("메뉴 생성 실패 (식당 없음)")
+    @WithCustomMockUser(username = "test_user")
+    fun createMenuFail() {
+        val menuRequest =
+            MenuRequest(
+                date = LocalDate.now(),
+                type = "lunch",
+                food = "Burger",
+                price = "$6",
+            )
+        doThrow(CafeteriaNotFoundException()).whenever(menuService).createMenu(999, menuRequest)
+        mockMvc
+            .perform(
+                post("/api/v1/cafeteria/999/menu")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(menuRequest)),
+            ).andExpect {
+                status().isNotFound
+                content().contentType("application/json")
+                jsonPath("$.message").value("CAFETERIA_NOT_FOUND")
+            }
+    }
+
+    @Test
+    @DisplayName("메뉴 생성 실패 (예외 처리)")
+    @WithCustomMockUser(username = "test_user")
+    fun createMenuException() {
+        val menuRequest =
+            MenuRequest(
+                date = LocalDate.now(),
+                type = "lunch",
+                food = "Burger",
+                price = "$6",
+            )
+        doThrow(RuntimeException("Unexpected error")).whenever(menuService).createMenu(1, menuRequest)
+        mockMvc
+            .perform(
+                post("/api/v1/cafeteria/1/menu")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(menuRequest)),
+            ).andExpect {
+                status().isInternalServerError
+                content().contentType("application/json")
+                jsonPath("$.message").value("INTERNAL_SERVER_ERROR")
+            }
+    }
+
+    @Test
+    @DisplayName("메뉴 ID로 조회")
+    @WithCustomMockUser(username = "test_user")
+    fun getMenuById() {
+        val menuId = 1
+        val menu =
+            Menu(
+                seq = menuId,
+                restaurantID = 1,
+                date = LocalDate.now(),
+                type = "lunch",
+                food = "Salad",
+                price = "$5",
+                cafeteria = null,
+            )
+        doReturn(menu).whenever(menuService).getMenuById(1, menuId)
+        mockMvc
+            .perform(get("/api/v1/cafeteria/1/menu/$menuId"))
+            .andExpect {
+                status().isOk
+                content().contentType("application/json")
+                jsonPath("$.seq").value(menuId)
+                jsonPath("$.restaurantID").value(1)
+                jsonPath("$.date").value(LocalDate.now().toString())
+                jsonPath("$.type").value("lunch")
+                jsonPath("$.food").value("Salad")
+                jsonPath("$.price").value("$5")
+            }
+    }
+
+    @Test
+    @DisplayName("메뉴 ID로 조회 실패 (존재하지 않는 식당 ID)")
+    @WithCustomMockUser(username = "test_user")
+    fun getMenuWithNonExistentCafeteria() {
+        val menuId = 999
+        doThrow(CafeteriaNotFoundException()).whenever(menuService).getMenuById(1, menuId)
+        mockMvc
+            .perform(get("/api/v1/cafeteria/1/menu/$menuId"))
+            .andExpect {
+                status().isNotFound
+                content().contentType("application/json")
+                jsonPath("$.message").value("CAFETERIA_NOT_FOUND")
+            }
+    }
+
+    @Test
+    @DisplayName("메뉴 ID로 조회 실패 (메뉴 없음)")
+    @WithCustomMockUser(username = "test_user")
+    fun getMenuByIdFail() {
+        val menuId = 999
+        doThrow(MenuNotFoundException()).whenever(menuService).getMenuById(1, menuId)
+        mockMvc
+            .perform(get("/api/v1/cafeteria/1/menu/$menuId"))
+            .andExpect {
+                status().isNotFound
+                content().contentType("application/json")
+                jsonPath("$.message").value("MENU_NOT_FOUND")
+            }
+    }
+
+    @Test
+    @DisplayName("메뉴 ID로 조회 실패 (예외 처리)")
+    @WithCustomMockUser(username = "test_user")
+    fun getMenuByIdException() {
+        val menuId = 1
+        doThrow(RuntimeException("Unexpected error")).whenever(menuService).getMenuById(1, menuId)
+        mockMvc
+            .perform(get("/api/v1/cafeteria/1/menu/$menuId"))
+            .andExpect {
+                status().isInternalServerError
+                content().contentType("application/json")
+                jsonPath("$.message").value("INTERNAL_SERVER_ERROR")
+            }
+    }
+
+    @Test
+    @DisplayName("메뉴 수정 성공")
+    @WithCustomMockUser(username = "test_user")
+    fun updateMenu() {
+        val menuId = 1
+        val menuRequest =
+            MenuRequest(
+                date = LocalDate.now(),
+                type = "lunch",
+                food = "Updated Burger",
+                price = "$7",
+            )
+        val updatedMenu =
+            Menu(
+                seq = menuId,
+                restaurantID = 1,
+                date = menuRequest.date,
+                type = menuRequest.type,
+                food = menuRequest.food,
+                price = menuRequest.price,
+                cafeteria = null,
+            )
+        doReturn(updatedMenu).whenever(menuService).updateMenu(1, menuId, menuRequest)
+        mockMvc
+            .perform(
+                put("/api/v1/cafeteria/1/menu/$menuId")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(menuRequest)),
+            ).andExpect {
+                status().isOk
+                content().contentType("application/json")
+                jsonPath("$.seq").value(menuId)
+                jsonPath("$.restaurantID").value(1)
+                jsonPath("$.date").value(menuRequest.date.toString())
+                jsonPath("$.type").value(menuRequest.type)
+                jsonPath("$.food").value(menuRequest.food)
+                jsonPath("$.price").value(menuRequest.price)
+            }
+    }
+
+    @Test
+    @DisplayName("메뉴 수정 실패 (메뉴 없음)")
+    @WithCustomMockUser(username = "test_user")
+    fun updateMenuByIdFail() {
+        val menuId = 999
+        val menuRequest =
+            MenuRequest(
+                date = LocalDate.now(),
+                type = "lunch",
+                food = "Updated Burger",
+                price = "$7",
+            )
+        doThrow(MenuNotFoundException()).whenever(menuService).updateMenu(1, menuId, menuRequest)
+        mockMvc
+            .perform(
+                put("/api/v1/cafeteria/1/menu/$menuId")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(menuRequest)),
+            ).andExpect {
+                status().isNotFound
+                content().contentType("application/json")
+                jsonPath("$.message").value("MENU_NOT_FOUND")
+            }
+    }
+
+    @Test
+    @DisplayName("메뉴 수정 실패 (식당 없음)")
+    @WithCustomMockUser(username = "test_user")
+    fun updateMenuFail() {
+        val menuId = 999
+        val menuRequest =
+            MenuRequest(
+                date = LocalDate.now(),
+                type = "lunch",
+                food = "Updated Burger",
+                price = "$7",
+            )
+        doThrow(CafeteriaNotFoundException()).whenever(menuService).updateMenu(999, menuId, menuRequest)
+        mockMvc
+            .perform(
+                put("/api/v1/cafeteria/999/menu/$menuId")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(menuRequest)),
+            ).andExpect {
+                status().isBadRequest
+                content().contentType("application/json")
+                jsonPath("$.message").value("CAFETERIA_NOT_FOUND")
+            }
+    }
+
+    @Test
+    @DisplayName("메뉴 수정 실패 (예외 처리)")
+    @WithCustomMockUser(username = "test_user")
+    fun updateMenuException() {
+        val menuId = 1
+        val menuRequest =
+            MenuRequest(
+                date = LocalDate.now(),
+                type = "lunch",
+                food = "Updated Burger",
+                price = "$7",
+            )
+        doThrow(RuntimeException("Unexpected error")).whenever(menuService).updateMenu(1, menuId, menuRequest)
+        mockMvc
+            .perform(
+                put("/api/v1/cafeteria/1/menu/$menuId")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(menuRequest)),
+            ).andExpect {
+                status().isInternalServerError
+                content().contentType("application/json")
+                jsonPath("$.message").value("INTERNAL_SERVER_ERROR")
+            }
+    }
+
+    @Test
+    @DisplayName("메뉴 삭제 성공")
+    @WithCustomMockUser(username = "test_user")
+    fun deleteMenu() {
+        val menuId = 1
+        mockMvc
+            .perform(delete("/api/v1/cafeteria/1/menu/$menuId"))
+            .andExpect {
+                status().isNoContent
+            }
+        verify(menuService).deleteMenuById(1, menuId)
+    }
+
+    @Test
+    @DisplayName("메뉴 삭제 실패 (메뉴 없음)")
+    @WithCustomMockUser(username = "test_user")
+    fun deleteMenuFail() {
+        val menuId = 999
+        doThrow(MenuNotFoundException()).whenever(menuService).deleteMenuById(1, menuId)
+        mockMvc
+            .perform(delete("/api/v1/cafeteria/1/menu/$menuId"))
+            .andExpect {
+                status().isNotFound
+                content().contentType("application/json")
+                jsonPath("$.message").value("MENU_NOT_FOUND")
+            }
+    }
+
+    @Test
+    @DisplayName("메뉴 삭제 실패 (예외 처리)")
+    @WithCustomMockUser(username = "test_user")
+    fun deleteMenuException() {
+        val menuId = 1
+        doThrow(RuntimeException("Unexpected error")).whenever(menuService).deleteMenuById(1, menuId)
+        mockMvc
+            .perform(delete("/api/v1/cafeteria/1/menu/$menuId"))
             .andExpect {
                 status().isInternalServerError
                 content().contentType("application/json")
