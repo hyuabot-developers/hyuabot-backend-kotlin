@@ -13,13 +13,13 @@ data class ShuttleStop(
     @Column(name = "stop_name ", length = 15, nullable = false)
     val name: String,
     @Column(name = "latitude", columnDefinition = "double precision", nullable = false)
-    val latitude: Double,
+    var latitude: Double,
     @Column(name = "longitude", columnDefinition = "double precision", nullable = false)
-    val longitude: Double,
+    var longitude: Double,
     @OneToMany(mappedBy = "stop")
-    val route: List<ShuttleRouteStop>,
+    val route: List<ShuttleRouteStop> = emptyList(),
     @OneToMany(mappedBy = "startStop")
-    val routeToStart: List<ShuttleRoute>,
+    val routeToStart: List<ShuttleRoute> = emptyList(),
     @OneToMany(mappedBy = "endStop")
-    val routeToEnd: List<ShuttleRoute>,
+    val routeToEnd: List<ShuttleRoute> = emptyList(),
 )

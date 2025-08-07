@@ -7,4 +7,9 @@ interface ShuttleRouteStopRepository : JpaRepository<ShuttleRouteStop, Int> {
     fun findByRouteName(routeName: String): List<ShuttleRouteStop>
 
     fun findByStopName(stopName: String): List<ShuttleRouteStop>
+
+    fun findByRouteNameAndStopName(
+        routeName: String,
+        stopName: String,
+    ): ShuttleRouteStop?
 }
