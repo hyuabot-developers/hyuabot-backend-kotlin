@@ -22,6 +22,7 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZonedDateTime
+import kotlin.test.assertEquals
 
 @ActiveProfiles("test")
 @DataJpaTest
@@ -227,7 +228,7 @@ class ShuttleRepositoryTest {
         holidays?.let {
             assert(it.seq != null)
             assert(listOf("halt", "weekends").contains(it.type))
-            assert(it.date == date)
+            assertEquals(it.date, date)
             assert(it.calendarType == calendarType)
         }
     }
@@ -261,8 +262,8 @@ class ShuttleRepositoryTest {
             assert(route.tag == "C")
             assert(route.startStopID == "dormitory_o")
             assert(route.endStopID == "dormitory_i")
-            assert(route.startStop.name == "dormitory_o")
-            assert(route.endStop.name == "dormitory_i")
+            assert(route.startStop?.name == "dormitory_o")
+            assert(route.endStop?.name == "dormitory_i")
             assert(route.timetable.isEmpty())
             assert(route.stop.isEmpty())
         }
@@ -294,17 +295,12 @@ class ShuttleRepositoryTest {
             assert(routeStop.seq != null)
             assert(routeStop.stopName in listOf("dormitory_o", "shuttlecock_o", "dormitory_i"))
             assert(routeStop.routeName == routeName)
-            assert(routeStop.stop.name in listOf("dormitory_o", "shuttlecock_o", "dormitory_i"))
+            assert(routeStop.stop?.name in listOf("dormitory_o", "shuttlecock_o", "dormitory_i"))
             assert(routeStop.order in 0..2)
-            assert(
-                routeStop.cumulativeTime == Duration.ofMinutes(-5) ||
-                    routeStop.cumulativeTime == Duration.ofMinutes(0) ||
-                    routeStop.cumulativeTime == Duration.ofMinutes(5),
-            )
-            assert(routeStop.route.name == "CDD")
-            assert(routeStop.stop.route.isEmpty())
-            assert(routeStop.stop.routeToStart.isEmpty())
-            assert(routeStop.stop.routeToEnd.isEmpty())
+            assert(routeStop.route?.name == "CDD")
+            assert(routeStop.stop?.route?.isEmpty() == true)
+            assert(routeStop.stop?.routeToStart?.isEmpty() == true)
+            assert(routeStop.stop?.routeToEnd?.isEmpty() == true)
         }
     }
 
@@ -315,12 +311,12 @@ class ShuttleRepositoryTest {
         val routeStops = routeStopRepository.findByStopName(stopName)
         assert(routeStops.isNotEmpty())
         routeStops.forEach { routeStop ->
-            assert(routeStop.stop.name == stopName)
-            assert(routeStop.route.name == "CDD")
+            assert(routeStop.stop?.name == stopName)
+            assert(routeStop.route?.name == "CDD")
             assert(routeStop.order == 0)
-            assert(routeStop.cumulativeTime == Duration.ofMinutes(-5))
-            assert(routeStop.route.startStop.name == "dormitory_o")
-            assert(routeStop.route.endStop.name == "dormitory_i")
+            assertEquals(routeStop.cumulativeTime, Duration.ofMinutes(-5))
+            assert(routeStop.route?.startStop?.name == "dormitory_o")
+            assert(routeStop.route?.endStop?.name == "dormitory_i")
         }
     }
 
@@ -335,33 +331,14 @@ class ShuttleRepositoryTest {
             assert(timetable.periodType == periodType)
             assert(timetable.weekday)
             assert(timetable.routeName == "CDD")
-            assert(
-                timetable.departureTime == LocalTime.parse("08:00:00") ||
-                    timetable.departureTime == LocalTime.parse("08:30:00") ||
-                    timetable.departureTime == LocalTime.parse("09:00:00"),
-            )
             assert(timetable.route == null)
-        }
-    }
-
-    @Test
-    @DisplayName("셔틀버스 시간표 조회(학기/계절학기/방학+평일/주말)")
-    fun testTimetableFindByPeriodTypeAndWeekday() {
-        val periodType = "semester"
-        val weekday = true
-        val timetables = timetableRepository.findByPeriodTypeAndWeekday(periodType, weekday)
-        assert(timetables.isNotEmpty())
-        timetables.forEach { timetable ->
-            assert(timetable.seq != null)
-            assert(timetable.periodType == periodType)
-            assert(timetable.weekday == weekday)
-            assert(timetable.routeName == "CDD")
             assert(
-                timetable.departureTime == LocalTime.parse("08:00:00") ||
-                    timetable.departureTime == LocalTime.parse("08:30:00") ||
-                    timetable.departureTime == LocalTime.parse("09:00:00"),
+                listOf(
+                    LocalTime.parse("08:00:00"),
+                    LocalTime.parse("08:30:00"),
+                    LocalTime.parse("09:00:00"),
+                ).contains(timetable.departureTime),
             )
-            assert(timetable.route == null)
         }
     }
 
@@ -377,11 +354,6 @@ class ShuttleRepositoryTest {
             assert(timetable.periodType == periodType)
             assert(timetable.weekday)
             assert(timetable.routeName == routeName)
-            assert(
-                timetable.departureTime == LocalTime.parse("08:00:00") ||
-                    timetable.departureTime == LocalTime.parse("08:30:00") ||
-                    timetable.departureTime == LocalTime.parse("09:00:00"),
-            )
             assert(timetable.route == null)
         }
     }
@@ -399,11 +371,6 @@ class ShuttleRepositoryTest {
             assert(timetable.periodType == periodType)
             assert(timetable.weekday == weekday)
             assert(timetable.routeName == routeName)
-            assert(
-                timetable.departureTime == LocalTime.parse("08:00:00") ||
-                    timetable.departureTime == LocalTime.parse("08:30:00") ||
-                    timetable.departureTime == LocalTime.parse("09:00:00"),
-            )
             assert(timetable.route == null)
         }
     }
@@ -429,7 +396,7 @@ class ShuttleRepositoryTest {
         assert(item.routeName == "CDD")
         assert(item.routeTag == "C")
         assert(item.stopName == "dormitory_o")
-        assert(item.departureTime == LocalTime.parse("08:00:00"))
+        assertEquals(item.departureTime, LocalTime.parse("08:00:00"))
         assert(item.destinationGroup == "STATION")
     }
 

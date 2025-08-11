@@ -17,9 +17,9 @@ data class ShuttleStop(
     @Column(name = "longitude", columnDefinition = "double precision", nullable = false)
     var longitude: Double,
     @OneToMany(mappedBy = "stop")
-    val route: List<ShuttleRouteStop> = emptyList(),
+    val route: List<ShuttleRouteStop>,
     @OneToMany(mappedBy = "startStop")
-    val routeToStart: List<ShuttleRoute> = emptyList(),
+    val routeToStart: List<ShuttleRoute>,
     @OneToMany(mappedBy = "endStop")
-    val routeToEnd: List<ShuttleRoute> = emptyList(),
+    val routeToEnd: List<ShuttleRoute>,
 )
