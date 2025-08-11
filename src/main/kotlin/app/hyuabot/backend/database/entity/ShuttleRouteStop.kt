@@ -29,7 +29,7 @@ data class ShuttleRouteStop(
     val seq: Int? = null,
     @Column(name = "route_name", length = 15, nullable = false)
     val routeName: String,
-    @Column(name = "stop_name ", length = 15, nullable = false)
+    @Column(name = "stop_name", length = 15, nullable = false)
     val stopName: String,
     @Column(name = "stop_order", columnDefinition = "integer", nullable = false)
     var order: Int,

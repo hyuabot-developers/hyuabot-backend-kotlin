@@ -1,4 +1,4 @@
-package app.hyuabot.backend.shuttle
+package app.hyuabot.backend.shuttle.service
 
 import app.hyuabot.backend.database.entity.ShuttleStop
 import app.hyuabot.backend.database.repository.ShuttleStopRepository
@@ -6,14 +6,17 @@ import app.hyuabot.backend.shuttle.domain.CreateShuttleStopRequest
 import app.hyuabot.backend.shuttle.domain.UpdateShuttleStopRequest
 import app.hyuabot.backend.shuttle.exception.DuplicateShuttleStopException
 import app.hyuabot.backend.shuttle.exception.ShuttleStopNotFoundException
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
 class ShuttleStopService(
     private val shuttleStopRepository: ShuttleStopRepository,
 ) {
-    fun getAllStops(name: String): List<ShuttleStop> =
-        if (name.isNotEmpty()) {
+    private val log = LoggerFactory.getLogger(ShuttleStopService::class.java)
+
+    fun getAllStops(name: String? = null): List<ShuttleStop> =
+        if (!name.isNullOrBlank()) {
             shuttleStopRepository.findByNameContaining(name)
         } else {
             shuttleStopRepository.findAll()
@@ -25,8 +28,8 @@ class ShuttleStopService(
             .orElseThrow { ShuttleStopNotFoundException() }
 
     fun createStop(payload: CreateShuttleStopRequest): ShuttleStop {
-        shuttleStopRepository.findById(payload.name).let {
-            DuplicateShuttleStopException()
+        shuttleStopRepository.findById(payload.name).ifPresent {
+            throw DuplicateShuttleStopException()
         }
         return shuttleStopRepository.save(
             ShuttleStop(

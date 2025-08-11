@@ -1,4 +1,4 @@
-package app.hyuabot.backend.shuttle
+package app.hyuabot.backend.shuttle.service
 
 import app.hyuabot.backend.database.entity.ShuttleRoute
 import app.hyuabot.backend.database.entity.ShuttleRouteStop
@@ -20,8 +20,8 @@ import app.hyuabot.backend.shuttle.exception.DuplicateShuttleTimetableException
 import app.hyuabot.backend.shuttle.exception.ShuttleRouteNotFoundException
 import app.hyuabot.backend.shuttle.exception.ShuttleRouteStopNotFoundException
 import app.hyuabot.backend.shuttle.exception.ShuttleTimetableNotFoundException
+import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.stereotype.Service
-import java.time.Duration
 import java.time.LocalTime
 
 @Service
@@ -31,8 +31,8 @@ class ShuttleRouteService(
     private val shuttleRouteStopRepository: ShuttleRouteStopRepository,
     private val shuttleTimetableRepository: ShuttleTimetableRepository,
 ) {
-    fun getAllRoutes(name: String) =
-        if (name.isNotEmpty()) {
+    fun getAllRoutes(name: String? = null) =
+        if (!name.isNullOrEmpty()) {
             shuttleRouteRepository.findByNameContaining(name)
         } else {
             shuttleRouteRepository.findAll()
@@ -40,7 +40,7 @@ class ShuttleRouteService(
 
     fun getRouteByName(name: String): ShuttleRoute =
         shuttleRouteRepository.findById(name).orElseThrow {
-            IllegalArgumentException("Shuttle route not found")
+            ShuttleRouteNotFoundException()
         }
 
     fun createRoute(payload: CreateShuttleRouteRequest): ShuttleRoute {
@@ -88,7 +88,7 @@ class ShuttleRouteService(
         shuttleRouteRepository
             .findById(routeName)
             .orElseThrow { ShuttleRouteNotFoundException() }
-        return shuttleRouteStopRepository.findByRouteName(routeName)
+        return shuttleRouteStopRepository.findByRouteName(routeName).sortedBy { it.order }
     }
 
     fun createShuttleRouteStop(
@@ -115,7 +115,7 @@ class ShuttleRouteService(
                 routeName = routeName,
                 stopName = payload.stopName,
                 order = payload.order,
-                cumulativeTime = Duration.parse(payload.cumulativeTime),
+                cumulativeTime = LocalDateTimeBuilder.convertStringToDuration(payload.cumulativeTime),
                 route = null,
                 stop = null,
             ),
@@ -127,6 +127,7 @@ class ShuttleRouteService(
         stopName: String,
         payload: UpdateShuttleRouteStopRequest,
     ): ShuttleRouteStop {
+        shuttleRouteRepository.findById(routeName).orElseThrow { throw ShuttleRouteNotFoundException() }
         val shuttleRouteStop =
             shuttleRouteStopRepository.findByRouteNameAndStopName(routeName, stopName)
                 ?: throw ShuttleRouteStopNotFoundException()
@@ -139,7 +140,7 @@ class ShuttleRouteService(
         }
         shuttleRouteStop.apply {
             order = payload.order
-            cumulativeTime = Duration.parse(payload.cumulativeTime)
+            cumulativeTime = LocalDateTimeBuilder.convertStringToDuration(payload.cumulativeTime)
         }
         return shuttleRouteStopRepository.save(shuttleRouteStop)
     }
@@ -208,6 +209,7 @@ class ShuttleRouteService(
 
         return shuttleTimetableRepository.save(
             ShuttleTimetable(
+                seq = null,
                 routeName = routeName,
                 periodType = payload.periodType,
                 weekday = payload.weekday,
@@ -217,6 +219,15 @@ class ShuttleRouteService(
         )
     }
 
+    fun getShuttleTimetableByRouteNameAndSeq(
+        routeName: String,
+        seq: Int,
+    ): ShuttleTimetable {
+        shuttleRouteRepository.findById(routeName).orElseThrow { ShuttleRouteNotFoundException() }
+        return shuttleTimetableRepository.findByRouteNameAndSeq(routeName, seq)
+            ?: throw ShuttleTimetableNotFoundException()
+    }
+
     fun updateShuttleTimetable(
         routeName: String,
         seq: Int,
@@ -224,9 +235,8 @@ class ShuttleRouteService(
     ): ShuttleTimetable {
         shuttleRouteRepository.findById(routeName).orElseThrow { ShuttleRouteNotFoundException() }
         val shuttleTimetable =
-            shuttleTimetableRepository.findById(seq).orElseThrow {
-                ShuttleTimetableNotFoundException()
-            }
+            shuttleTimetableRepository.findByRouteNameAndSeq(routeName, seq)
+                ?: throw ShuttleTimetableNotFoundException()
 
         // Check if the departure time is in valid format (HH:mm:ss)
         payload.departureTime.let {
@@ -242,12 +252,14 @@ class ShuttleRouteService(
         return shuttleTimetableRepository.save(shuttleTimetable)
     }
 
-    fun deleteShuttleTimetableBySeq(
+    fun deleteShuttleTimetable(
         routeName: String,
         seq: Int,
     ) {
         shuttleRouteRepository.findById(routeName).orElseThrow { ShuttleRouteNotFoundException() }
         shuttleTimetableRepository.findById(seq).orElseThrow { ShuttleTimetableNotFoundException() }
-        shuttleTimetableRepository.deleteById(seq)
+        shuttleTimetableRepository.findByRouteNameAndSeq(routeName, seq)?.let {
+            shuttleTimetableRepository.delete(it)
+        } ?: throw ShuttleTimetableNotFoundException()
     }
 }

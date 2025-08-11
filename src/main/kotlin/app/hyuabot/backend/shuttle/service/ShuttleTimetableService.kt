@@ -1,4 +1,4 @@
-package app.hyuabot.backend.shuttle
+package app.hyuabot.backend.shuttle.service
 
 import app.hyuabot.backend.database.entity.ShuttleTimetableView
 import app.hyuabot.backend.database.repository.ShuttleTimetableViewRepository

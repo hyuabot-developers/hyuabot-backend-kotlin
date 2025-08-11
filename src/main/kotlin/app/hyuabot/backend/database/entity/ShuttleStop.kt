@@ -10,7 +10,7 @@ import jakarta.persistence.Table
 @Table(name = "shuttle_stop")
 data class ShuttleStop(
     @Id
-    @Column(name = "stop_name ", length = 15, nullable = false)
+    @Column(name = "stop_name", length = 15, nullable = false)
     val name: String,
     @Column(name = "latitude", columnDefinition = "double precision", nullable = false)
     var latitude: Double,

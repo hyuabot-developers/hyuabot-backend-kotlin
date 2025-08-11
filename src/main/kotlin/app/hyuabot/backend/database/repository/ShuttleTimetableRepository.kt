@@ -31,4 +31,9 @@ interface ShuttleTimetableRepository : JpaRepository<ShuttleTimetable, Int> {
         isWeekdays: Boolean,
         departureTime: LocalTime,
     ): ShuttleTimetable?
+
+    fun findByRouteNameAndSeq(
+        routeName: String,
+        seq: Int,
+    ): ShuttleTimetable?
 }
