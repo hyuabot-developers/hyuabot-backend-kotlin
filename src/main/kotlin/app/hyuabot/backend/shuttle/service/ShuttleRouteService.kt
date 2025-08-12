@@ -14,11 +14,12 @@ import app.hyuabot.backend.shuttle.domain.CreateShuttleRouteStopRequest
 import app.hyuabot.backend.shuttle.domain.ShuttleTimetableRequest
 import app.hyuabot.backend.shuttle.domain.UpdateShuttleRouteRequest
 import app.hyuabot.backend.shuttle.domain.UpdateShuttleRouteStopRequest
+import app.hyuabot.backend.shuttle.exception.DuplicateShuttleRouteException
 import app.hyuabot.backend.shuttle.exception.DuplicateShuttleRouteStopException
-import app.hyuabot.backend.shuttle.exception.DuplicateShuttleStopException
 import app.hyuabot.backend.shuttle.exception.DuplicateShuttleTimetableException
 import app.hyuabot.backend.shuttle.exception.ShuttleRouteNotFoundException
 import app.hyuabot.backend.shuttle.exception.ShuttleRouteStopNotFoundException
+import app.hyuabot.backend.shuttle.exception.ShuttleStopNotFoundException
 import app.hyuabot.backend.shuttle.exception.ShuttleTimetableNotFoundException
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.stereotype.Service
@@ -45,7 +46,7 @@ class ShuttleRouteService(
 
     fun createRoute(payload: CreateShuttleRouteRequest): ShuttleRoute {
         if (shuttleRouteRepository.existsById(payload.name)) {
-            throw DuplicateShuttleStopException()
+            throw DuplicateShuttleRouteException()
         }
         return shuttleRouteRepository.save(
             ShuttleRoute(
@@ -99,7 +100,7 @@ class ShuttleRouteService(
     ): ShuttleRouteStop {
         // Check if the route and stop exist
         shuttleRouteRepository.findById(routeName).orElseThrow { ShuttleRouteNotFoundException() }
-        shuttleStopRepository.findById(payload.stopName).orElseThrow { ShuttleRouteNotFoundException() }
+        shuttleStopRepository.findById(payload.stopName).orElseThrow { ShuttleStopNotFoundException() }
         shuttleRouteStopRepository
             .findByRouteNameAndStopName(
                 routeName = routeName,
@@ -151,6 +152,7 @@ class ShuttleRouteService(
         routeName: String,
         stopName: String,
     ) {
+        shuttleRouteRepository.findById(routeName).orElseThrow { ShuttleRouteNotFoundException() }
         shuttleRouteStopRepository.findByRouteNameAndStopName(routeName, stopName)?.let {
             shuttleRouteStopRepository.delete(it)
         } ?: throw ShuttleRouteStopNotFoundException()
@@ -259,7 +261,6 @@ class ShuttleRouteService(
         seq: Int,
     ) {
         shuttleRouteRepository.findById(routeName).orElseThrow { ShuttleRouteNotFoundException() }
-        shuttleTimetableRepository.findById(seq).orElseThrow { ShuttleTimetableNotFoundException() }
         shuttleTimetableRepository.findByRouteNameAndSeq(routeName, seq)?.let {
             shuttleTimetableRepository.delete(it)
         } ?: throw ShuttleTimetableNotFoundException()

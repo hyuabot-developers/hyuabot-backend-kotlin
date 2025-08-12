@@ -32,14 +32,14 @@ class ShuttlePeriodService(
                 start =
                     payload.start.let {
                         ZonedDateTime.of(
-                            LocalDateTime.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                            LocalDateTime.parse("$it.000", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")),
                             LocalDateTimeBuilder.serviceTimezone,
                         )
                     },
                 end =
                     payload.end.let {
                         ZonedDateTime.of(
-                            LocalDateTime.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                            LocalDateTime.parse("$it.999", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")),
                             LocalDateTimeBuilder.serviceTimezone,
                         )
                     },
@@ -74,14 +74,14 @@ class ShuttlePeriodService(
                     start =
                         payload.start.let {
                             ZonedDateTime.of(
-                                LocalDateTime.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                LocalDateTime.parse("$it.000", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")),
                                 LocalDateTimeBuilder.serviceTimezone,
                             )
                         }
                     end =
                         payload.end.let {
                             ZonedDateTime.of(
-                                LocalDateTime.parse(it, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                                LocalDateTime.parse("$it.999", DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")),
                                 LocalDateTimeBuilder.serviceTimezone,
                             )
                         }
