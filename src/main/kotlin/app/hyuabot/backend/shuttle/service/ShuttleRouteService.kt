@@ -125,6 +125,15 @@ class ShuttleRouteService(
         )
     }
 
+    fun getShuttleRouteStopByRouteNameAndStopName(
+        routeName: String,
+        stopName: String,
+    ): ShuttleRouteStop {
+        shuttleRouteRepository.findById(routeName).orElseThrow { ShuttleRouteNotFoundException() }
+        return shuttleRouteStopRepository.findByRouteNameAndStopName(routeName, stopName)
+            ?: throw ShuttleRouteStopNotFoundException()
+    }
+
     fun updateShuttleRouteStop(
         routeName: String,
         stopName: String,

@@ -17,6 +17,7 @@ import app.hyuabot.backend.shuttle.exception.DuplicateShuttleRouteStopException
 import app.hyuabot.backend.shuttle.exception.DuplicateShuttleTimetableException
 import app.hyuabot.backend.shuttle.exception.ShuttleRouteNotFoundException
 import app.hyuabot.backend.shuttle.exception.ShuttleRouteStopNotFoundException
+import app.hyuabot.backend.shuttle.exception.ShuttleStopNotFoundException
 import app.hyuabot.backend.shuttle.exception.ShuttleTimetableNotFoundException
 import app.hyuabot.backend.shuttle.service.ShuttleRouteService
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
@@ -502,10 +503,10 @@ class ShuttleRouteController {
                 HttpStatus.NOT_FOUND,
                 ResponseBuilder.Message("SHUTTLE_ROUTE_NOT_FOUND"),
             )
-        } catch (_: ShuttleRouteStopNotFoundException) {
+        } catch (_: ShuttleStopNotFoundException) {
             ResponseBuilder.response(
                 HttpStatus.NOT_FOUND,
-                ResponseBuilder.Message("SHUTTLE_ROUTE_STOP_NOT_FOUND"),
+                ResponseBuilder.Message("SHUTTLE_STOP_NOT_FOUND"),
             )
         } catch (_: DuplicateShuttleRouteStopException) {
             ResponseBuilder.response(
@@ -519,6 +520,88 @@ class ShuttleRouteController {
             )
         } catch (e: Exception) {
             logger.error("Error creating shuttle route stop for route: $routeName", e)
+            ResponseBuilder.response(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                ResponseBuilder.Message("INTERNAL_SERVER_ERROR"),
+            )
+        }
+
+    @GetMapping("/{routeName}/stop/{stopName}")
+    @Operation(
+        summary = "셔틀버스 노선의 정류장 상세 조회",
+        description = "특정 셔틀버스 노선의 정류장 상세 정보를 조회합니다.",
+        parameters = [
+            io.swagger.v3.oas.annotations.Parameter(
+                name = "routeName",
+                description = "셔틀버스 노선 ID",
+                required = true,
+                schema = Schema(type = "string", example = "DHDD"),
+            ),
+            io.swagger.v3.oas.annotations.Parameter(
+                name = "stopName",
+                description = "셔틀버스 정류장 ID",
+                required = true,
+                schema = Schema(type = "string", example = "dormitory_o"),
+            ),
+        ],
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "셔틀버스 노선 정류장 상세 조회 성공",
+                content = [Content(schema = Schema(implementation = ShuttleRouteStopResponse::class))],
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "셔틀버스 노선 또는 정류장이 존재하지 않음",
+                content = [
+                    Content(
+                        schema = Schema(implementation = ResponseBuilder.Message::class),
+                        examples = [
+                            ExampleObject(
+                                name = "셔틀버스 노선 없음",
+                                summary = "셔틀버스 노선이 존재하지 않음",
+                                value = """{"message": "SHUTTLE_ROUTE_NOT_FOUND"}""",
+                            ),
+                            ExampleObject(
+                                name = "셔틀버스 정류장 없음",
+                                summary = "셔틀버스 정류장이 존재하지 않음",
+                                value = """{"message": "SHUTTLE_ROUTE_STOP_NOT_FOUND"}""",
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+    fun getShuttleRouteStopByRouteNameAndStopName(
+        @PathVariable routeName: String,
+        @PathVariable stopName: String,
+    ): ResponseEntity<*> =
+        try {
+            val stop = shuttleRouteService.getShuttleRouteStopByRouteNameAndStopName(routeName, stopName)
+            ResponseBuilder.response(
+                HttpStatus.OK,
+                ShuttleRouteStopResponse(
+                    seq = stop.seq!!,
+                    name = stop.stopName,
+                    order = stop.order,
+                    cumulativeTime = LocalDateTimeBuilder.convertDurationToString(stop.cumulativeTime),
+                ),
+            )
+        } catch (_: ShuttleRouteNotFoundException) {
+            ResponseBuilder.response(
+                HttpStatus.NOT_FOUND,
+                ResponseBuilder.Message("SHUTTLE_ROUTE_NOT_FOUND"),
+            )
+        } catch (_: ShuttleRouteStopNotFoundException) {
+            ResponseBuilder.response(
+                HttpStatus.NOT_FOUND,
+                ResponseBuilder.Message("SHUTTLE_ROUTE_STOP_NOT_FOUND"),
+            )
+        } catch (e: Exception) {
+            logger.error("Error retrieving shuttle route stop for route: $routeName, stop: $stopName", e)
             ResponseBuilder.response(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 ResponseBuilder.Message("INTERNAL_SERVER_ERROR"),

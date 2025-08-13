@@ -9,8 +9,8 @@ import java.time.format.DateTimeFormatter
 
 object LocalDateTimeBuilder {
     val serviceTimezone: ZoneId = ZoneId.of("Asia/Seoul")
-    val datetimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-    val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+    private val datetimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
 
     fun convertAsServiceTimezone(dateTime: ZonedDateTime): LocalDateTime = dateTime.withZoneSameInstant(serviceTimezone).toLocalDateTime()
 
@@ -31,11 +31,7 @@ object LocalDateTimeBuilder {
 
     fun convertStringToDuration(duration: String): Duration {
         val parts = duration.split(":").map { it.toInt() }
-        return if (parts.size == 3) {
-            Duration.ofHours(parts[0].toLong()).plusMinutes(parts[1].toLong()).plusSeconds(parts[2].toLong())
-        } else {
-            throw IllegalArgumentException("Invalid duration format")
-        }
+        return Duration.ofHours(parts[0].toLong()).plusMinutes(parts[1].toLong()).plusSeconds(parts[2].toLong())
     }
 
     fun checkLocalDateTimeFormat(dateTime: String): Boolean {

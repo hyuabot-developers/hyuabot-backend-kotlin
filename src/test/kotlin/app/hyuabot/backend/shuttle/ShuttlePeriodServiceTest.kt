@@ -114,7 +114,7 @@ class ShuttlePeriodServiceTest {
         val payload =
             ShuttlePeriodRequest(
                 type = "semester",
-                start = "2025-09-01 00:00:0",
+                start = "2025-09-01 00:00:60",
                 end = "2025-12-23 23:59:59",
             )
 

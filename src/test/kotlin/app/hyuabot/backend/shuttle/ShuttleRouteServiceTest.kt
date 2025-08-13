@@ -540,6 +540,89 @@ class ShuttleRouteServiceTest {
     }
 
     @Test
+    @DisplayName("셔틀버스 노선별 정류장 상세 조회")
+    fun getStopInRoute() {
+        val routeName = "TestRoute"
+        val stopName = "ExistingStop"
+        val existingRoute =
+            ShuttleRoute(
+                name = routeName,
+                descriptionKorean = "테스트 노선",
+                descriptionEnglish = "Test Route",
+                tag = "TR",
+                startStopID = "StartStop",
+                endStopID = "EndStop",
+                timetable = emptyList(),
+                stop = emptyList(),
+                startStop = null,
+                endStop = null,
+            )
+        val existingRouteStop =
+            ShuttleRouteStop(
+                stopName = stopName,
+                routeName = routeName,
+                order = 1,
+                cumulativeTime = Duration.ofMinutes(5),
+                route = null,
+                stop = null,
+            )
+        whenever(shuttleRouteRepository.findById(routeName)).thenReturn(Optional.of(existingRoute))
+        whenever(
+            shuttleRouteStopRepository.findByRouteNameAndStopName(
+                routeName,
+                stopName,
+            ),
+        ).thenReturn(existingRouteStop)
+
+        val result =
+            shuttleRouteService.getShuttleRouteStopByRouteNameAndStopName(routeName, stopName)
+        assertEquals(existingRouteStop.stopName, result.stopName)
+        assertEquals(existingRouteStop.routeName, result.routeName)
+    }
+
+    @Test
+    @DisplayName("셔틀버스 노선별 정류장 상세 조회 실패 (존재하지 않는 노선 이름)")
+    fun getStopInRouteNotFound() {
+        val routeName = "NonExistentRoute"
+        val stopName = "ExistingStop"
+        whenever(shuttleRouteRepository.findById(routeName)).thenReturn(Optional.empty())
+        assertThrows<ShuttleRouteNotFoundException> {
+            shuttleRouteService.getShuttleRouteStopByRouteNameAndStopName(routeName, stopName)
+        }
+    }
+
+    @Test
+    @DisplayName("셔틀버스 노선별 정류장 상세 조회 실패 (존재하지 않는 정류장 이름)")
+    fun getStopInRouteStopNotFound() {
+        val routeName = "TestRoute"
+        val stopName = "NonExistentStop"
+        val existingRoute =
+            ShuttleRoute(
+                name = routeName,
+                descriptionKorean = "테스트 노선",
+                descriptionEnglish = "Test Route",
+                tag = "TR",
+                startStopID = "StartStop",
+                endStopID = "EndStop",
+                timetable = emptyList(),
+                stop = emptyList(),
+                startStop = null,
+                endStop = null,
+            )
+        whenever(shuttleRouteRepository.findById(routeName)).thenReturn(Optional.of(existingRoute))
+        whenever(
+            shuttleRouteStopRepository.findByRouteNameAndStopName(
+                routeName,
+                stopName,
+            ),
+        ).thenReturn(null)
+
+        assertThrows<ShuttleRouteStopNotFoundException> {
+            shuttleRouteService.getShuttleRouteStopByRouteNameAndStopName(routeName, stopName)
+        }
+    }
+
+    @Test
     @DisplayName("셔틀버스 노선별 정류장 수정")
     fun updateStopInRoute() {
         val existingRoute =

@@ -63,7 +63,7 @@ class ShuttleStopController {
     @ApiResponses(
         value = [
             ApiResponse(
-                responseCode = "200",
+                responseCode = "201",
                 description = "셔틀버스 정류장 생성 성공",
                 content = [Content(schema = Schema(implementation = ShuttleStopResponse::class))],
             ),
