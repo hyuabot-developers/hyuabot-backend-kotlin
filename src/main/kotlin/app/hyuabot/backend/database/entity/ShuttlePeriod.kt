@@ -26,11 +26,11 @@ data class ShuttlePeriod(
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "shuttle_period_seq_seq")
     val seq: Int? = null,
     @Column(name = "period_type", nullable = false)
-    val type: String,
+    var type: String,
     @Column(name = "period_start", columnDefinition = "timestamptz", nullable = false)
-    val start: ZonedDateTime,
+    var start: ZonedDateTime,
     @Column(name = "period_end", columnDefinition = "timestamptz", nullable = false)
-    val end: ZonedDateTime,
+    var end: ZonedDateTime,
     @ManyToOne
     @JoinColumn(name = "period_type", referencedColumnName = "period_type", insertable = false, updatable = false)
     val periodType: ShuttlePeriodType?,

@@ -20,13 +20,13 @@ data class ShuttleTimetable(
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "shuttle_timetable_seq_seq")
     val seq: Int? = null,
     @Column(name = "period_type", length = 20, nullable = false)
-    val periodType: String,
+    var periodType: String,
     @Column(name = "weekday", nullable = false)
-    val weekday: Boolean,
+    var weekday: Boolean,
     @Column(name = "route_name", length = 20, nullable = false)
     val routeName: String,
     @Column(name = "departure_time", columnDefinition = "time", nullable = false)
-    val departureTime: LocalTime,
+    var departureTime: LocalTime,
     @ManyToOne
     @JoinColumn(name = "route_name", referencedColumnName = "route_name", insertable = false, updatable = false)
     val route: ShuttleRoute?,

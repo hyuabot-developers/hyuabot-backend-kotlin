@@ -29,17 +29,17 @@ data class ShuttleRouteStop(
     val seq: Int? = null,
     @Column(name = "route_name", length = 15, nullable = false)
     val routeName: String,
-    @Column(name = "stop_name ", length = 15, nullable = false)
+    @Column(name = "stop_name", length = 15, nullable = false)
     val stopName: String,
     @Column(name = "stop_order", columnDefinition = "integer", nullable = false)
-    val order: Int,
+    var order: Int,
     @Type(PostgreSQLIntervalType::class)
     @Column(name = "cumulative_time", columnDefinition = "interval", nullable = false)
-    val cumulativeTime: Duration,
+    var cumulativeTime: Duration,
     @ManyToOne
     @JoinColumn(name = "route_name", referencedColumnName = "route_name", insertable = false, updatable = false)
-    val route: ShuttleRoute,
+    val route: ShuttleRoute?,
     @ManyToOne
     @JoinColumn(name = "stop_name", referencedColumnName = "stop_name", insertable = false, updatable = false)
-    val stop: ShuttleStop,
+    val stop: ShuttleStop?,
 )
