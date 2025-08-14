@@ -32,6 +32,10 @@ class ShuttleRouteService(
     private val shuttleRouteStopRepository: ShuttleRouteStopRepository,
     private val shuttleTimetableRepository: ShuttleTimetableRepository,
 ) {
+    companion object {
+        val TIME_FORMAT_REGEX = Regex("\\d{2}:\\d{2}:\\d{2}")
+    }
+
     fun getAllRoutes(name: String? = null) =
         if (!name.isNullOrEmpty()) {
             shuttleRouteRepository.findByNameContaining(name)
@@ -108,7 +112,7 @@ class ShuttleRouteService(
             )?.let { throw DuplicateShuttleRouteStopException() }
         // Check cumulative time has valid format (HH:mm:ss)
         payload.cumulativeTime.let {
-            if (!it.matches(Regex("\\d{2}:\\d{2}:\\d{2}"))) {
+            if (!it.matches(TIME_FORMAT_REGEX)) {
                 throw DurationNotValidException()
             }
         }
@@ -146,7 +150,7 @@ class ShuttleRouteService(
 
         // Check cumulative time has valid format (HH:mm:ss)
         payload.cumulativeTime.let {
-            if (!it.matches(Regex("\\d{2}:\\d{2}:\\d{2}"))) {
+            if (!it.matches(TIME_FORMAT_REGEX)) {
                 throw DurationNotValidException()
             }
         }
@@ -206,7 +210,7 @@ class ShuttleRouteService(
         shuttleRouteRepository.findById(routeName).orElseThrow { ShuttleRouteNotFoundException() }
         // Check if the departure time is in valid format (HH:mm:ss)
         payload.departureTime.let {
-            if (!it.matches(Regex("\\d{2}:\\d{2}:\\d{2}"))) {
+            if (!it.matches(TIME_FORMAT_REGEX)) {
                 throw LocalTimeNotValidException()
             }
         }
@@ -253,7 +257,7 @@ class ShuttleRouteService(
 
         // Check if the departure time is in valid format (HH:mm:ss)
         payload.departureTime.let {
-            if (!it.matches(Regex("\\d{2}:\\d{2}:\\d{2}"))) {
+            if (!it.matches(TIME_FORMAT_REGEX)) {
                 throw LocalTimeNotValidException()
             }
         }
