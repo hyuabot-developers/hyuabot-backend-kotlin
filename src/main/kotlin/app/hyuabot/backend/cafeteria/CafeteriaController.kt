@@ -52,42 +52,7 @@ class CafeteriaController {
         description = "학식 식당 목록 조회 성공",
         content = [
             Content(
-                schema =
-                    Schema(
-                        implementation = CafeteriaListResponse::class,
-                        description = "학식 식당 목록",
-                    ),
-                examples = [
-                    ExampleObject(
-                        name = "식당 목록 조회 성공 예시",
-                        value = """
-                            {
-                                "result": [
-                                    {
-                                        "seq": 1,
-                                        "campusID": 1,
-                                        "name": "학생회관 식당",
-                                        "latitude": 37.5665,
-                                        "longitude": 126.978,
-                                        "breakfastTime": "08:00-09:30",
-                                        "lunchTime": "11:30-13:30",
-                                        "dinnerTime": "17:00-19:00"
-                                    },
-                                    {
-                                        "seq": 2,
-                                        "campusID": 1,
-                                        "name": "과학관 식당",
-                                        "latitude": 37.5665,
-                                        "longitude": 126.978,
-                                        "breakfastTime": "08:00-09:30",
-                                        "lunchTime": "11:30-13:30",
-                                        "dinnerTime": "17:00-19:00"
-                                    }
-                                ]
-                            }
-                        """,
-                    ),
-                ],
+                schema = Schema(implementation = CafeteriaListResponse::class),
             ),
         ],
     )
@@ -121,23 +86,6 @@ class CafeteriaController {
                     Content(
                         mediaType = MediaType.APPLICATION_JSON_VALUE,
                         schema = Schema(implementation = CreateCafeteriaRequest::class),
-                        examples = [
-                            ExampleObject(
-                                name = "학식 식당 생성 예시",
-                                value = """
-                                {
-                                    "id": 1,
-                                    "campusID": 1,
-                                    "name": "학생회관 식당",
-                                    "latitude": 37.5665,
-                                    "longitude": 126.978,
-                                    "breakfastTime": "08:00-09:30",
-                                    "lunchTime": "11:30-13:30",
-                                    "dinnerTime": "17:00-19:00"
-                                }
-                            """,
-                            ),
-                        ],
                     ),
                 ],
             ),
@@ -154,23 +102,6 @@ class CafeteriaController {
                                 implementation = CafeteriaResponse::class,
                                 description = "생성된 학식 식당 정보",
                             ),
-                        examples = [
-                            ExampleObject(
-                                name = "학식 식당 생성 성공 예시",
-                                value = """
-                                    {
-                                        "seq": 1,
-                                        "campusID": 1,
-                                        "name": "학생회관 식당",
-                                        "latitude": 37.5665,
-                                        "longitude": 126.978,
-                                        "breakfastTime": "08:00-09:30",
-                                        "lunchTime": "11:30-13:30",
-                                        "dinnerTime": "17:00-19:00"
-                                    }
-                                """,
-                            ),
-                        ],
                     ),
                 ],
             ),
@@ -284,23 +215,6 @@ class CafeteriaController {
                         implementation = CafeteriaResponse::class,
                         description = "학식 식당 상세 정보",
                     ),
-                examples = [
-                    ExampleObject(
-                        name = "학식 식당 상세 조회 성공 예시",
-                        value = """
-                            {
-                                "seq": 1,
-                                "campusID": 1,
-                                "name": "학생회관 식당",
-                                "latitude": 37.5665,
-                                "longitude": 126.978,
-                                "breakfastTime": "08:00-09:30",
-                                "lunchTime": "11:30-13:30",
-                                "dinnerTime": "17:00-19:00"
-                            }
-                        """,
-                    ),
-                ],
             ),
         ],
     )
@@ -369,22 +283,6 @@ class CafeteriaController {
                     Content(
                         mediaType = MediaType.APPLICATION_JSON_VALUE,
                         schema = Schema(implementation = UpdateCafeteriaRequest::class),
-                        examples = [
-                            ExampleObject(
-                                name = "학식 식당 수정 예시",
-                                value = """
-                                    {
-                                        "campusID": 1,
-                                        "name": "학생회관 식당",
-                                        "latitude": 37.5665,
-                                        "longitude": 126.978,
-                                        "breakfastTime": "08:00-09:30",
-                                        "lunchTime": "11:30-13:30",
-                                        "dinnerTime": "17:00-19:00"
-                                    }
-                                """,
-                            ),
-                        ],
                     ),
                 ],
             ),
@@ -395,30 +293,7 @@ class CafeteriaController {
                 responseCode = "200",
                 description = "학식 식당 정보 수정 성공",
                 content = [
-                    Content(
-                        schema =
-                            Schema(
-                                implementation = CafeteriaResponse::class,
-                                description = "수정된 학식 식당 정보",
-                            ),
-                        examples = [
-                            ExampleObject(
-                                name = "학식 식당 수정 성공 예시",
-                                value = """
-                                    {
-                                        "seq": 1,
-                                        "campusID": 1,
-                                        "name": "학생회관 식당",
-                                        "latitude": 37.5665,
-                                        "longitude": 126.978,
-                                        "breakfastTime": "08:00-09:30",
-                                        "lunchTime": "11:30-13:30",
-                                        "dinnerTime": "17:00-19:00"
-                                    }
-                                """,
-                            ),
-                        ],
-                    ),
+                    Content(schema = Schema(implementation = CafeteriaResponse::class)),
                 ],
             ),
             ApiResponse(
@@ -600,40 +475,7 @@ class CafeteriaController {
         responseCode = "200",
         description = "메뉴 목록 조회 성공",
         content = [
-            Content(
-                schema =
-                    Schema(
-                        implementation = MenuListResponse::class,
-                        description = "메뉴 목록",
-                    ),
-                examples = [
-                    ExampleObject(
-                        name = "메뉴 목록 예시",
-                        value = """
-                            {
-                                "result": [
-                                    {
-                                        "seq": 1,
-                                        "cafeteriaID": 101,
-                                        "date": "2023-10-01",
-                                        "type": "조식",
-                                        "food": "김치찌개, 밥, 계란후라이",
-                                        "price": "3000"
-                                    },
-                                    {
-                                        "seq": 2,
-                                        "cafeteriaID": 101,
-                                        "date": "2023-10-01",
-                                        "type": "중식",
-                                        "food": "제육볶음, 밥, 김치",
-                                        "price": "4000"
-                                    }
-                                ]
-                            }
-                        """,
-                    ),
-                ],
-            ),
+            Content(schema = Schema(implementation = MenuListResponse::class)),
         ],
     )
     fun getMenuList(
@@ -689,20 +531,6 @@ class CafeteriaController {
                     Content(
                         mediaType = MediaType.APPLICATION_JSON_VALUE,
                         schema = Schema(implementation = MenuRequest::class),
-                        examples = [
-                            ExampleObject(
-                                name = "메뉴 생성 예시",
-                                value = """
-                                {
-                                    "cafeteriaID": 101,
-                                    "date": "2023-10-01",
-                                    "type": "조식",
-                                    "food": "김치찌개, 밥, 계란후라이",
-                                    "price": "3000"
-                                }
-                            """,
-                            ),
-                        ],
                     ),
                 ],
             ),
@@ -713,28 +541,7 @@ class CafeteriaController {
                 responseCode = "201",
                 description = "메뉴 생성 성공",
                 content = [
-                    Content(
-                        schema =
-                            Schema(
-                                implementation = MenuResponse::class,
-                                description = "생성된 메뉴 정보",
-                            ),
-                        examples = [
-                            ExampleObject(
-                                name = "메뉴 생성 예시",
-                                value = """
-                                    {
-                                        "seq": 1,
-                                        "cafeteriaID": 101,
-                                        "date": "2023-10-01",
-                                        "type": "조식",
-                                        "food": "김치찌개, 밥, 계란후라이",
-                                        "price": "3000"
-                                    }
-                                """,
-                            ),
-                        ],
-                    ),
+                    Content(schema = Schema(implementation = MenuResponse::class)),
                 ],
             ),
             ApiResponse(
@@ -826,28 +633,7 @@ class CafeteriaController {
         responseCode = "200",
         description = "메뉴 상세 조회 성공",
         content = [
-            Content(
-                schema =
-                    Schema(
-                        implementation = MenuResponse::class,
-                        description = "메뉴 상세 정보",
-                    ),
-                examples = [
-                    ExampleObject(
-                        name = "메뉴 상세 조회 예시",
-                        value = """
-                            {
-                                "seq": 1,
-                                "cafeteriaID": 101,
-                                "date": "2023-10-01",
-                                "type": "조식",
-                                "food": "김치찌개, 밥, 계란후라이",
-                                "price": "3000"
-                            }
-                        """,
-                    ),
-                ],
-            ),
+            Content(schema = Schema(implementation = MenuResponse::class)),
         ],
     )
     @ApiResponse(
@@ -924,19 +710,6 @@ class CafeteriaController {
                     Content(
                         mediaType = MediaType.APPLICATION_JSON_VALUE,
                         schema = Schema(implementation = MenuRequest::class),
-                        examples = [
-                            ExampleObject(
-                                name = "메뉴 수정 예시",
-                                value = """
-                                    {
-                                        "date": "2023-10-01",
-                                        "type": "조식",
-                                        "food": "김치찌개, 밥, 계란후라이",
-                                        "price": "3000"
-                                    }
-                                """,
-                            ),
-                        ],
                     ),
                 ],
             ),
@@ -947,28 +720,7 @@ class CafeteriaController {
                 responseCode = "200",
                 description = "메뉴 수정 성공",
                 content = [
-                    Content(
-                        schema =
-                            Schema(
-                                implementation = MenuResponse::class,
-                                description = "수정된 메뉴 정보",
-                            ),
-                        examples = [
-                            ExampleObject(
-                                name = "메뉴 수정 예시",
-                                value = """
-                                    {
-                                        "seq": 1,
-                                        "cafeteriaID": 101,
-                                        "date": "2023-10-01",
-                                        "type": "조식",
-                                        "food": "김치찌개, 밥, 계란후라이",
-                                        "price": "3000"
-                                    }
-                                """,
-                            ),
-                        ],
-                    ),
+                    Content(schema = Schema(implementation = MenuResponse::class)),
                 ],
             ),
             ApiResponse(

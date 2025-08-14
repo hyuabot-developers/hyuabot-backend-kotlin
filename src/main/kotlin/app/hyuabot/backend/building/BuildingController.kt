@@ -50,36 +50,7 @@ class BuildingController {
         responseCode = "200",
         description = "건물 목록 조회 성공",
         content = [
-            Content(
-                schema = Schema(implementation = BuildingListResponse::class),
-                examples = [
-                    ExampleObject(
-                        name = "건물 목록 예시",
-                        value = """
-                            {
-                                "result": [
-                                    {
-                                        "id": "1",
-                                        "name": "중앙도서관",
-                                        "campusID": 1,
-                                        "latitude": 37.5665,
-                                        "longitude": 126.978,
-                                        "url": "https://example.com/building/1"
-                                    },
-                                    {
-                                        "id": "2",
-                                        "name": "공학관",
-                                        "campusID": 1,
-                                        "latitude": 37.5670,
-                                        "longitude": 126.979,
-                                        "url": "https://example.com/building/2"
-                                    }
-                                ]
-                            }
-                        """,
-                    ),
-                ],
-            ),
+            Content(schema = Schema(implementation = BuildingListResponse::class)),
         ],
     )
     fun getBuildingList(
@@ -115,21 +86,6 @@ class BuildingController {
                     Content(
                         mediaType = MediaType.APPLICATION_JSON_VALUE,
                         schema = Schema(implementation = CreateBuildingRequest::class),
-                        examples = [
-                            ExampleObject(
-                                name = "건물 생성 예시",
-                                value = """
-                                {
-                                    "id": "3",
-                                    "name": "신축관",
-                                    "campusID": 1,
-                                    "latitude": 37.5680,
-                                    "longitude": 126.980,
-                                    "url": "https://example.com/building/3"
-                                }
-                            """,
-                            ),
-                        ],
                     ),
                 ],
             ),
@@ -140,24 +96,7 @@ class BuildingController {
                 responseCode = "201",
                 description = "건물 생성 성공",
                 content = [
-                    Content(
-                        schema = Schema(implementation = BuildingResponse::class),
-                        examples = [
-                            ExampleObject(
-                                name = "건물 생성 응답 예시",
-                                value = """
-                                    {
-                                        "id": "3",
-                                        "name": "신축관",
-                                        "campusID": 1,
-                                        "latitude": 37.5680,
-                                        "longitude": 126.980,
-                                        "url": "https://example.com/building/3"
-                                    }
-                                """,
-                            ),
-                        ],
-                    ),
+                    Content(schema = Schema(implementation = BuildingResponse::class)),
                 ],
             ),
             ApiResponse(
@@ -246,24 +185,7 @@ class BuildingController {
                 responseCode = "200",
                 description = "건물 상세 조회 성공",
                 content = [
-                    Content(
-                        schema = Schema(implementation = BuildingResponse::class),
-                        examples = [
-                            ExampleObject(
-                                name = "건물 상세 조회 예시",
-                                value = """
-                                    {
-                                        "id": "1",
-                                        "name": "중앙도서관",
-                                        "campusID": 1,
-                                        "latitude": 37.5665,
-                                        "longitude": 126.978,
-                                        "url": "https://example.com/building/1"
-                                    }
-                                """,
-                            ),
-                        ],
-                    ),
+                    Content(schema = Schema(implementation = BuildingResponse::class)),
                 ],
             ),
             ApiResponse(
@@ -330,20 +252,6 @@ class BuildingController {
                     Content(
                         mediaType = MediaType.APPLICATION_JSON_VALUE,
                         schema = Schema(implementation = UpdateBuildingRequest::class),
-                        examples = [
-                            ExampleObject(
-                                name = "건물 수정 예시",
-                                value = """
-                                    {
-                                        "id": "1",
-                                        "campusID": 1,
-                                        "latitude": 37.5665,
-                                        "longitude": 126.978,
-                                        "url": "https://example.com/building/1"
-                                    }
-                                """,
-                            ),
-                        ],
                     ),
                 ],
             ),
@@ -354,24 +262,7 @@ class BuildingController {
                 responseCode = "200",
                 description = "건물 정보 수정 성공",
                 content = [
-                    Content(
-                        schema = Schema(implementation = BuildingResponse::class),
-                        examples = [
-                            ExampleObject(
-                                name = "건물 수정 응답 예시",
-                                value = """
-                                    {
-                                        "id": "1",
-                                        "name": "중앙도서관",
-                                        "campusID": 1,
-                                        "latitude": 37.5665,
-                                        "longitude": 126.978,
-                                        "url": "https://example.com/building/1"
-                                    }
-                                """,
-                            ),
-                        ],
-                    ),
+                    Content(schema = Schema(implementation = BuildingResponse::class)),
                 ],
             ),
             ApiResponse(
@@ -528,32 +419,7 @@ class BuildingController {
         responseCode = "200",
         description = "교내 강의실 목록 조회 성공",
         content = [
-            Content(
-                schema = Schema(implementation = RoomListResponse::class),
-                examples = [
-                    ExampleObject(
-                        name = "강의실 목록 조회 예시",
-                        value = """
-                            {
-                                "result": [
-                                    {
-                                        "seq": 1,
-                                        "buildingName": "공학관",
-                                        "number": "101",
-                                        "name": "공학관 101호"
-                                    },
-                                    {
-                                        "seq": 2,
-                                        "buildingName": "공학관",
-                                        "number": "102",
-                                        "name": "공학관 102호"
-                                    }
-                                ]
-                            }
-                        """,
-                    ),
-                ],
-            ),
+            Content(schema = Schema(implementation = RoomListResponse::class)),
         ],
     )
     fun getRoomList(
@@ -587,17 +453,6 @@ class BuildingController {
                     Content(
                         mediaType = MediaType.APPLICATION_JSON_VALUE,
                         schema = Schema(implementation = RoomRequest::class),
-                        examples = [
-                            ExampleObject(
-                                name = "강의실 생성 예시",
-                                value = """
-                                {
-                                    "number": "101",
-                                    "name": "공학관 101호"
-                                }
-                            """,
-                            ),
-                        ],
                     ),
                 ],
             ),
@@ -608,22 +463,7 @@ class BuildingController {
                 responseCode = "201",
                 description = "교내 강의실 생성 성공",
                 content = [
-                    Content(
-                        schema = Schema(implementation = RoomResponse::class),
-                        examples = [
-                            ExampleObject(
-                                name = "강의실 생성 예시",
-                                value = """
-                                    {
-                                        "seq": 1,
-                                        "buildingName": "공학관",
-                                        "number": "101",
-                                        "name": "공학관 101호"
-                                    }
-                                """,
-                            ),
-                        ],
-                    ),
+                    Content(schema = Schema(implementation = RoomResponse::class)),
                 ],
             ),
             ApiResponse(
@@ -722,22 +562,7 @@ class BuildingController {
                 responseCode = "200",
                 description = "교내 강의실 상세 조회 성공",
                 content = [
-                    Content(
-                        schema = Schema(implementation = RoomResponse::class),
-                        examples = [
-                            ExampleObject(
-                                name = "강의실 상세 조회 예시",
-                                value = """
-                                    {
-                                        "seq": 1,
-                                        "buildingName": "공학관",
-                                        "number": "101",
-                                        "name": "공학관 101호"
-                                    }
-                                """,
-                            ),
-                        ],
-                    ),
+                    Content(schema = Schema(implementation = RoomResponse::class)),
                 ],
             ),
             ApiResponse(
@@ -835,17 +660,6 @@ class BuildingController {
                     Content(
                         mediaType = MediaType.APPLICATION_JSON_VALUE,
                         schema = Schema(implementation = RoomRequest::class),
-                        examples = [
-                            ExampleObject(
-                                name = "강의실 수정 예시",
-                                value = """
-                                    {
-                                        "number": "101",
-                                        "name": "공학관 101호"
-                                    }
-                                """,
-                            ),
-                        ],
                     ),
                 ],
             ),
@@ -856,22 +670,7 @@ class BuildingController {
                 responseCode = "200",
                 description = "교내 강의실 수정 성공",
                 content = [
-                    Content(
-                        schema = Schema(implementation = RoomResponse::class),
-                        examples = [
-                            ExampleObject(
-                                name = "강의실 수정 예시",
-                                value = """
-                                    {
-                                        "seq": 1,
-                                        "buildingName": "공학관",
-                                        "number": "101",
-                                        "name": "공학관 101호"
-                                    }
-                                """,
-                            ),
-                        ],
-                    ),
+                    Content(schema = Schema(implementation = RoomResponse::class)),
                 ],
             ),
             ApiResponse(

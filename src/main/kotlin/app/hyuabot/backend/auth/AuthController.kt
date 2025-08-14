@@ -377,26 +377,7 @@ class AuthController {
                 description = "사용자 프로필 조회 성공",
                 content =
                     arrayOf(
-                        Content(
-                            schema = Schema(implementation = UserResponse::class),
-                            examples =
-                                arrayOf(
-                                    ExampleObject(
-                                        name = "USER_PROFILE_SUCCESS",
-                                        description = "사용자 프로필 조회 성공 예시",
-                                        value =
-                                            """
-                                            {
-                                                "username": "user123",
-                                                "nickname": "User",
-                                                "email": "user@example.com",
-                                                "phone": "+821012345678",
-                                                "active": true
-                                            }
-                                            """,
-                                    ),
-                                ),
-                        ),
+                        Content(schema = Schema(implementation = UserResponse::class)),
                     ),
             ),
             ApiResponse(
