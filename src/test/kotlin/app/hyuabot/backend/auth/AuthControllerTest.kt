@@ -83,10 +83,8 @@ class AuthControllerTest {
                 post("/api/v1/user")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(map)),
-            ).andExpect {
-                status().isCreated()
-                jsonPath("$.message").value("USER_CREATED_SUCCESSFULLY")
-            }
+            ).andExpect(status().isCreated)
+            .andExpect(jsonPath("$.message").value("USER_CREATED_SUCCESSFULLY"))
     }
 
     @Test
@@ -108,10 +106,8 @@ class AuthControllerTest {
                 post("/api/v1/user")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(map)),
-            ).andExpect {
-                status().isConflict()
-                jsonPath("$.message").value("DUPLICATE_USER_ID")
-            }
+            ).andExpect(status().isConflict)
+            .andExpect(jsonPath("$.message").value("DUPLICATE_USER_ID"))
     }
 
     @Test
@@ -133,10 +129,8 @@ class AuthControllerTest {
                 post("/api/v1/user")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(map)),
-            ).andExpect {
-                status().isConflict()
-                jsonPath("$.message").value("DUPLICATE_EMAIL")
-            }
+            ).andExpect(status().isConflict)
+            .andExpect(jsonPath("$.message").value("DUPLICATE_EMAIL"))
     }
 
     @Test
@@ -158,10 +152,8 @@ class AuthControllerTest {
                 post("/api/v1/user")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(map)),
-            ).andExpect {
-                status().isInternalServerError()
-                jsonPath("$.message").value("INTERNAL_SERVER_ERROR")
-            }
+            ).andExpect(status().isInternalServerError)
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
     }
 
     @Test
@@ -184,12 +176,10 @@ class AuthControllerTest {
                 post("/api/v1/user/token")
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
                     .content("username=${map["username"]}&password=${map["password"]}"),
-            ).andExpect {
-                status().isCreated()
-                cookie().exists("access_token")
-                cookie().exists("refresh_token")
-                jsonPath("$.message").value("LOGIN_SUCCESS")
-            }
+            ).andExpect(status().isCreated)
+            .andExpect(cookie().exists("access_token"))
+            .andExpect(cookie().exists("refresh_token"))
+            .andExpect(jsonPath("$.message").value("LOGIN_SUCCESS"))
     }
 
     @Test
@@ -208,10 +198,8 @@ class AuthControllerTest {
                 post("/api/v1/user/token")
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
                     .content("username=${map["username"]}&password=${map["password"]}"),
-            ).andExpect {
-                status().isUnauthorized()
-                jsonPath("$.message").value("INVALID_CREDENTIALS")
-            }
+            ).andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$.message").value("UNAUTHORIZED"))
     }
 
     @Test
@@ -230,10 +218,8 @@ class AuthControllerTest {
                 post("/api/v1/user/token")
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED_VALUE)
                     .content("username=${map["username"]}&password=${map["password"]}"),
-            ).andExpect {
-                status().isInternalServerError()
-                jsonPath("$.message").value("INTERNAL_SERVER_ERROR")
-            }
+            ).andExpect(status().isInternalServerError)
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
     }
 
     @Test
@@ -246,11 +232,9 @@ class AuthControllerTest {
             .perform(
                 put("/api/v1/user/token")
                     .cookie(Cookie("refresh_token", "mockRefreshToken")),
-            ).andExpect {
-                status().isOk()
-                cookie().exists("access_token")
-                jsonPath("$.message").value("TOKEN_REFRESH_SUCCESS")
-            }
+            ).andExpect(status().isOk)
+            .andExpect(cookie().exists("access_token"))
+            .andExpect(jsonPath("$.message").value("TOKEN_REFRESH_SUCCESS"))
     }
 
     @Test
@@ -259,10 +243,8 @@ class AuthControllerTest {
         mockMvc
             .perform(
                 put("/api/v1/user/token"),
-            ).andExpect {
-                status().isUnauthorized()
-                jsonPath("$.message").value("UNAUTHORIZED")
-            }
+            ).andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$.message").value("UNAUTHORIZED"))
     }
 
     @Test
@@ -272,10 +254,8 @@ class AuthControllerTest {
             .perform(
                 put("/api/v1/user/token")
                     .cookie(Cookie("test", "testCookie")),
-            ).andExpect {
-                status().isUnauthorized()
-                jsonPath("$.message").value("UNAUTHORIZED")
-            }
+            ).andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$.message").value("UNAUTHORIZED"))
     }
 
     @Test
@@ -301,10 +281,8 @@ class AuthControllerTest {
                 delete("/api/v1/user/token")
                     .cookie(Cookie("access_token", "mockAccessToken"))
                     .cookie(Cookie("refresh_token", "mockRefreshToken")),
-            ).andExpect {
-                status().isUnauthorized()
-                jsonPath("$.message").value("UNAUTHORIZED")
-            }
+            ).andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$.message").value("UNAUTHORIZED"))
     }
 
     @Test
@@ -344,9 +322,7 @@ class AuthControllerTest {
         mockMvc
             .perform(
                 get("/api/v1/user/profile"),
-            ).andExpect {
-                status().isNotFound()
-                jsonPath("$.message").value("NO_USER_INFO")
-            }
+            ).andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.message").value("NO_USER_INFO"))
     }
 }
