@@ -40,6 +40,7 @@ jobs:
           echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/application-test.properties
           echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/application-test.properties
           echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/application-test.properties
+          echo "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect" >> src/main/resources/application-test.properties
           echo "spring.sql.init.mode=always" >> src/main/resources/application-test.properties
           echo "jwt.secret=secret" >> src/main/resources/application-test.properties
           echo "jwt.expiration=3600" >> src/main/resources/application-test.properties
@@ -82,6 +83,7 @@ jobs:
           echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/application-test.properties
           echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/application-test.properties
           echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/application-test.properties
+          echo "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect" >> src/main/resources/application-test.properties
           echo "spring.sql.init.mode=always" >> src/main/resources/application-test.properties
           echo "jwt.secret=secret" >> src/main/resources/application-test.properties
           echo "jwt.expiration=3600" >> src/main/resources/application-test.properties
