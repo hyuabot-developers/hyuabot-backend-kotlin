@@ -3,16 +3,16 @@ package app.hyuabot.backend.readingRoom.domain
 import io.swagger.v3.oas.annotations.media.Schema
 
 data class UpdateReadingRoomRequest(
-    @Schema(description = "Campus ID", example = "1")
+    @get:Schema(description = "캠퍼스 ID", example = "1")
     val campusID: Int,
-    @Schema(description = "Reading Room Name", example = "Study Room A")
+    @get:Schema(description = "열람실 이름", example = "1층 열람실")
     val name: String,
-    @Schema(description = "Total Seats", example = "100")
+    @get:Schema(description = "열람실 전체 좌석 수", example = "100")
     val total: Int,
-    @Schema(description = "Active Seats", example = "50")
+    @get:Schema(description = "열람실 현재 활성 좌석 수", example = "50")
     val active: Int,
-    @Schema(description = "Reading Room Active Status", example = "true")
+    @get:Schema(description = "열람실 활성화 상태", example = "true")
     val isActive: Boolean,
-    @Schema(description = "Reading Room Reservable Status", example = "true")
+    @get:Schema(description = "열람실 예약 가능 여부", example = "true")
     val isReservable: Boolean,
 )

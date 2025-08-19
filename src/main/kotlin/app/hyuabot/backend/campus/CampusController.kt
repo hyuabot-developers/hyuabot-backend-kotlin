@@ -39,32 +39,9 @@ class CampusController {
     @ApiResponse(
         responseCode = "200",
         description = "캠퍼스 목록 조회 성공",
-        content =
-            [
-                Content(
-                    schema = Schema(implementation = CampusListResponse::class),
-                    examples =
-                        arrayOf(
-                            ExampleObject(
-                                name = "캠퍼스 목록 조회 성공 예시",
-                                value = """
-                                    {
-                                        "result": [
-                                            {
-                                                "seq": 1,
-                                                "name": "서울"
-                                            },
-                                            {
-                                                "seq": 2,
-                                                "name": "ERICA"
-                                            }
-                                        ]
-                                    }
-                                """,
-                            ),
-                        ),
-                ),
-            ],
+        content = [
+            Content(schema = Schema(implementation = CampusListResponse::class)),
+        ],
     )
     fun getCampusList(): ResponseEntity<CampusListResponse> =
         campusService.getCampusList().let { campusList ->
@@ -87,16 +64,6 @@ class CampusController {
                     Content(
                         mediaType = MediaType.APPLICATION_JSON_VALUE,
                         schema = Schema(implementation = CreateCampusRequest::class),
-                        examples = [
-                            ExampleObject(
-                                name = "테스트 캠퍼스 등록 예시",
-                                value = """
-                                {
-                                    "name": "테스트 캠퍼스"
-                                }
-                            """,
-                            ),
-                        ],
                     ),
                 ],
             ),
@@ -106,24 +73,9 @@ class CampusController {
             ApiResponse(
                 responseCode = "201",
                 description = "캠퍼스 등록 성공",
-                content =
-                    [
-                        Content(
-                            schema = Schema(implementation = CampusResponse::class),
-                            examples =
-                                arrayOf(
-                                    ExampleObject(
-                                        name = "캠퍼스 등록 성공 예시",
-                                        value = """
-                                        {
-                                            "seq": 3,
-                                            "name": "신규 캠퍼스"
-                                        }
-                                        """,
-                                    ),
-                                ),
-                        ),
-                    ],
+                content = [
+                    Content(schema = Schema(implementation = CampusResponse::class)),
+                ],
             ),
             ApiResponse(
                 responseCode = "409",
@@ -192,20 +144,7 @@ class CampusController {
                 responseCode = "200",
                 description = "캠퍼스 상세 조회 성공",
                 content = [
-                    Content(
-                        schema = Schema(implementation = CampusResponse::class),
-                        examples = [
-                            ExampleObject(
-                                name = "캠퍼스 상세 조회 성공 예시",
-                                value = """
-                                    {
-                                        "seq": 1,
-                                        "name": "서울"
-                                    }
-                                    """,
-                            ),
-                        ],
-                    ),
+                    Content(schema = Schema(implementation = CampusResponse::class)),
                 ],
             ),
             ApiResponse(
@@ -260,16 +199,6 @@ class CampusController {
                     Content(
                         mediaType = MediaType.APPLICATION_JSON_VALUE,
                         schema = Schema(implementation = CreateCampusRequest::class),
-                        examples = [
-                            ExampleObject(
-                                name = "테스트 캠퍼스 등록 예시",
-                                value = """
-                                {
-                                    "name": "테스트 캠퍼스"
-                                }
-                            """,
-                            ),
-                        ],
                     ),
                 ],
             ),
@@ -279,24 +208,9 @@ class CampusController {
             ApiResponse(
                 responseCode = "200",
                 description = "캠퍼스 수정 성공",
-                content =
-                    [
-                        Content(
-                            schema = Schema(implementation = CampusResponse::class),
-                            examples =
-                                arrayOf(
-                                    ExampleObject(
-                                        name = "캠퍼스 수정 성공 예시",
-                                        value = """
-                                        {
-                                            "seq": 3,
-                                            "name": "신규 캠퍼스"
-                                        }
-                                        """,
-                                    ),
-                                ),
-                        ),
-                    ],
+                content = [
+                    Content(schema = Schema(implementation = CampusResponse::class)),
+                ],
             ),
             ApiResponse(
                 responseCode = "404",

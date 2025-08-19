@@ -106,16 +106,29 @@ class CafeteriaControllerTest {
         ).whenever(cafeteriaService).getCafeteriaList()
         mockMvc
             .perform(get("/api/v1/cafeteria"))
-            .andExpect {
-                status().isOk
-                content().contentType("application/json")
-                jsonPath("$[0].id").value(1)
-                jsonPath("$[1].id").value(2)
-                jsonPath("$[2].id").value(3)
-                jsonPath("$[0].name").value("Cafeteria A")
-                jsonPath("$[1].name").value("Cafeteria B")
-                jsonPath("$[2].name").value("Cafeteria C")
-            }
+            .andExpect(status().isOk)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.result[0].seq").value(1))
+            .andExpect(jsonPath("$.result[1].seq").value(2))
+            .andExpect(jsonPath("$.result[2].seq").value(3))
+            .andExpect(jsonPath("$.result[0].name").value("Cafeteria A"))
+            .andExpect(jsonPath("$.result[1].name").value("Cafeteria B"))
+            .andExpect(jsonPath("$.result[2].name").value("Cafeteria C"))
+            .andExpect(jsonPath("$.result[0].latitude").value(37.7749))
+            .andExpect(jsonPath("$.result[0].longitude").value(-122.4194))
+            .andExpect(jsonPath("$.result[0].breakfastTime").value("07:00-10:00"))
+            .andExpect(jsonPath("$.result[0].lunchTime").value("11:00-14:00"))
+            .andExpect(jsonPath("$.result[0].dinnerTime").value("17:00-20:00"))
+            .andExpect(jsonPath("$.result[1].latitude").value(37.7750))
+            .andExpect(jsonPath("$.result[1].longitude").value(-122.4195))
+            .andExpect(jsonPath("$.result[1].breakfastTime").value("07:30-10:30"))
+            .andExpect(jsonPath("$.result[1].lunchTime").value("11:30-14:30"))
+            .andExpect(jsonPath("$.result[1].dinnerTime").value("17:30-20:30"))
+            .andExpect(jsonPath("$.result[2].latitude").value(37.7760))
+            .andExpect(jsonPath("$.result[2].longitude").value(-122.4200))
+            .andExpect(jsonPath("$.result[2].breakfastTime").value("08:00-11:00"))
+            .andExpect(jsonPath("$.result[2].lunchTime").value("12:00-15:00"))
+            .andExpect(jsonPath("$.result[2].dinnerTime").value("18:00-21:00"))
     }
 
     @Test
@@ -140,17 +153,15 @@ class CafeteriaControllerTest {
                 post("/api/v1/cafeteria")
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(newCafeteria)),
-            ).andExpect {
-                status().isCreated
-                content().contentType("application/json")
-                jsonPath("$.id").value(4)
-                jsonPath("$.name").value("Cafeteria D")
-                jsonPath("$.latitude").value(37.7770)
-                jsonPath("$.longitude").value(-122.4210)
-                jsonPath("$.breakfastTime").value("07:00-10:00")
-                jsonPath("$.lunchTime").value("11:00-14:00")
-                jsonPath("$.dinnerTime").value("17:00-20:00")
-            }
+            ).andExpect(status().isCreated)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.seq").value(4))
+            .andExpect(jsonPath("$.name").value("Cafeteria D"))
+            .andExpect(jsonPath("$.latitude").value(37.7770))
+            .andExpect(jsonPath("$.longitude").value(-122.4210))
+            .andExpect(jsonPath("$.breakfastTime").value("07:00-10:00"))
+            .andExpect(jsonPath("$.lunchTime").value("11:00-14:00"))
+            .andExpect(jsonPath("$.dinnerTime").value("17:00-20:00"))
     }
 
     @Test
@@ -175,11 +186,9 @@ class CafeteriaControllerTest {
                 post("/api/v1/cafeteria")
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(newCafeteria)),
-            ).andExpect {
-                status().isConflict
-                content().contentType("application/json")
-                jsonPath("$.message").value("DUPLICATE_CAFETERIA_ID")
-            }
+            ).andExpect(status().isConflict)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("DUPLICATE_CAFETERIA_ID"))
     }
 
     @Test
@@ -204,11 +213,9 @@ class CafeteriaControllerTest {
                 post("/api/v1/cafeteria")
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(newCafeteria)),
-            ).andExpect {
-                status().isBadRequest
-                content().contentType("application/json")
-                jsonPath("$.message").value("CAMPUS_NOT_FOUND")
-            }
+            ).andExpect(status().isBadRequest)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("CAMPUS_NOT_FOUND"))
     }
 
     @Test
@@ -233,11 +240,9 @@ class CafeteriaControllerTest {
                 post("/api/v1/cafeteria")
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(newCafeteria)),
-            ).andExpect {
-                status().isInternalServerError
-                content().contentType("application/json")
-                jsonPath("$.message").value("INTERNAL_SERVER_ERROR")
-            }
+            ).andExpect(status().isInternalServerError)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
     }
 
     @Test
@@ -259,17 +264,15 @@ class CafeteriaControllerTest {
         doReturn(cafeteria).whenever(cafeteriaService).getCafeteriaById(1)
         mockMvc
             .perform(get("/api/v1/cafeteria/1"))
-            .andExpect {
-                status().isOk
-                content().contentType("application/json")
-                jsonPath("$.id").value(1)
-                jsonPath("$.name").value("Cafeteria A")
-                jsonPath("$.latitude").value(37.7749)
-                jsonPath("$.longitude").value(-122.4194)
-                jsonPath("$.breakfastTime").value("07:00-10:00")
-                jsonPath("$.lunchTime").value("11:00-14:00")
-                jsonPath("$.dinnerTime").value("17:00-20:00")
-            }
+            .andExpect(status().isOk)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.seq").value(1))
+            .andExpect(jsonPath("$.name").value("Cafeteria A"))
+            .andExpect(jsonPath("$.latitude").value(37.7749))
+            .andExpect(jsonPath("$.longitude").value(-122.4194))
+            .andExpect(jsonPath("$.breakfastTime").value("07:00-10:00"))
+            .andExpect(jsonPath("$.lunchTime").value("11:00-14:00"))
+            .andExpect(jsonPath("$.dinnerTime").value("17:00-20:00"))
     }
 
     @Test
@@ -279,11 +282,9 @@ class CafeteriaControllerTest {
         doThrow(CafeteriaNotFoundException::class).whenever(cafeteriaService).getCafeteriaById(1)
         mockMvc
             .perform(get("/api/v1/cafeteria/1"))
-            .andExpect {
-                status().isNotFound
-                content().contentType("application/json")
-                jsonPath("$.message").value("CAFETERIA_NOT_FOUND")
-            }
+            .andExpect(status().isNotFound)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("CAFETERIA_NOT_FOUND"))
     }
 
     @Test
@@ -293,11 +294,9 @@ class CafeteriaControllerTest {
         doThrow(RuntimeException("Unexpected error")).whenever(cafeteriaService).getCafeteriaById(1)
         mockMvc
             .perform(get("/api/v1/cafeteria/1"))
-            .andExpect {
-                status().isInternalServerError
-                content().contentType("application/json")
-                jsonPath("$.message").value("INTERNAL_SERVER_ERROR")
-            }
+            .andExpect(status().isInternalServerError)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
     }
 
     @Test
@@ -332,12 +331,10 @@ class CafeteriaControllerTest {
                 put("/api/v1/cafeteria/1")
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(payload)),
-            ).andExpect {
-                status().isOk
-                content().contentType("application/json")
-                jsonPath("$.id").value(1)
-                jsonPath("$.name").value("Updated Cafeteria A")
-            }
+            ).andExpect(status().isOk)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.seq").value(1))
+            .andExpect(jsonPath("$.name").value("Updated Cafeteria A"))
     }
 
     @Test
@@ -360,11 +357,9 @@ class CafeteriaControllerTest {
                 put("/api/v1/cafeteria/1")
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(payload)),
-            ).andExpect {
-                status().isNotFound
-                content().contentType("application/json")
-                jsonPath("$.message").value("CAFETERIA_NOT_FOUND")
-            }
+            ).andExpect(status().isNotFound)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("CAFETERIA_NOT_FOUND"))
     }
 
     @Test
@@ -387,11 +382,9 @@ class CafeteriaControllerTest {
                 put("/api/v1/cafeteria/1")
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(payload)),
-            ).andExpect {
-                status().isBadRequest
-                content().contentType("application/json")
-                jsonPath("$.message").value("CAMPUS_NOT_FOUND")
-            }
+            ).andExpect(status().isBadRequest)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("CAMPUS_NOT_FOUND"))
     }
 
     @Test
@@ -414,11 +407,9 @@ class CafeteriaControllerTest {
                 put("/api/v1/cafeteria/1")
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(payload)),
-            ).andExpect {
-                status().isInternalServerError
-                content().contentType("application/json")
-                jsonPath("$.message").value("INTERNAL_SERVER_ERROR")
-            }
+            ).andExpect(status().isInternalServerError)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
     }
 
     @Test
@@ -427,9 +418,7 @@ class CafeteriaControllerTest {
     fun deleteCafeteriaById() {
         mockMvc
             .perform(delete("/api/v1/cafeteria/1"))
-            .andExpect {
-                status().isNoContent
-            }
+            .andExpect(status().isNoContent)
         verify(cafeteriaService).deleteCafeteriaById(1)
     }
 
@@ -440,11 +429,9 @@ class CafeteriaControllerTest {
         doThrow(CafeteriaNotFoundException::class).whenever(cafeteriaService).deleteCafeteriaById(1)
         mockMvc
             .perform(delete("/api/v1/cafeteria/1"))
-            .andExpect {
-                status().isNotFound
-                content().contentType("application/json")
-                jsonPath("$.message").value("CAFETERIA_NOT_FOUND")
-            }
+            .andExpect(status().isNotFound)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("CAFETERIA_NOT_FOUND"))
     }
 
     @Test
@@ -454,11 +441,9 @@ class CafeteriaControllerTest {
         doThrow(RuntimeException("Unexpected error")).whenever(cafeteriaService).deleteCafeteriaById(1)
         mockMvc
             .perform(delete("/api/v1/cafeteria/1"))
-            .andExpect {
-                status().isInternalServerError
-                content().contentType("application/json")
-                jsonPath("$.message").value("INTERNAL_SERVER_ERROR")
-            }
+            .andExpect(status().isInternalServerError)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
     }
 
     @Test
@@ -503,28 +488,28 @@ class CafeteriaControllerTest {
         // With date and cafeteriaID parameters
         mockMvc
             .perform(get("/api/v1/cafeteria/1/menu"))
-            .andExpect {
-                status().isOk
-                content().contentType("application/json")
-                jsonPath("$.result[0].seq").value(1)
-                jsonPath("$.result[0].restaurantID").value(1)
-                jsonPath("$.result[0].date").value(LocalDate.now().toString())
-                jsonPath("$.result[0].type").value("lunch")
-                jsonPath("$.result[0].food").value("Spaghetti")
-                jsonPath("$.result[0].price").value("$10")
-                jsonPath("$.result[1].seq").value(2)
-                jsonPath("$.result[1].restaurantID").value(1)
-                jsonPath("$.result[1].date").value(LocalDate.now().toString())
-                jsonPath("$.result[1].type").value("dinner")
-                jsonPath("$.result[1].food").value("Pizza")
-                jsonPath("$.result[1].price").value("$12")
-                jsonPath("$.result[2].seq").value(3)
-                jsonPath("$.result[2].restaurantID").value(1)
-                jsonPath("$.result[2].date").value(LocalDate.now().toString())
-                jsonPath("$.result[2].type").value("breakfast")
-                jsonPath("$.result[2].food").value("Pancakes")
-                jsonPath("$.result[2].price").value("$8")
-            }
+            .andExpect(status().isOk)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.result").isArray)
+            .andExpect(jsonPath("$.result.length()").value(3))
+            .andExpect(jsonPath("$.result[0].seq").value(1))
+            .andExpect(jsonPath("$.result[0].cafeteriaID").value(1))
+            .andExpect(jsonPath("$.result[0].date").value(LocalDate.now().toString()))
+            .andExpect(jsonPath("$.result[0].type").value("lunch"))
+            .andExpect(jsonPath("$.result[0].food").value("Spaghetti"))
+            .andExpect(jsonPath("$.result[0].price").value("$10"))
+            .andExpect(jsonPath("$.result[1].seq").value(2))
+            .andExpect(jsonPath("$.result[1].cafeteriaID").value(1))
+            .andExpect(jsonPath("$.result[1].date").value(LocalDate.now().toString()))
+            .andExpect(jsonPath("$.result[1].type").value("dinner"))
+            .andExpect(jsonPath("$.result[1].food").value("Pizza"))
+            .andExpect(jsonPath("$.result[1].price").value("$12"))
+            .andExpect(jsonPath("$.result[2].seq").value(3))
+            .andExpect(jsonPath("$.result[2].cafeteriaID").value(1))
+            .andExpect(jsonPath("$.result[2].date").value(LocalDate.now().toString()))
+            .andExpect(jsonPath("$.result[2].type").value("breakfast"))
+            .andExpect(jsonPath("$.result[2].food").value("Pancakes"))
+            .andExpect(jsonPath("$.result[2].price").value("$8"))
     }
 
     @Test
@@ -539,11 +524,9 @@ class CafeteriaControllerTest {
         // With date and cafeteriaID parameters
         mockMvc
             .perform(get("/api/v1/cafeteria/1/menu"))
-            .andExpect {
-                status().isNotFound
-                content().contentType("application/json")
-                jsonPath("$.message").value("CAFETERIA_NOT_FOUND")
-            }
+            .andExpect(status().isNotFound)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("CAFETERIA_NOT_FOUND"))
     }
 
     @Test
@@ -560,11 +543,9 @@ class CafeteriaControllerTest {
         // With date and cafeteriaID parameters
         mockMvc
             .perform(get("/api/v1/cafeteria/1/menu"))
-            .andExpect {
-                status().isInternalServerError
-                content().contentType("application/json")
-                jsonPath("$.message").value("INTERNAL_SERVER_ERROR")
-            }
+            .andExpect(status().isInternalServerError)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
     }
 
     @Test
@@ -595,16 +576,14 @@ class CafeteriaControllerTest {
                 post("/api/v1/cafeteria/1/menu")
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(menuRequest)),
-            ).andExpect {
-                status().isCreated
-                content().contentType("application/json")
-                jsonPath("$.seq").value(1)
-                jsonPath("$.restaurantID").value(1)
-                jsonPath("$.date").value(menuRequest.date.toString())
-                jsonPath("$.type").value(menuRequest.type)
-                jsonPath("$.food").value(menuRequest.food)
-                jsonPath("$.price").value(menuRequest.price)
-            }
+            ).andExpect(status().isCreated)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.seq").value(1))
+            .andExpect(jsonPath("$.cafeteriaID").value(1))
+            .andExpect(jsonPath("$.date").value(menuRequest.date.toString()))
+            .andExpect(jsonPath("$.type").value(menuRequest.type))
+            .andExpect(jsonPath("$.food").value(menuRequest.food))
+            .andExpect(jsonPath("$.price").value(menuRequest.price))
     }
 
     @Test
@@ -624,11 +603,9 @@ class CafeteriaControllerTest {
                 post("/api/v1/cafeteria/999/menu")
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(menuRequest)),
-            ).andExpect {
-                status().isNotFound
-                content().contentType("application/json")
-                jsonPath("$.message").value("CAFETERIA_NOT_FOUND")
-            }
+            ).andExpect(status().isBadRequest)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("CAFETERIA_NOT_FOUND"))
     }
 
     @Test
@@ -648,11 +625,9 @@ class CafeteriaControllerTest {
                 post("/api/v1/cafeteria/1/menu")
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(menuRequest)),
-            ).andExpect {
-                status().isInternalServerError
-                content().contentType("application/json")
-                jsonPath("$.message").value("INTERNAL_SERVER_ERROR")
-            }
+            ).andExpect(status().isInternalServerError)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
     }
 
     @Test
@@ -673,16 +648,14 @@ class CafeteriaControllerTest {
         doReturn(menu).whenever(menuService).getMenuById(1, menuId)
         mockMvc
             .perform(get("/api/v1/cafeteria/1/menu/$menuId"))
-            .andExpect {
-                status().isOk
-                content().contentType("application/json")
-                jsonPath("$.seq").value(menuId)
-                jsonPath("$.restaurantID").value(1)
-                jsonPath("$.date").value(LocalDate.now().toString())
-                jsonPath("$.type").value("lunch")
-                jsonPath("$.food").value("Salad")
-                jsonPath("$.price").value("$5")
-            }
+            .andExpect(status().isOk)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.seq").value(menuId))
+            .andExpect(jsonPath("$.cafeteriaID").value(1))
+            .andExpect(jsonPath("$.date").value(LocalDate.now().toString()))
+            .andExpect(jsonPath("$.type").value("lunch"))
+            .andExpect(jsonPath("$.food").value("Salad"))
+            .andExpect(jsonPath("$.price").value("$5"))
     }
 
     @Test
@@ -693,11 +666,9 @@ class CafeteriaControllerTest {
         doThrow(CafeteriaNotFoundException()).whenever(menuService).getMenuById(1, menuId)
         mockMvc
             .perform(get("/api/v1/cafeteria/1/menu/$menuId"))
-            .andExpect {
-                status().isNotFound
-                content().contentType("application/json")
-                jsonPath("$.message").value("CAFETERIA_NOT_FOUND")
-            }
+            .andExpect(status().isNotFound)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("CAFETERIA_NOT_FOUND"))
     }
 
     @Test
@@ -708,11 +679,9 @@ class CafeteriaControllerTest {
         doThrow(MenuNotFoundException()).whenever(menuService).getMenuById(1, menuId)
         mockMvc
             .perform(get("/api/v1/cafeteria/1/menu/$menuId"))
-            .andExpect {
-                status().isNotFound
-                content().contentType("application/json")
-                jsonPath("$.message").value("MENU_NOT_FOUND")
-            }
+            .andExpect(status().isNotFound)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("MENU_NOT_FOUND"))
     }
 
     @Test
@@ -723,11 +692,9 @@ class CafeteriaControllerTest {
         doThrow(RuntimeException("Unexpected error")).whenever(menuService).getMenuById(1, menuId)
         mockMvc
             .perform(get("/api/v1/cafeteria/1/menu/$menuId"))
-            .andExpect {
-                status().isInternalServerError
-                content().contentType("application/json")
-                jsonPath("$.message").value("INTERNAL_SERVER_ERROR")
-            }
+            .andExpect(status().isInternalServerError)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
     }
 
     @Test
@@ -758,16 +725,14 @@ class CafeteriaControllerTest {
                 put("/api/v1/cafeteria/1/menu/$menuId")
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(menuRequest)),
-            ).andExpect {
-                status().isOk
-                content().contentType("application/json")
-                jsonPath("$.seq").value(menuId)
-                jsonPath("$.restaurantID").value(1)
-                jsonPath("$.date").value(menuRequest.date.toString())
-                jsonPath("$.type").value(menuRequest.type)
-                jsonPath("$.food").value(menuRequest.food)
-                jsonPath("$.price").value(menuRequest.price)
-            }
+            ).andExpect(status().isOk)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.seq").value(menuId))
+            .andExpect(jsonPath("$.cafeteriaID").value(1))
+            .andExpect(jsonPath("$.date").value(menuRequest.date.toString()))
+            .andExpect(jsonPath("$.type").value(menuRequest.type))
+            .andExpect(jsonPath("$.food").value(menuRequest.food))
+            .andExpect(jsonPath("$.price").value(menuRequest.price))
     }
 
     @Test
@@ -788,11 +753,9 @@ class CafeteriaControllerTest {
                 put("/api/v1/cafeteria/1/menu/$menuId")
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(menuRequest)),
-            ).andExpect {
-                status().isNotFound
-                content().contentType("application/json")
-                jsonPath("$.message").value("MENU_NOT_FOUND")
-            }
+            ).andExpect(status().isNotFound)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("MENU_NOT_FOUND"))
     }
 
     @Test
@@ -813,11 +776,9 @@ class CafeteriaControllerTest {
                 put("/api/v1/cafeteria/999/menu/$menuId")
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(menuRequest)),
-            ).andExpect {
-                status().isBadRequest
-                content().contentType("application/json")
-                jsonPath("$.message").value("CAFETERIA_NOT_FOUND")
-            }
+            ).andExpect(status().isBadRequest)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("CAFETERIA_NOT_FOUND"))
     }
 
     @Test
@@ -838,11 +799,9 @@ class CafeteriaControllerTest {
                 put("/api/v1/cafeteria/1/menu/$menuId")
                     .contentType("application/json")
                     .content(objectMapper.writeValueAsString(menuRequest)),
-            ).andExpect {
-                status().isInternalServerError
-                content().contentType("application/json")
-                jsonPath("$.message").value("INTERNAL_SERVER_ERROR")
-            }
+            ).andExpect(status().isInternalServerError)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
     }
 
     @Test
@@ -852,9 +811,7 @@ class CafeteriaControllerTest {
         val menuId = 1
         mockMvc
             .perform(delete("/api/v1/cafeteria/1/menu/$menuId"))
-            .andExpect {
-                status().isNoContent
-            }
+            .andExpect(status().isNoContent)
         verify(menuService).deleteMenuById(1, menuId)
     }
 
@@ -866,11 +823,9 @@ class CafeteriaControllerTest {
         doThrow(MenuNotFoundException()).whenever(menuService).deleteMenuById(1, menuId)
         mockMvc
             .perform(delete("/api/v1/cafeteria/1/menu/$menuId"))
-            .andExpect {
-                status().isNotFound
-                content().contentType("application/json")
-                jsonPath("$.message").value("MENU_NOT_FOUND")
-            }
+            .andExpect(status().isNotFound)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("MENU_NOT_FOUND"))
     }
 
     @Test
@@ -881,10 +836,8 @@ class CafeteriaControllerTest {
         doThrow(RuntimeException("Unexpected error")).whenever(menuService).deleteMenuById(1, menuId)
         mockMvc
             .perform(delete("/api/v1/cafeteria/1/menu/$menuId"))
-            .andExpect {
-                status().isInternalServerError
-                content().contentType("application/json")
-                jsonPath("$.message").value("INTERNAL_SERVER_ERROR")
-            }
+            .andExpect(status().isInternalServerError)
+            .andExpect(content().contentType("application/json"))
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
     }
 }

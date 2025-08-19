@@ -43,68 +43,7 @@ class ReadingRoomController {
         responseCode = "200",
         description = "열람실 목록 조회 성공",
         content = [
-            Content(
-                schema = Schema(implementation = ReadingRoomListResponse::class),
-                examples = [
-                    ExampleObject(
-                        name = "열람실 목록 조회 성공 예시",
-                        value = """
-                            {
-                                "result": [
-                                    {
-                                        "seq": 61,
-                                        "name": "제1열람실 (2F)",
-                                        "campusID": 2,
-                                        "isActive": true,
-                                        "isReservable": true,
-                                        "total": 320,
-                                        "active": 320,
-                                        "occupied": 18,
-                                        "available": 302,
-                                        "updatedAt": "2025-07-22 16:06:03"
-                                    },
-                                    {
-                                        "seq": 63,
-                                        "name": "제2열람실 (4F)",
-                                        "campusID": 2,
-                                        "isActive": true,
-                                        "isReservable": true,
-                                        "total": 216,
-                                        "active": 216,
-                                        "occupied": 35,
-                                        "available": 181,
-                                        "updatedAt": "2025-07-22 16:06:03"
-                                    },
-                                    {
-                                        "seq": 131,
-                                        "name": "집중열람실 (4F)",
-                                        "campusID": 2,
-                                        "isActive": true,
-                                        "isReservable": true,
-                                        "total": 12,
-                                        "active": 12,
-                                        "occupied": 0,
-                                        "available": 12,
-                                        "updatedAt": "2025-07-22 16:06:03"
-                                    },
-                                    {
-                                        "seq": 132,
-                                        "name": "노상일 HOLMZ (4F)",
-                                        "campusID": 2,
-                                        "isActive": true,
-                                        "isReservable": true,
-                                        "total": 82,
-                                        "active": 82,
-                                        "occupied": 14,
-                                        "available": 68,
-                                        "updatedAt": "2025-07-22 16:06:03"
-                                    }
-                                ]
-                            }
-                        """,
-                    ),
-                ],
-            ),
+            Content(schema = Schema(implementation = ReadingRoomListResponse::class)),
         ],
     )
     fun getReadingRoomList(
@@ -143,19 +82,6 @@ class ReadingRoomController {
                     Content(
                         mediaType = MediaType.APPLICATION_JSON_VALUE,
                         schema = Schema(implementation = CreateReadingRoomRequest::class),
-                        examples = [
-                            ExampleObject(
-                                name = "열람실 생성 예시",
-                                value = """
-                                {
-                                    "id": 100,
-                                    "name": "새로운 열람실",
-                                    "campusID": 1,
-                                    "total": 50
-                                }
-                            """,
-                            ),
-                        ],
                     ),
                 ],
             ),
@@ -165,32 +91,9 @@ class ReadingRoomController {
             ApiResponse(
                 responseCode = "201",
                 description = "열람실 생성 성공",
-                content =
-                    [
-                        Content(
-                            schema = Schema(implementation = ReadingRoomResponse::class),
-                            examples =
-                                arrayOf(
-                                    ExampleObject(
-                                        name = "열람 등록 성공 예시",
-                                        value = """
-                                        {
-                                            "seq": 100,
-                                            "name": "새로운 열람실",
-                                            "campusID": 1,
-                                            "isActive": true,
-                                            "isReservable": true,
-                                            "total": 50,
-                                            "active": 50,
-                                            "occupied": 0,
-                                            "available": 50,
-                                            "updatedAt": "2025-07-22 16:06:03"
-                                        }
-                                        """,
-                                    ),
-                                ),
-                        ),
-                    ],
+                content = [
+                    Content(schema = Schema(implementation = ReadingRoomResponse::class)),
+                ],
             ),
             ApiResponse(
                 responseCode = "409",
@@ -277,28 +180,7 @@ class ReadingRoomController {
                 responseCode = "200",
                 description = "열람실 상세 조회 성공",
                 content = [
-                    Content(
-                        schema = Schema(implementation = ReadingRoomResponse::class),
-                        examples = [
-                            ExampleObject(
-                                name = "열람실 상세 조회 성공 예시",
-                                value = """
-                                    {
-                                        "seq": 61,
-                                        "name": "제1열람실 (2F)",
-                                        "campusID": 2,
-                                        "isActive": true,
-                                        "isReservable": true,
-                                        "total": 320,
-                                        "active": 320,
-                                        "occupied": 18,
-                                        "available": 302,
-                                        "updatedAt": "2025-07-22 16:06:03"
-                                    }
-                                """,
-                            ),
-                        ],
-                    ),
+                    Content(schema = Schema(implementation = ReadingRoomResponse::class)),
                 ],
             ),
             ApiResponse(
@@ -365,21 +247,6 @@ class ReadingRoomController {
                     Content(
                         mediaType = MediaType.APPLICATION_JSON_VALUE,
                         schema = Schema(implementation = UpdateReadingRoomRequest::class),
-                        examples = [
-                            ExampleObject(
-                                name = "열람실 정보 수정 예시",
-                                value = """
-                                {
-                                    "campusID": 1,
-                                    "name": "수정된 열람실",
-                                    "total": 60,
-                                    "active": 60,
-                                    "isActive": true,
-                                    "isReservable": true
-                                }
-                                """,
-                            ),
-                        ],
                     ),
                 ],
             ),
@@ -389,32 +256,9 @@ class ReadingRoomController {
             ApiResponse(
                 responseCode = "200",
                 description = "열람실 정보 수정 성공",
-                content =
-                    [
-                        Content(
-                            schema = Schema(implementation = ReadingRoomResponse::class),
-                            examples =
-                                arrayOf(
-                                    ExampleObject(
-                                        name = "열람실 정보 수정 성공 예시",
-                                        value = """
-                                        {
-                                            "seq": 61,
-                                            "name": "수정된 열람실",
-                                            "campusID": 1,
-                                            "isActive": true,
-                                            "isReservable": true,
-                                            "total": 60,
-                                            "active": 60,
-                                            "occupied": 0,
-                                            "available": 60,
-                                            "updatedAt": "2025-07-22 16:06:03"
-                                        }
-                                        """,
-                                    ),
-                                ),
-                        ),
-                    ],
+                content = [
+                    Content(schema = Schema(implementation = ReadingRoomResponse::class)),
+                ],
             ),
             ApiResponse(
                 responseCode = "404",

@@ -33,7 +33,7 @@ class ShuttleRouteService(
     private val shuttleTimetableRepository: ShuttleTimetableRepository,
 ) {
     companion object {
-        val TIME_FORMAT_REGEX = Regex("\\d{2}:\\d{2}:\\d{2}")
+        private val TIME_FORMAT_REGEX = Regex("\\d{2}:\\d{2}:\\d{2}")
     }
 
     fun getAllRoutes(name: String? = null) =
