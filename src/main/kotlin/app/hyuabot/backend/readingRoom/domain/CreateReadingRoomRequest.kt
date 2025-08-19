@@ -3,12 +3,12 @@ package app.hyuabot.backend.readingRoom.domain
 import io.swagger.v3.oas.annotations.media.Schema
 
 data class CreateReadingRoomRequest(
-    @Schema(description = "Campus ID", example = "1")
+    @get:Schema(description = "캠퍼스 ID", example = "1")
     val campusID: Int,
-    @Schema(description = "Reading Room ID", example = "101")
+    @get:Schema(description = "열람실 ID", example = "101")
     val id: Int,
-    @Schema(description = "Reading Room Name", example = "Study Room A")
+    @get:Schema(description = "열람실 이름", example = "1층 열람실")
     val name: String,
-    @Schema(description = "Total Seats", example = "100")
+    @get:Schema(description = "전체 좌석 수", example = "100")
     val total: Int,
 )
