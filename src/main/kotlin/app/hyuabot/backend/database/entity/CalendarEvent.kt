@@ -20,16 +20,16 @@ data class CalendarEvent(
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "academic_calendar_academic_calendar_id_seq")
     val id: Int? = null,
     @Column(name = "category_id", columnDefinition = "integer", nullable = false)
-    val categoryID: Int,
+    var categoryID: Int,
     @Column(name = "title", length = 100, nullable = false)
-    val title: String,
+    var title: String,
     @Column(name = "description", columnDefinition = "text", nullable = false)
-    val description: String,
+    var description: String,
     @Column(name = "start_date", columnDefinition = "date", nullable = false)
-    val start: LocalDate,
+    var start: LocalDate,
     @Column(name = "end_date", columnDefinition = "date", nullable = false)
-    val end: LocalDate,
+    var end: LocalDate,
     @ManyToOne
     @JoinColumn(name = "category_id", referencedColumnName = "category_id", insertable = false, updatable = false)
-    val category: CalendarCategory,
+    val category: CalendarCategory? = null,
 )

@@ -5,4 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface CalendarCategoryRepository : JpaRepository<CalendarCategory, Int> {
     fun findByNameContaining(name: String): List<CalendarCategory>
+
+    fun findByName(name: String): CalendarCategory?
 }
