@@ -58,7 +58,11 @@ class CalendarService(
 
     fun getAllEvents(): List<CalendarEvent> = eventRepository.findAll().sortedBy { it.id }
 
-    fun getEventByCategoryId(id: Int): List<CalendarEvent> = eventRepository.findByCategoryID(id).sortedBy { it.id }
+    fun getEventByCategoryId(id: Int): List<CalendarEvent> {
+        categoryRepository.findById(id).orElseThrow { CalendarCategoryNotFoundException() }.let { category ->
+            return category.event.sortedBy { it.id }
+        }
+    }
 
     fun createEvent(payload: CalendarEventRequest): CalendarEvent {
         if (!LocalDateTimeBuilder.checkLocalDateRange(payload.start, payload.end)) {

@@ -4,6 +4,7 @@ import app.hyuabot.backend.calendar.CalendarService
 import app.hyuabot.backend.calendar.domain.CalendarEventListResponse
 import app.hyuabot.backend.calendar.domain.CalendarEventRequest
 import app.hyuabot.backend.calendar.domain.CalendarEventResponse
+import app.hyuabot.backend.calendar.exception.CalendarCategoryNotFoundException
 import app.hyuabot.backend.calendar.exception.CalendarEventNotFoundException
 import app.hyuabot.backend.database.exception.LocalDateTimeNotValidException
 import app.hyuabot.backend.utility.ResponseBuilder
@@ -69,7 +70,21 @@ class CalendarEventController {
             ApiResponse(
                 responseCode = "400",
                 description = "학사일정 등록 실패",
-                content = [Content(schema = Schema(implementation = ResponseBuilder.Message::class))],
+                content = [
+                    Content(
+                        schema = Schema(implementation = ResponseBuilder.Message::class),
+                        examples = [
+                            ExampleObject(
+                                name = "존재하지 않는 카테고리",
+                                value = """{"message":"CATEGORY_NOT_FOUND"}""",
+                            ),
+                            ExampleObject(
+                                name = "잘못된 날짜 형식",
+                                value = """{"message":"LOCAL_DATE_TIME_NOT_VALID"}""",
+                            ),
+                        ],
+                    ),
+                ],
             ),
         ],
     )
@@ -88,6 +103,11 @@ class CalendarEventController {
                     end = event.end.format(dateTimeFormatter),
                     categoryID = event.categoryID,
                 ),
+            )
+        } catch (_: CalendarCategoryNotFoundException) {
+            ResponseBuilder.response(
+                HttpStatus.BAD_REQUEST,
+                ResponseBuilder.Message("CATEGORY_NOT_FOUND"),
             )
         } catch (_: LocalDateTimeNotValidException) {
             ResponseBuilder.response(
@@ -183,12 +203,36 @@ class CalendarEventController {
             ApiResponse(
                 responseCode = "400",
                 description = "학사일정 수정 실패 - 잘못된 요청",
-                content = [Content(schema = Schema(implementation = ResponseBuilder.Message::class))],
+                content = [
+                    Content(
+                        schema = Schema(implementation = ResponseBuilder.Message::class),
+                        examples = [
+                            ExampleObject(
+                                name = "존재하지 않는 카테고리",
+                                value = """{"message":"CATEGORY_NOT_FOUND"}""",
+                            ),
+                            ExampleObject(
+                                name = "잘못된 날짜 형식",
+                                value = """{"message":"LOCAL_DATE_TIME_NOT_VALID"}""",
+                            ),
+                        ],
+                    ),
+                ],
             ),
             ApiResponse(
                 responseCode = "404",
                 description = "학사일정 수정 실패 - 학사일정 없음",
-                content = [Content(schema = Schema(implementation = ResponseBuilder.Message::class))],
+                content = [
+                    Content(
+                        schema = Schema(implementation = ResponseBuilder.Message::class),
+                        examples = [
+                            ExampleObject(
+                                name = "존재하지 않는 학사일정",
+                                value = """{"message":"EVENT_NOT_FOUND"}""",
+                            ),
+                        ],
+                    ),
+                ],
             ),
         ],
     )
@@ -213,6 +257,11 @@ class CalendarEventController {
             ResponseBuilder.response(
                 HttpStatus.NOT_FOUND,
                 ResponseBuilder.Message("EVENT_NOT_FOUND"),
+            )
+        } catch (_: CalendarCategoryNotFoundException) {
+            ResponseBuilder.response(
+                HttpStatus.BAD_REQUEST,
+                ResponseBuilder.Message("CATEGORY_NOT_FOUND"),
             )
         } catch (_: LocalDateTimeNotValidException) {
             ResponseBuilder.response(
