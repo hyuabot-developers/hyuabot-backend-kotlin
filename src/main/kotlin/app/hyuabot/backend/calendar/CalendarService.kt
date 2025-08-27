@@ -80,6 +80,8 @@ class CalendarService(
         )
     }
 
+    fun getEventById(id: Int): CalendarEvent = eventRepository.findById(id).orElseThrow { CalendarEventNotFoundException() }
+
     fun updateEvent(
         id: Int,
         payload: CalendarEventRequest,
