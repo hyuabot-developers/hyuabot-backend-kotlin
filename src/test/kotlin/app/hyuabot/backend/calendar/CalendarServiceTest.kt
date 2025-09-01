@@ -278,7 +278,7 @@ class CalendarServiceTest {
     }
 
     @Test
-    @DisplayName("학사일정 항목 셍성")
+    @DisplayName("학사일정 항목 생성")
     fun testCreateEvent() {
         val payload =
             CalendarEventRequest(

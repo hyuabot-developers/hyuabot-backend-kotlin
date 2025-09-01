@@ -8,7 +8,6 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
@@ -20,7 +19,6 @@ import java.time.format.DateTimeFormatter
 @Tag(name = "Shuttle", description = "셔틀버스 관련 API")
 class ShuttleTimetableController {
     @Autowired private lateinit var service: ShuttleTimetableService
-    private val logger = LoggerFactory.getLogger(javaClass)
 
     @GetMapping("")
     @Operation(summary = "셔틀버스 시간표 조회", description = "셔틀버스 시간표를 조회합니다.")
