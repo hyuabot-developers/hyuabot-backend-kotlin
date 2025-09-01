@@ -1,6 +1,7 @@
 package app.hyuabot.backend.utility
 
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
@@ -32,6 +33,30 @@ object LocalDateTimeBuilder {
     fun convertStringToDuration(duration: String): Duration {
         val parts = duration.split(":").map { it.toInt() }
         return Duration.ofHours(parts[0].toLong()).plusMinutes(parts[1].toLong()).plusSeconds(parts[2].toLong())
+    }
+
+    fun checkLocalDateRange(
+        start: String,
+        end: String,
+    ): Boolean {
+        if (!checkLocalDateFormat(start) || !checkLocalDateFormat(end)) {
+            return false
+        }
+        val startDate = LocalDate.parse(start, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        val endDate = LocalDate.parse(end, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        return !startDate.isAfter(endDate)
+    }
+
+    fun checkLocalDateFormat(date: String): Boolean {
+        if (!date.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) {
+            return false
+        }
+        return try {
+            LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
 
     fun checkLocalDateTimeFormat(dateTime: String): Boolean {

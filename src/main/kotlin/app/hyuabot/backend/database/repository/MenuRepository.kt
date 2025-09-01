@@ -12,10 +12,6 @@ interface MenuRepository : JpaRepository<Menu, Int> {
 
     fun findByRestaurantID(restaurantID: Int): List<Menu>
 
-    fun findByDate(date: LocalDate): List<Menu>
-
-    fun findByType(mealType: String): List<Menu>
-
     fun findByRestaurantIDAndType(
         restaurantID: Int,
         mealType: String,
@@ -24,11 +20,6 @@ interface MenuRepository : JpaRepository<Menu, Int> {
     fun findByRestaurantIDAndDate(
         restaurantID: Int,
         date: LocalDate,
-    ): List<Menu>
-
-    fun findByDateAndType(
-        date: LocalDate,
-        mealType: String,
     ): List<Menu>
 
     fun findByRestaurantIDAndDateAndType(
