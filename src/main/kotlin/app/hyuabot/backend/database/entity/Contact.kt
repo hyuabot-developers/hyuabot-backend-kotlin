@@ -19,14 +19,14 @@ data class Contact(
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "phonebook_phonebook_id_seq")
     val id: Int? = null,
     @Column(name = "campus_id", columnDefinition = "integer", nullable = false)
-    val campusID: Int,
+    var campusID: Int,
     @Column(name = "category_id", columnDefinition = "integer", nullable = false)
-    val categoryID: Int,
+    var categoryID: Int,
     @Column(name = "name", columnDefinition = "text", nullable = false)
-    val name: String,
+    var name: String,
     @Column(name = "phone", length = 30, nullable = false)
-    val phone: String,
+    var phone: String,
     @ManyToOne
     @JoinColumn(name = "category_id", referencedColumnName = "category_id", insertable = false, updatable = false)
-    val category: ContactCategory,
+    val category: ContactCategory?,
 )

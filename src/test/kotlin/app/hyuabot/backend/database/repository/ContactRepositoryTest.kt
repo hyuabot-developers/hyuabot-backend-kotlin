@@ -75,7 +75,7 @@ class ContactRepositoryTest {
         assert(contacts.isNotEmpty())
         assert(contacts[0].id != null)
         assert(contacts[0].categoryID == category.id)
-        assert(contacts[0].category.id == category.id)
+        assert(contacts[0].category!!.id == category.id)
         assert(contacts[0].campusID == campus.id!!)
         assert(contacts[0].name == "Contact 1")
         assert(contacts[0].phone == "1234567890")
