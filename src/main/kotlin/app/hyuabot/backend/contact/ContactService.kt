@@ -141,8 +141,8 @@ class ContactService(
     }
 
     companion object {
-        val phoneRegex = Regex("^\\d{2,3}-\\d{3,4}-\\d{4}$")
-        val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+        private val phoneRegex = Regex("^\\d{2,3}-\\d{3,4}-\\d{4}$")
+        private val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
         fun checkPhoneNumberFormat(phone: String): Boolean = phoneRegex.matches(phone)
     }

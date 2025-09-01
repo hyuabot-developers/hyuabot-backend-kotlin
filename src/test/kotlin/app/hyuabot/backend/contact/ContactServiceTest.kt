@@ -23,9 +23,9 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import java.util.Optional
 import kotlin.test.assertEquals
 
@@ -534,18 +534,33 @@ class ContactServiceTest {
     }
 
     @Test
-    @DisplayName("연락처 버전 업데이트")
+    @DisplayName("연락처 버전 업데이트 - 새로 생성")
     fun testUpdateContactVersion() {
-        val now = ZonedDateTime.now()
-        val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-        val newVersion =
+        whenever(versionRepository.findTopByOrderByCreatedAtDesc()).thenReturn(null)
+        service.updateContactVersion()
+        verify(versionRepository).save(
+            org.mockito.kotlin.check { saved ->
+                assert(saved.name.isNotBlank())
+            },
+        )
+    }
+
+    @Test
+    @DisplayName("연락처 버전 업데이트 - 기존 버전과 다를 때")
+    fun testUpdateExistingVersion() {
+        val oldVersion =
             ContactVersion(
                 id = 1,
-                name = now.format(dateTimeFormatter),
-                createdAt = now,
+                name = "oldVersion",
+                createdAt = ZonedDateTime.now().minusDays(1),
             )
-        whenever(versionRepository.findAll()).thenReturn(listOf(newVersion))
-        whenever(versionRepository.save(newVersion)).thenReturn(newVersion)
+        whenever(versionRepository.findTopByOrderByCreatedAtDesc()).thenReturn(oldVersion)
         service.updateContactVersion()
+        verify(versionRepository).save(
+            org.mockito.kotlin.check { saved ->
+                assertEquals(oldVersion.id, saved.id)
+                assert(saved.name != "oldVersion")
+            },
+        )
     }
 }
