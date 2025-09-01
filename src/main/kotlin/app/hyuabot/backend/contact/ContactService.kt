@@ -124,29 +124,26 @@ class ContactService(
 
     fun updateContactVersion() {
         val now = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone)
-        val versionName = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-        versionRepository.findAll().let { versions ->
-            if (versions.isEmpty()) {
-                versionRepository.save(
-                    ContactVersion(
-                        name = versionName,
-                        createdAt = now,
-                    ),
-                )
-            } else {
-                versions.first().let { current ->
-                    current.name = versionName
-                    current.createdAt = now
-                    versionRepository.save(current)
-                }
-            }
+        val versionName = now.format(dateTimeFormatter)
+        val current = versionRepository.findTopByOrderByCreatedAtDesc()
+        if (current == null) {
+            versionRepository.save(
+                ContactVersion(
+                    name = versionName,
+                    createdAt = now,
+                ),
+            )
+        } else {
+            current.name = versionName
+            current.createdAt = now
+            versionRepository.save(current)
         }
     }
 
     companion object {
-        fun checkPhoneNumberFormat(phone: String): Boolean {
-            val regex = Regex("^\\d{2,3}-\\d{3,4}-\\d{4}$")
-            return regex.matches(phone)
-        }
+        val phoneRegex = Regex("^\\d{2,3}-\\d{3,4}-\\d{4}$")
+        val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+
+        fun checkPhoneNumberFormat(phone: String): Boolean = phoneRegex.matches(phone)
     }
 }
