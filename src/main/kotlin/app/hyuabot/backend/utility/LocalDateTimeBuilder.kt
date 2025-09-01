@@ -42,13 +42,9 @@ object LocalDateTimeBuilder {
         if (!checkLocalDateFormat(start) || !checkLocalDateFormat(end)) {
             return false
         }
-        return try {
-            val startDate = LocalDate.parse(start, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-            val endDate = LocalDate.parse(end, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-            !startDate.isAfter(endDate)
-        } catch (e: Exception) {
-            false
-        }
+        val startDate = LocalDate.parse(start, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        val endDate = LocalDate.parse(end, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        return !startDate.isAfter(endDate)
     }
 
     fun checkLocalDateFormat(date: String): Boolean {

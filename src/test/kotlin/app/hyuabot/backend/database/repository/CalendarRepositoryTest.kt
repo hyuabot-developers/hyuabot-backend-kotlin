@@ -12,7 +12,9 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestPropertySource
+import java.time.LocalDate
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 
 @ActiveProfiles("test")
 @DataJpaTest
@@ -25,7 +27,9 @@ class CalendarRepositoryTest {
 
     @Autowired lateinit var calendarVersionRepository: CalendarVersionRepository
 
-    val currentTime = ZonedDateTime.now().toLocalDate()
+    private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+    val currentTime: LocalDate = ZonedDateTime.now().toLocalDate()
     val category =
         CalendarCategory(
             name = "General",
@@ -70,11 +74,11 @@ class CalendarRepositoryTest {
         assert(events.isNotEmpty())
         assert(events[0].id != null)
         assert(events[0].categoryID == category.id)
-        assert(events[0].category.id == category.id)
+        assert(events[0].category!!.id == category.id)
         assert(events[0].title == "Event 1")
         assert(events[0].description == "Description for Event 1")
-        assert(events[0].start == currentTime.minusDays(1))
-        assert(events[0].end == currentTime.plusDays(1))
+        assert(events[0].start.format(dateTimeFormatter) == currentTime.minusDays(1).format(dateTimeFormatter))
+        assert(events[0].end.format(dateTimeFormatter) == currentTime.plusDays(1).format(dateTimeFormatter))
     }
 
     @Test

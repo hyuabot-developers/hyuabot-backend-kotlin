@@ -5,6 +5,7 @@ import app.hyuabot.backend.calendar.domain.CalendarCategoryListResponse
 import app.hyuabot.backend.calendar.domain.CalendarCategoryRequest
 import app.hyuabot.backend.calendar.domain.CalendarCategoryResponse
 import app.hyuabot.backend.calendar.domain.CalendarEventListResponse
+import app.hyuabot.backend.calendar.domain.CalendarEventResponse
 import app.hyuabot.backend.calendar.exception.CalendarCategoryNotFoundException
 import app.hyuabot.backend.calendar.exception.DuplicateCategoryException
 import app.hyuabot.backend.utility.ResponseBuilder
@@ -274,7 +275,7 @@ class CalendarCategoryController {
                 body =
                     CalendarEventListResponse(
                         service.getEventByCategoryId(seq).map {
-                            app.hyuabot.backend.calendar.domain.CalendarEventResponse(
+                            CalendarEventResponse(
                                 seq = it.id!!,
                                 title = it.title,
                                 description = it.description,

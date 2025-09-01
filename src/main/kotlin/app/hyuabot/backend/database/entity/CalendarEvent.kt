@@ -31,5 +31,5 @@ data class CalendarEvent(
     var end: LocalDate,
     @ManyToOne
     @JoinColumn(name = "category_id", referencedColumnName = "category_id", insertable = false, updatable = false)
-    val category: CalendarCategory? = null,
+    val category: CalendarCategory?,
 )
