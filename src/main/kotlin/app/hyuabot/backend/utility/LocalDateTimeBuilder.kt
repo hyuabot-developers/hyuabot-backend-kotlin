@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter
 
 object LocalDateTimeBuilder {
     val serviceTimezone: ZoneId = ZoneId.of("Asia/Seoul")
-    private val datetimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+    val datetimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
     private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
 
     fun convertAsServiceTimezone(dateTime: ZonedDateTime): LocalDateTime = dateTime.withZoneSameInstant(serviceTimezone).toLocalDateTime()

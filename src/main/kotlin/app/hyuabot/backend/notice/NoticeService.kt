@@ -12,6 +12,7 @@ import app.hyuabot.backend.notice.exception.NoticeCategoryNotFoundException
 import app.hyuabot.backend.notice.exception.NoticeNotFoundException
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
 import java.time.ZonedDateTime
 
 @Service
@@ -45,7 +46,10 @@ class NoticeService(
 
     fun getAllNotices() = noticeRepository.findAll().sortedBy { it.id }
 
-    fun getNoticesByCategoryId(categoryId: Int) = noticeRepository.findByCategoryID(categoryId).sortedBy { it.id }
+    fun getNoticesByCategoryId(categoryId: Int) =
+        categoryRepository.findById(categoryId).orElseThrow { NoticeCategoryNotFoundException() }.let {
+            noticeRepository.findByCategoryID(categoryId).sortedBy { it.id }
+        }
 
     fun createNotice(
         userID: String,
@@ -54,7 +58,8 @@ class NoticeService(
         if (!LocalDateTimeBuilder.checkLocalDateTimeFormat(payload.expiredAt)) {
             throw LocalDateTimeNotValidException()
         }
-        val expiredAt = ZonedDateTime.parse(payload.expiredAt).withZoneSameInstant(LocalDateTimeBuilder.serviceTimezone)
+        val expiredLocalDateTime = LocalDateTime.parse(payload.expiredAt, LocalDateTimeBuilder.datetimeFormatter)
+        val expiredAt = ZonedDateTime.of(expiredLocalDateTime, LocalDateTimeBuilder.serviceTimezone)
         categoryRepository.findById(payload.categoryID).orElseThrow { NoticeCategoryNotFoundException() }
         return noticeRepository.save(
             Notice(
@@ -79,7 +84,8 @@ class NoticeService(
         if (!LocalDateTimeBuilder.checkLocalDateTimeFormat(payload.expiredAt)) {
             throw LocalDateTimeNotValidException()
         }
-        val expiredAt = ZonedDateTime.parse(payload.expiredAt).withZoneSameInstant(LocalDateTimeBuilder.serviceTimezone)
+        val expiredLocalDateTime = LocalDateTime.parse(payload.expiredAt, LocalDateTimeBuilder.datetimeFormatter)
+        val expiredAt = ZonedDateTime.of(expiredLocalDateTime, LocalDateTimeBuilder.serviceTimezone)
         categoryRepository.findById(payload.categoryID).orElseThrow { NoticeCategoryNotFoundException() }
         return noticeRepository.findById(id).orElseThrow { NoticeNotFoundException() }.let { notice ->
             val updatedNotice =

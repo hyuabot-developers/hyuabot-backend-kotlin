@@ -58,6 +58,7 @@ class NoticeController {
                                 LocalDateTimeBuilder.convertAsServiceTimezone(it.expiredAt),
                             ),
                         userID = it.userID,
+                        categoryID = it.categoryID,
                         language = it.language,
                     )
                 },
@@ -111,6 +112,7 @@ class NoticeController {
                                     LocalDateTimeBuilder.convertAsServiceTimezone(it.expiredAt),
                                 ),
                             userID = it.userID,
+                            categoryID = it.categoryID,
                             language = it.language,
                         ),
                 )
@@ -176,6 +178,7 @@ class NoticeController {
                                     LocalDateTimeBuilder.convertAsServiceTimezone(it.expiredAt),
                                 ),
                             userID = it.userID,
+                            categoryID = it.categoryID,
                             language = it.language,
                         ),
                 )
@@ -256,6 +259,7 @@ class NoticeController {
                                     LocalDateTimeBuilder.convertAsServiceTimezone(it.expiredAt),
                                 ),
                             userID = it.userID,
+                            categoryID = it.categoryID,
                             language = it.language,
                         ),
                 )

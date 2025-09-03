@@ -285,6 +285,7 @@ class NoticeCategoryController {
                                             LocalDateTimeBuilder.convertAsServiceTimezone(it.expiredAt),
                                         ),
                                     userID = it.userID,
+                                    categoryID = it.categoryID,
                                     language = it.language,
                                 )
                             },
