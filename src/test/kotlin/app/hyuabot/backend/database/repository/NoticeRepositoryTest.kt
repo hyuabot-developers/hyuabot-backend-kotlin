@@ -87,8 +87,8 @@ class NoticeRepositoryTest {
         assert(notices.isNotEmpty())
         notices.forEach { notice ->
             assert(notice.title.contains("Notice"))
-            assert(notice.category.name == "General")
-            assert(notice.user.userID == user.userID)
+            assert(notice.category!!.name == "General")
+            assert(notice.user!!.userID == user.userID)
         }
     }
 
@@ -99,8 +99,8 @@ class NoticeRepositoryTest {
         assert(notices.isNotEmpty())
         notices.forEach { notice ->
             assert(notice.categoryID == category.id)
-            assert(notice.category.name == "General")
-            assert(notice.user.userID == user.userID)
+            assert(notice.category!!.name == "General")
+            assert(notice.user!!.userID == user.userID)
         }
     }
 
@@ -113,8 +113,8 @@ class NoticeRepositoryTest {
             assert(notice.id != null)
             assert(notice.userID == user.userID)
             assert(notice.categoryID == category.id)
-            assert(notice.category.name == "General")
-            assert(notice.user.userID == user.userID)
+            assert(notice.category!!.name == "General")
+            assert(notice.user!!.userID == user.userID)
             assert(notice.expiredAt.isAfter(currentTime))
             assert(notice.title.contains("Notice"))
             assert(notice.url.startsWith("https://"))

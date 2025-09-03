@@ -33,8 +33,8 @@ data class Notice(
     val language: String,
     @ManyToOne
     @JoinColumn(name = "category_id", referencedColumnName = "category_id", insertable = false, updatable = false)
-    val category: NoticeCategory,
+    val category: NoticeCategory?,
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "user_id", insertable = false, updatable = false)
-    val user: User,
+    val user: User?,
 )
