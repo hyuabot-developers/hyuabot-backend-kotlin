@@ -26,17 +26,17 @@ data class CommuteShuttleTimetable(
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "commute_shuttle_timetable_seq_seq")
     val seq: Int? = null,
     @Column(name = "route_name", length = 15, nullable = false)
-    val routeName: String,
+    var routeName: String,
     @Column(name = "stop_name", length = 50, nullable = false)
-    val stopName: String,
+    var stopName: String,
     @Column(name = "stop_order", columnDefinition = "integer", nullable = false)
-    val order: Int,
+    var order: Int,
     @Column(name = "departure_time", columnDefinition = "time", nullable = false)
-    val departureTime: LocalTime,
+    var departureTime: LocalTime,
     @ManyToOne
     @JoinColumn(name = "route_name", referencedColumnName = "route_name", insertable = false, updatable = false)
-    val route: CommuteShuttleRoute,
+    val route: CommuteShuttleRoute?,
     @ManyToOne
     @JoinColumn(name = "stop_name", referencedColumnName = "stop_name", insertable = false, updatable = false)
-    val stop: CommuteShuttleStop,
+    val stop: CommuteShuttleStop?,
 )

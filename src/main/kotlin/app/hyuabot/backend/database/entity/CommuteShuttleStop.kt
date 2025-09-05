@@ -13,11 +13,11 @@ data class CommuteShuttleStop(
     @Column(name = "stop_name", length = 50, nullable = false)
     val name: String,
     @Column(name = "description", length = 100, nullable = false)
-    val description: String,
+    var description: String,
     @Column(name = "latitude", columnDefinition = "double precision", nullable = false)
-    val latitude: Double,
+    var latitude: Double,
     @Column(name = "longitude", columnDefinition = "double precision", nullable = false)
-    val longitude: Double,
+    var longitude: Double,
     @OneToMany(mappedBy = "stop")
     val timetable: List<CommuteShuttleTimetable>,
 )

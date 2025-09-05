@@ -59,6 +59,18 @@ object LocalDateTimeBuilder {
         }
     }
 
+    fun checkLocalTimeFormat(time: String): Boolean {
+        if (!time.matches(Regex("\\d{2}:\\d{2}:\\d{2}"))) {
+            return false
+        }
+        return try {
+            LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm:ss"))
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     fun checkLocalDateTimeFormat(dateTime: String): Boolean {
         if (!dateTime.matches(Regex("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}"))) {
             return false

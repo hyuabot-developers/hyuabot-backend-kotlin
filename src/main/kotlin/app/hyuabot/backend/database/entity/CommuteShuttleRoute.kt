@@ -13,9 +13,9 @@ data class CommuteShuttleRoute(
     @Column(name = "route_name", length = 15, nullable = false)
     val name: String,
     @Column(name = "route_description_korean", length = 100, nullable = false)
-    val descriptionKorean: String,
+    var descriptionKorean: String,
     @Column(name = "route_description_english", length = 100, nullable = false)
-    val descriptionEnglish: String,
+    var descriptionEnglish: String,
     @OneToMany(mappedBy = "route")
     val timetable: List<CommuteShuttleTimetable>,
 )
