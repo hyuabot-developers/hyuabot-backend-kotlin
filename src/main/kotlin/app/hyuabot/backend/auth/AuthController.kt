@@ -7,6 +7,7 @@ import app.hyuabot.backend.auth.exception.DuplicateEmailException
 import app.hyuabot.backend.auth.exception.DuplicateUserIDException
 import app.hyuabot.backend.security.JWTUser
 import app.hyuabot.backend.utility.ResponseBuilder
+import io.jsonwebtoken.ExpiredJwtException
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
@@ -271,20 +272,27 @@ class AuthController {
             return ResponseBuilder.response(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
         }
         val refreshToken = request.cookies.first { it.name == "refresh_token" }.value
-        val newAccessToken = authService.refreshToken(refreshToken)
-        val accessTokenCookie =
-            ResponseCookie
-                .from("access_token", newAccessToken)
-                .httpOnly(true)
-                .secure(true)
-                .sameSite("None")
-                .path("/")
-                .build()
-        return ResponseBuilder.response(
-            HttpStatus.OK,
-            "TOKEN_REFRESH_SUCCESS",
-            cookies = listOf(accessTokenCookie),
-        )
+        try {
+            val newAccessToken = authService.refreshToken(refreshToken)
+            val accessTokenCookie =
+                ResponseCookie
+                    .from("access_token", newAccessToken)
+                    .httpOnly(true)
+                    .secure(true)
+                    .sameSite("None")
+                    .path("/")
+                    .build()
+            return ResponseBuilder.response(
+                HttpStatus.OK,
+                "TOKEN_REFRESH_SUCCESS",
+                cookies = listOf(accessTokenCookie),
+            )
+        } catch (_: ExpiredJwtException) {
+            return ResponseBuilder.response(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
+        } catch (e: Exception) {
+            logger.error("Token refresh failed: ${e.message}", e)
+            return ResponseBuilder.response(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR")
+        }
     }
 
     @DeleteMapping("/token")
