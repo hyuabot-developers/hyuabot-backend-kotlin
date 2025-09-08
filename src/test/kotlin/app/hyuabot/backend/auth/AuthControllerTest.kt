@@ -7,6 +7,7 @@ import app.hyuabot.backend.database.entity.User
 import app.hyuabot.backend.database.repository.UserRepository
 import app.hyuabot.backend.security.WithCustomMockUser
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.jsonwebtoken.ExpiredJwtException
 import jakarta.servlet.http.Cookie
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -256,6 +257,34 @@ class AuthControllerTest {
                     .cookie(Cookie("test", "testCookie")),
             ).andExpect(status().isUnauthorized)
             .andExpect(jsonPath("$.message").value("UNAUTHORIZED"))
+    }
+
+    @Test
+    @DisplayName("토큰 갱신 테스트 (만료된 토큰)")
+    fun testRefreshTokenWithExpiredToken() {
+        doThrow(ExpiredJwtException(null, null, "TOKEN_EXPIRED"))
+            .whenever(authService)
+            .refreshToken("expiredRefreshToken")
+        mockMvc
+            .perform(
+                put("/api/v1/user/token")
+                    .cookie(Cookie("refresh_token", "expiredRefreshToken")),
+            ).andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$.message").value("UNAUTHORIZED"))
+    }
+
+    @Test
+    @DisplayName("토큰 갱신 테스트 (오류)")
+    fun testRefreshTokenError() {
+        doThrow(RuntimeException("DB_ERROR"))
+            .whenever(authService)
+            .refreshToken("mockRefreshToken")
+        mockMvc
+            .perform(
+                put("/api/v1/user/token")
+                    .cookie(Cookie("refresh_token", "mockRefreshToken")),
+            ).andExpect(status().isInternalServerError)
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
     }
 
     @Test

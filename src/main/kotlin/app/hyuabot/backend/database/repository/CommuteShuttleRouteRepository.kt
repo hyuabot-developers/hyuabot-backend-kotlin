@@ -5,4 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface CommuteShuttleRouteRepository : JpaRepository<CommuteShuttleRoute, String> {
     fun findByNameContaining(name: String): List<CommuteShuttleRoute>
+
+    fun findByName(name: String): CommuteShuttleRoute?
 }

@@ -5,4 +5,11 @@ import org.springframework.data.jpa.repository.JpaRepository
 
 interface CommuteShuttleTimetableRepository : JpaRepository<CommuteShuttleTimetable, Int> {
     fun findByRouteName(routeName: String): List<CommuteShuttleTimetable>
+
+    fun findByStopName(stopName: String): List<CommuteShuttleTimetable>
+
+    fun findByRouteNameAndSeq(
+        routeName: String,
+        seq: Int,
+    ): CommuteShuttleTimetable?
 }
