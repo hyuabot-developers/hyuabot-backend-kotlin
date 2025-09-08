@@ -20,4 +20,12 @@ class LocalDateTimeBuilderTest {
         assertEquals(false, LocalDateTimeBuilder.checkLocalDateFormat("202-13-31"))
         assertEquals(true, LocalDateTimeBuilder.checkLocalDateFormat("2023-10-31"))
     }
+
+    @Test
+    @DisplayName("시간 형식이 맞지 않을 때")
+    fun invalidTimeFormat() {
+        assertEquals(false, LocalDateTimeBuilder.checkLocalTimeFormat("24:70:00"))
+        assertEquals(false, LocalDateTimeBuilder.checkLocalTimeFormat("3:60:00"))
+        assertEquals(true, LocalDateTimeBuilder.checkLocalTimeFormat("23:59:59"))
+    }
 }
