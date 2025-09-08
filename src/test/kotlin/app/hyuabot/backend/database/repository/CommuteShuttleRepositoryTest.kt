@@ -138,8 +138,8 @@ class CommuteShuttleRepositoryTest {
             assert(it.routeName == "TEST_ROUTE_1")
             assert(it.order < 3)
             assert(it.departureTime >= LocalTime.parse("10:00:00"))
-            assert(it.route.name == "TEST_ROUTE_1")
-            assert(it.stop.name in setOf("TEST_STOP_1", "TEST_STOP_2", "TEST_STOP_3"))
+            assert(it.route!!.name == "TEST_ROUTE_1")
+            assert(it.stop!!.name in setOf("TEST_STOP_1", "TEST_STOP_2", "TEST_STOP_3"))
         }
     }
 }

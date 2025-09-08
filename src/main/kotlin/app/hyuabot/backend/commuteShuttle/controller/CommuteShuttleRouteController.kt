@@ -12,7 +12,7 @@ import app.hyuabot.backend.commuteShuttle.exception.DuplicateShuttleRouteExcepti
 import app.hyuabot.backend.commuteShuttle.exception.ShuttleRouteNotFoundException
 import app.hyuabot.backend.commuteShuttle.exception.ShuttleStopNotFoundException
 import app.hyuabot.backend.commuteShuttle.exception.ShuttleTimetableNotFoundException
-import app.hyuabot.backend.database.exception.DurationNotValidException
+import app.hyuabot.backend.database.exception.LocalTimeNotValidException
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import app.hyuabot.backend.utility.ResponseBuilder
 import io.swagger.v3.oas.annotations.Operation
@@ -470,7 +470,7 @@ class CommuteShuttleRouteController {
                 HttpStatus.BAD_REQUEST,
                 ResponseBuilder.Message("SHUTTLE_STOP_NOT_FOUND"),
             )
-        } catch (_: DurationNotValidException) {
+        } catch (_: LocalTimeNotValidException) {
             return ResponseBuilder.response(
                 HttpStatus.BAD_REQUEST,
                 ResponseBuilder.Message("INVALID_DATE_TIME_FORMAT"),
@@ -654,17 +654,22 @@ class CommuteShuttleRouteController {
                     time = LocalDateTimeBuilder.convertLocalTimeToString(updatedTimetable.departureTime),
                 ),
             )
-        } catch (_: app.hyuabot.backend.shuttle.exception.ShuttleRouteNotFoundException) {
+        } catch (_: ShuttleRouteNotFoundException) {
             return ResponseBuilder.response(
                 HttpStatus.NOT_FOUND,
                 ResponseBuilder.Message("SHUTTLE_ROUTE_NOT_FOUND"),
+            )
+        } catch (_: ShuttleStopNotFoundException) {
+            return ResponseBuilder.response(
+                HttpStatus.BAD_REQUEST,
+                ResponseBuilder.Message("SHUTTLE_STOP_NOT_FOUND"),
             )
         } catch (_: ShuttleTimetableNotFoundException) {
             return ResponseBuilder.response(
                 HttpStatus.NOT_FOUND,
                 ResponseBuilder.Message("SHUTTLE_TIMETABLE_NOT_FOUND"),
             )
-        } catch (_: DurationNotValidException) {
+        } catch (_: LocalTimeNotValidException) {
             return ResponseBuilder.response(
                 HttpStatus.BAD_REQUEST,
                 ResponseBuilder.Message("INVALID_DATE_TIME_FORMAT"),
@@ -733,7 +738,7 @@ class CommuteShuttleRouteController {
         try {
             service.deleteTimetable(seq)
             return ResponseBuilder.response(HttpStatus.NO_CONTENT, null)
-        } catch (_: app.hyuabot.backend.shuttle.exception.ShuttleRouteNotFoundException) {
+        } catch (_: ShuttleRouteNotFoundException) {
             return ResponseBuilder.response(
                 HttpStatus.NOT_FOUND,
                 ResponseBuilder.Message("SHUTTLE_ROUTE_NOT_FOUND"),
