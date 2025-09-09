@@ -18,22 +18,22 @@ data class SubwayRouteStation(
     @Column(name = "station_id", length = 10, nullable = false)
     val id: String,
     @Column(name = "route_id", columnDefinition = "integer", nullable = false)
-    val routeID: Int,
+    var routeID: Int,
     @Column(name = "station_name", length = 30, nullable = false)
-    val name: String,
+    var name: String,
     @Column(name = "station_seq", columnDefinition = "integer", nullable = false)
-    val order: Int,
+    var order: Int,
     @Type(value = PostgreSQLIntervalType::class)
     @Column(name = "cumulative_time", columnDefinition = "interval", nullable = false)
-    val cumulativeTime: Duration,
+    var cumulativeTime: Duration,
     @ManyToOne
     @JoinColumn(name = "route_id", referencedColumnName = "route_id", insertable = false, updatable = false)
-    val route: SubwayRoute,
+    val route: SubwayRoute?,
     @ManyToOne
     @JoinColumn(name = "station_name", referencedColumnName = "station_name", insertable = false, updatable = false)
-    val stationName: SubwayStation,
+    val stationName: SubwayStation?,
     @OneToMany(mappedBy = "station")
-    val realtime: List<SubwayRealtime>,
+    val realtime: List<SubwayRealtime>?,
     @OneToMany(mappedBy = "station")
-    val timetable: List<SubwayTimetable>,
+    val timetable: List<SubwayTimetable>?,
 )

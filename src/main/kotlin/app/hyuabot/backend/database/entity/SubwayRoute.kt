@@ -13,7 +13,7 @@ data class SubwayRoute(
     @Column(name = "route_id", columnDefinition = "integer", nullable = false)
     val id: Int,
     @Column(name = "route_name", length = 30, nullable = false)
-    val name: String,
+    var name: String,
     @OneToMany(mappedBy = "route")
     val station: List<SubwayRouteStation>,
 )

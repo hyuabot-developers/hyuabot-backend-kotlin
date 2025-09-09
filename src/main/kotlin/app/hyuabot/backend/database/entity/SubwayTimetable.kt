@@ -31,24 +31,24 @@ data class SubwayTimetable(
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "subway_timetable_seq_seq")
     val seq: Int? = null,
     @Column(name = "station_id", length = 10, nullable = false)
-    val stationID: String,
+    var stationID: String,
     @Column(name = "start_station_id", length = 10, nullable = false)
-    val startStationID: String,
+    var startStationID: String,
     @Column(name = "terminal_station_id", length = 10, nullable = false)
-    val terminalStationID: String,
+    var terminalStationID: String,
     @Column(name = "departure_time", columnDefinition = "time", nullable = false)
-    val departureTime: LocalTime,
+    var departureTime: LocalTime,
     @Column(name = "weekday", length = 10, nullable = false)
-    val weekday: String,
+    var weekday: String,
     @Column(name = "up_down_type", length = 10, nullable = false)
-    val heading: String,
+    var heading: String,
     @ManyToOne
     @JoinColumn(name = "station_id", referencedColumnName = "station_id", insertable = false, updatable = false)
-    val station: SubwayRouteStation,
+    val station: SubwayRouteStation?,
     @OneToOne
     @JoinColumn(name = "start_station_id", referencedColumnName = "station_id", insertable = false, updatable = false)
-    val startStation: SubwayRouteStation,
+    val startStation: SubwayRouteStation?,
     @OneToOne
     @JoinColumn(name = "terminal_station_id", referencedColumnName = "station_id", insertable = false, updatable = false)
-    val terminalStation: SubwayRouteStation,
+    val terminalStation: SubwayRouteStation?,
 )
