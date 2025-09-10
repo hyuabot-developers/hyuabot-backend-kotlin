@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -80,7 +81,9 @@ class SubwayRouteController {
             ),
         ],
     )
-    fun createSubwayRoute(payload: CreateSubwayRouteRequest): ResponseEntity<*> {
+    fun createSubwayRoute(
+        @RequestBody payload: CreateSubwayRouteRequest,
+    ): ResponseEntity<*> {
         try {
             service.createSubwayRoute(payload).let {
                 return ResponseBuilder.response(
@@ -191,7 +194,7 @@ class SubwayRouteController {
     )
     fun updateSubwayRoute(
         @PathVariable id: Int,
-        payload: UpdateSubwayRouteRequest,
+        @RequestBody payload: UpdateSubwayRouteRequest,
     ): ResponseEntity<*> {
         try {
             service.updateSubwayRoute(id, payload).let {

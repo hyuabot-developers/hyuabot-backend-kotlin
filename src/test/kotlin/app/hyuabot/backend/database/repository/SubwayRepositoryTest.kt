@@ -53,7 +53,7 @@ class SubwayRepositoryTest {
         (1..100).map {
             SubwayRealtime(
                 "K1",
-                heading = listOf("up", "down").get(it % 2),
+                heading = listOf("up", "down")[it % 2],
                 order = it / 2,
                 location = "중앙",
                 remainingStop = it / 2,
@@ -76,7 +76,7 @@ class SubwayRepositoryTest {
                 terminalStationID = "K10",
                 departureTime = LocalTime.parse("09:0$it:00"),
                 weekday = "weekdays",
-                heading = listOf("up", "down").get(it % 2),
+                heading = listOf("up", "down")[it % 2],
                 station = station[0],
                 startStation = station[0],
                 terminalStation = station[station.size - 1],
@@ -133,12 +133,12 @@ class SubwayRepositoryTest {
             assert(it.id.startsWith("K"))
             assert(it.name.startsWith("STATION"))
             assert(it.routeID == 1001)
-            assert(it.route.name == "1호선")
-            assert(it.order >= 1 && it.order <= 10)
+            assert(it.route!!.name == "1호선")
+            assert(it.order in 1..10)
             assert(it.cumulativeTime.toMinutes() == it.order.toLong())
-            assert(it.stationName.name.startsWith("STATION"))
-            assert(it.realtime.isEmpty())
-            assert(it.timetable.isEmpty())
+            assert(it.stationName!!.name.startsWith("STATION"))
+            assert(it.realtime!!.isEmpty())
+            assert(it.timetable!!.isEmpty())
         }
     }
 
@@ -149,8 +149,8 @@ class SubwayRepositoryTest {
         assert(found.isNotEmpty())
         found.forEach {
             assert(it.routeID == 1001)
-            assert(it.route.name == "1호선")
-            assert(it.stationName.name.startsWith("STATION"))
+            assert(it.route!!.name == "1호선")
+            assert(it.stationName!!.name.startsWith("STATION"))
         }
     }
 
@@ -162,11 +162,11 @@ class SubwayRepositoryTest {
         found.forEach {
             assert(it.seq != null)
             assert(it.stationID == "K1")
-            assert(it.station.id == "K1")
+            assert(it.stationID == "K1")
             assert(it.startStationID == "K1")
             assert(it.terminalStationID == "K10")
-            assert(it.startStation.id == "K1")
-            assert(it.terminalStation.id == "K10")
+            assert(it.startStationID == "K1")
+            assert(it.terminalStationID == "K10")
             assert(it.departureTime >= LocalTime.parse("09:00:00"))
             assert(it.weekday == "weekdays")
             assert(it.heading in listOf("up", "down"))
@@ -179,11 +179,11 @@ class SubwayRepositoryTest {
         val found = timetableRepository.findByStationIDAndDepartureTimeAfter("K1", LocalTime.parse("09:05:00"))
         assert(found.isNotEmpty())
         found.forEach {
-            assert(it.station.id == "K1")
+            assert(it.stationID == "K1")
             assert(it.startStationID == "K1")
             assert(it.terminalStationID == "K10")
-            assert(it.startStation.id == "K1")
-            assert(it.terminalStation.id == "K10")
+            assert(it.startStationID == "K1")
+            assert(it.terminalStationID == "K10")
             assert(it.departureTime > LocalTime.parse("09:05:00"))
             assert(it.weekday == "weekdays")
             assert(it.heading in listOf("up", "down"))
@@ -196,11 +196,11 @@ class SubwayRepositoryTest {
         val found = timetableRepository.findByStationIDAndHeading("K1", "up")
         assert(found.isNotEmpty())
         found.forEach {
-            assert(it.station.id == "K1")
+            assert(it.stationID == "K1")
             assert(it.startStationID == "K1")
             assert(it.terminalStationID == "K10")
-            assert(it.startStation.id == "K1")
-            assert(it.terminalStation.id == "K10")
+            assert(it.startStationID == "K1")
+            assert(it.terminalStationID == "K10")
             assert(it.heading == "up")
             assert(it.weekday == "weekdays")
         }
@@ -217,11 +217,11 @@ class SubwayRepositoryTest {
             )
         assert(found.isNotEmpty())
         found.forEach {
-            assert(it.station.id == "K1")
+            assert(it.stationID == "K1")
             assert(it.startStationID == "K1")
             assert(it.terminalStationID == "K10")
-            assert(it.startStation.id == "K1")
-            assert(it.terminalStation.id == "K10")
+            assert(it.startStationID == "K1")
+            assert(it.terminalStationID == "K10")
             assert(it.departureTime > LocalTime.parse("09:05:00"))
             assert(it.heading == "up")
             assert(it.weekday == "weekdays")
@@ -234,11 +234,11 @@ class SubwayRepositoryTest {
         val found = timetableRepository.findByStationIDAndWeekday("K1", "weekdays")
         assert(found.isNotEmpty())
         found.forEach {
-            assert(it.station.id == "K1")
+            assert(it.stationID == "K1")
             assert(it.startStationID == "K1")
             assert(it.terminalStationID == "K10")
-            assert(it.startStation.id == "K1")
-            assert(it.terminalStation.id == "K10")
+            assert(it.startStationID == "K1")
+            assert(it.terminalStationID == "K10")
             assert(it.weekday == "weekdays")
         }
     }
@@ -254,11 +254,11 @@ class SubwayRepositoryTest {
             )
         assert(found.isNotEmpty())
         found.forEach {
-            assert(it.station.id == "K1")
+            assert(it.stationID == "K1")
             assert(it.startStationID == "K1")
             assert(it.terminalStationID == "K10")
-            assert(it.startStation.id == "K1")
-            assert(it.terminalStation.id == "K10")
+            assert(it.startStationID == "K1")
+            assert(it.terminalStationID == "K10")
             assert(it.weekday == "weekdays")
             assert(it.departureTime > LocalTime.parse("09:05:00"))
         }
@@ -270,11 +270,11 @@ class SubwayRepositoryTest {
         val found = timetableRepository.findByStationIDAndHeadingAndWeekday("K1", "up", "weekdays")
         assert(found.isNotEmpty())
         found.forEach {
-            assert(it.station.id == "K1")
+            assert(it.stationID == "K1")
             assert(it.startStationID == "K1")
             assert(it.terminalStationID == "K10")
-            assert(it.startStation.id == "K1")
-            assert(it.terminalStation.id == "K10")
+            assert(it.startStationID == "K1")
+            assert(it.terminalStationID == "K10")
             assert(it.heading == "up")
             assert(it.weekday == "weekdays")
         }
@@ -292,11 +292,11 @@ class SubwayRepositoryTest {
             )
         assert(found.isNotEmpty())
         found.forEach {
-            assert(it.station.id == "K1")
+            assert(it.stationID == "K1")
             assert(it.startStationID == "K1")
             assert(it.terminalStationID == "K10")
-            assert(it.startStation.id == "K1")
-            assert(it.terminalStation.id == "K10")
+            assert(it.startStationID == "K1")
+            assert(it.terminalStationID == "K10")
             assert(it.heading == "up")
             assert(it.weekday == "weekdays")
             assert(it.departureTime > LocalTime.parse("09:05:00"))
@@ -309,14 +309,14 @@ class SubwayRepositoryTest {
         val found = realtimeRepository.findByStationID("K1")
         assert(found.isNotEmpty())
         found.forEach {
-            assert(it.station.id == "K1")
+            assert(it.stationID == "K1")
             assert(it.heading in listOf("up", "down"))
             assert(it.order >= 0)
             assert(it.location == "중앙")
             assert(it.remainingStop >= 0)
             assert(it.remainingTime.toMinutes() >= 0)
             assert(it.terminalStationID == "K10")
-            assert(it.terminalStation.name == "STATION10")
+            assert(it.terminalStation?.name == "STATION10")
             assert(it.trainNumber.startsWith("K"))
             assert(it.updatedAt.isBefore(ZonedDateTime.now()))
             assert(!it.isExpress)
@@ -331,14 +331,15 @@ class SubwayRepositoryTest {
         val found = realtimeRepository.findByStationIDAndHeading("K1", "up")
         assert(found.isNotEmpty())
         found.forEach {
-            assert(it.station.id == "K1")
+            assert(it.stationID == "K1")
             assert(it.heading == "up")
             assert(it.order >= 0)
             assert(it.location == "중앙")
+            assert(it.station?.name == "STATION1")
             assert(it.remainingStop >= 0)
             assert(it.remainingTime.toMinutes() >= 0)
             assert(it.terminalStationID == "K10")
-            assert(it.terminalStation.name == "STATION10")
+            assert(it.terminalStation?.name == "STATION10")
             assert(it.trainNumber.startsWith("K"))
             assert(it.updatedAt.isBefore(ZonedDateTime.now()))
             assert(!it.isExpress)

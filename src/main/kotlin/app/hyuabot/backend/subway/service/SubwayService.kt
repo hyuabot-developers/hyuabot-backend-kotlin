@@ -67,11 +67,8 @@ class SubwayService(
 
     fun deleteSubwayRoute(id: Int) {
         val route = routeRepository.findById(id).orElseThrow { SubwayRouteNotFoundException() }
-        timetableRepository.deleteAll(
-            timetableRepository.findAll().filter {
-                it.station?.route?.id == route.id
-            },
-        )
+        timetableRepository.deleteAll(route.station.flatMap { it.timetable ?: emptyList() })
+        realtimeRepository.deleteAll(route.station.flatMap { it.realtime ?: emptyList() })
         stationRepository.deleteAll(route.station)
         routeRepository.delete(route)
     }
@@ -111,7 +108,7 @@ class SubwayService(
     fun getStationById(id: String): SubwayRouteStation = stationRepository.findById(id).orElseThrow { SubwayStationNotFoundException() }
 
     fun cleanUpUselessStationName(name: String) {
-        nameRepository.findByName(name)?.let { station ->
+        nameRepository.findByName(name)!!.let { station ->
             if (station.subwayLine.isEmpty()) {
                 nameRepository.delete(station)
             }
@@ -137,16 +134,8 @@ class SubwayService(
 
     fun deleteStation(id: String) {
         val station = stationRepository.findById(id).orElseThrow { SubwayStationNotFoundException() }
-        realtimeRepository.deleteAll(
-            realtimeRepository.findAll().filter {
-                it.stationID == station.id || it.terminalStationID == station.id
-            },
-        )
-        timetableRepository.deleteAll(
-            timetableRepository.findAll().filter {
-                it.stationID == station.id || it.terminalStationID == station.id || it.startStationID == station.id
-            },
-        )
+        realtimeRepository.deleteAll(station.realtime ?: emptyList())
+        timetableRepository.deleteAll(station.timetable ?: emptyList())
         stationRepository.delete(station)
         cleanUpUselessStationName(station.name)
     }
@@ -208,10 +197,10 @@ class SubwayService(
         if (!LocalDateTimeBuilder.checkLocalTimeFormat(payload.departureTime)) {
             throw LocalTimeNotValidException()
         }
+        val timetable = timetableRepository.findById(seq).orElseThrow { SubwayTimetableNotFoundException() }
         stationRepository.findById(stationID).orElseThrow { SubwayStationNotFoundException() }
         stationRepository.findById(payload.startStationID).orElseThrow { SubwayStartStationNotFoundException() }
         stationRepository.findById(payload.terminalStationID).orElseThrow { SubwayTerminalStationNotFoundException() }
-        val timetable = timetableRepository.findById(seq).orElseThrow { SubwayTimetableNotFoundException() }
         timetable.let {
             it.stationID = stationID
             it.startStationID = payload.startStationID

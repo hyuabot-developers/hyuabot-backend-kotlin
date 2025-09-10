@@ -438,7 +438,7 @@ class SubwayStationController {
                         examples = [
                             ExampleObject(
                                 name = "중복된 지하철 시간표",
-                                value = """{"message":"DUPLICATED_SUBWAY_TIMETABLE"}""",
+                                value = """{"message":"DUPLICATE_SUBWAY_TIMETABLE"}""",
                             ),
                         ],
                     ),
@@ -477,18 +477,18 @@ class SubwayStationController {
             )
         } catch (_: SubwayStartStationNotFoundException) {
             return ResponseBuilder.response(
-                HttpStatus.NOT_FOUND,
+                HttpStatus.BAD_REQUEST,
                 ResponseBuilder.Message("SUBWAY_START_STATION_NOT_FOUND"),
             )
         } catch (_: SubwayTerminalStationNotFoundException) {
             return ResponseBuilder.response(
-                HttpStatus.NOT_FOUND,
+                HttpStatus.BAD_REQUEST,
                 ResponseBuilder.Message("SUBWAY_TERMINAL_STATION_NOT_FOUND"),
             )
         } catch (_: DuplicateSubwayTimetableException) {
             return ResponseBuilder.response(
                 HttpStatus.CONFLICT,
-                ResponseBuilder.Message("DUPLICATED_SUBWAY_TIMETABLE"),
+                ResponseBuilder.Message("DUPLICATE_SUBWAY_TIMETABLE"),
             )
         } catch (e: Exception) {
             logger.error("Error adding subway station timetable", e)
@@ -668,12 +668,7 @@ class SubwayStationController {
         } catch (_: DuplicateSubwayTimetableException) {
             return ResponseBuilder.response(
                 HttpStatus.CONFLICT,
-                ResponseBuilder.Message("DUPLICATED_SUBWAY_TIMETABLE"),
-            )
-        } catch (_: SubwayStationNotFoundException) {
-            return ResponseBuilder.response(
-                HttpStatus.NOT_FOUND,
-                ResponseBuilder.Message("SUBWAY_STATION_NOT_FOUND"),
+                ResponseBuilder.Message("DUPLICATE_SUBWAY_TIMETABLE"),
             )
         } catch (e: Exception) {
             logger.error("Error updating subway station timetable", e)
