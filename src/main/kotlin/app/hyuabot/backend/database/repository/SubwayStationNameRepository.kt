@@ -4,5 +4,7 @@ import app.hyuabot.backend.database.entity.SubwayStation
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface SubwayStationNameRepository : JpaRepository<SubwayStation, String> {
+    fun findByName(name: String): SubwayStation?
+
     fun findByNameContaining(name: String): List<SubwayStation>
 }

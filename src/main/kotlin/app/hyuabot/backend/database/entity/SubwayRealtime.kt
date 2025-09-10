@@ -48,8 +48,8 @@ data class SubwayRealtime(
     val status: Int,
     @ManyToOne
     @JoinColumn(name = "station_id", referencedColumnName = "station_id", insertable = false, updatable = false)
-    val station: SubwayRouteStation,
+    val station: SubwayRouteStation?,
     @OneToOne
     @JoinColumn(name = "terminal_station_id", referencedColumnName = "station_id", insertable = false, updatable = false)
-    val terminalStation: SubwayRouteStation,
+    val terminalStation: SubwayRouteStation?,
 )

@@ -1,0 +1,20 @@
+package app.hyuabot.backend.subway.domain
+
+import io.swagger.v3.oas.annotations.media.Schema
+
+data class SubwayTimetableResponse(
+    @get:Schema(description = "시간표 ID", example = "1")
+    val seq: Int,
+    @get:Schema(description = "역 ID", example = "K251")
+    val stationID: String,
+    @get:Schema(description = "시점 ID", example = "K209")
+    val startStationID: String,
+    @get:Schema(description = "종점 ID", example = "K271")
+    val terminalStationID: String,
+    @get:Schema(description = "출발 시간", example = "05:30:00")
+    val departureTime: String,
+    @get:Schema(description = "평일/주말 구분", example = "weekdays")
+    val weekday: String,
+    @get:Schema(description = "상행/하행 구분", example = "up")
+    val direction: String,
+)
