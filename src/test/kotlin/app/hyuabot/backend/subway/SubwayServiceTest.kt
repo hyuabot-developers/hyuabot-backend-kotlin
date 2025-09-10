@@ -282,6 +282,9 @@ class SubwayServiceTest {
             )
         whenever(stationRepository.findById("K300")).thenReturn(Optional.empty())
         whenever(nameRepository.findByName("신림")).thenReturn(null)
+        whenever(nameRepository.save(SubwayStation(name = "신림", emptyList()))).thenReturn(
+            SubwayStation(name = "신림", emptyList()),
+        )
         whenever(stationRepository.save(newStation)).thenReturn(newStation)
         val createdStation =
             service.createStation(

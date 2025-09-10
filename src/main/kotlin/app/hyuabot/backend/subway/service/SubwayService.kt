@@ -82,14 +82,7 @@ class SubwayService(
         stationRepository.findById(payload.id).orElse(null)?.let {
             throw DuplicateSubwayStationException()
         }
-        nameRepository.findByName(payload.name)?.let {
-            nameRepository.save(
-                SubwayStation(
-                    name = payload.name,
-                    emptyList(),
-                ),
-            )
-        }
+        nameRepository.findByName(payload.name) ?: nameRepository.save(SubwayStation(name = payload.name, emptyList()))
         return stationRepository.save(
             SubwayRouteStation(
                 id = payload.id,
