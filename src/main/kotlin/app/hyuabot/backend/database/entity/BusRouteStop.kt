@@ -36,13 +36,13 @@ data class BusRouteStop(
     val minuteFromStart: Int,
     @ManyToOne
     @JoinColumn(name = "route_id", insertable = false, updatable = false)
-    val route: BusRoute,
+    val route: BusRoute?,
     @ManyToOne
     @JoinColumn(name = "stop_id", insertable = false, updatable = false)
-    val stop: BusStop,
+    val stop: BusStop?,
     @ManyToOne
     @JoinColumn(name = "start_stop_id", insertable = false, updatable = false)
-    val startStop: BusStop,
+    val startStop: BusStop?,
     @OneToMany(mappedBy = "routeStop")
     val log: List<BusDepartureLog>,
     @OneToMany(mappedBy = "routeStop")
