@@ -1410,6 +1410,35 @@ class BusServiceTest {
     }
 
     @Test
+    @DisplayName("버스 시간표 항목 조회")
+    fun testGetBusTimetableBySeq() {
+        whenever(timetableRepository.findById(1)).thenReturn(
+            Optional.of(
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("05:30:00"),
+                ),
+            ),
+        )
+        val result = timetableService.getBusTimetableById(1)
+        assertEquals(1, result.seq)
+        assertEquals(216000068, result.routeID)
+        assertEquals(LocalTime.parse("05:30:00"), result.departureTime)
+    }
+
+    @Test
+    @DisplayName("버스 시간표 항목 조회 - 존재하지 않는 Seq")
+    fun testGetBusTimetableBySeqNonExistent() {
+        whenever(timetableRepository.findById(99)).thenReturn(Optional.empty())
+        assertThrows<BusTimetableNotFoundException> {
+            timetableService.getBusTimetableById(99)
+        }
+    }
+
+    @Test
     @DisplayName("버스 시간표 항목 수정")
     fun testUpdateBusTimetable() {
         val payload =

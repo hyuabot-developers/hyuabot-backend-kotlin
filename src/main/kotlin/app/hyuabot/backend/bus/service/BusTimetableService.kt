@@ -55,6 +55,8 @@ class BusTimetableService(
         )
     }
 
+    fun getBusTimetableById(id: Int): BusTimetable = timetableRepository.findById(id).orElseThrow { BusTimetableNotFoundException() }
+
     fun updateBusTimetable(
         id: Int,
         payload: BusTimetableRequest,
