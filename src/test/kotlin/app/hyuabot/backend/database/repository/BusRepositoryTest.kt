@@ -204,9 +204,9 @@ class BusRepositoryTest {
             assert(routeStop.startStopID == stops[0].id)
             assert(routeStop.order == index)
             assert(routeStop.minuteFromStart == index)
-            assert(routeStop.route.id == route.id)
-            assert(routeStop.stop.id == stops[index].id)
-            assert(routeStop.startStop.id == stops[0].id)
+            assert(routeStop.routeID == route.id)
+            assert(routeStop.stopID == stops[index].id)
+            assert(routeStop.startStopID == stops[0].id)
             assert(routeStop.log.isEmpty())
             assert(routeStop.realtime.isEmpty())
         }
@@ -271,8 +271,8 @@ class BusRepositoryTest {
             assert(realtime.remainingTime == Duration.ofMinutes((index + 1) * 5L))
             assert(!realtime.isLowFloor)
             assert(realtime.updatedAt.isBefore(ZonedDateTime.now()))
-            assert(realtime.routeStop.routeID == realtime.routeID)
-            assert(realtime.routeStop.stopID == realtime.stopID)
+            assert(realtime.routeStop!!.routeID == realtime.routeID)
+            assert(realtime.routeStop!!.stopID == realtime.stopID)
         }
     }
 
@@ -288,8 +288,8 @@ class BusRepositoryTest {
             assert(log.departureDate == LocalDate.now())
             assert(log.departureTime >= LocalTime.parse("05:00:00"))
             assert(log.vehicleID.startsWith("Vehicle-"))
-            assert(log.routeStop.routeID == log.routeID)
-            assert(log.routeStop.stopID == log.stopID)
+            assert(log.routeStop!!.routeID == log.routeID)
+            assert(log.routeStop!!.stopID == log.stopID)
         }
     }
 
@@ -304,8 +304,8 @@ class BusRepositoryTest {
             assert(log.departureDate == LocalDate.now())
             assert(log.departureTime >= LocalTime.parse("05:00:00"))
             assert(log.vehicleID.startsWith("Vehicle-"))
-            assert(log.routeStop.routeID == log.routeID)
-            assert(log.routeStop.stopID == log.stopID)
+            assert(log.routeStop!!.routeID == log.routeID)
+            assert(log.routeStop!!.stopID == log.stopID)
         }
     }
 }

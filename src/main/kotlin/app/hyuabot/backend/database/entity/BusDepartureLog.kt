@@ -42,5 +42,5 @@ data class BusDepartureLog(
         JoinColumn(name = "route_id", referencedColumnName = "route_id", insertable = false, updatable = false),
         JoinColumn(name = "stop_id", referencedColumnName = "stop_id", insertable = false, updatable = false),
     )
-    val routeStop: BusRouteStop,
+    val routeStop: BusRouteStop?,
 )
