@@ -1,0 +1,39 @@
+name: Deploy Spring Boot Backend Application
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+  push:
+    branches:
+      - ci/deploy
+  workflow_dispatch:
+jobs:
+  deploy:
+    if: github.event.pull_request.merged == true || github.ref == 'refs/heads/ci/deploy' || github.event_name == 'workflow_dispatch'
+    runs-on: ["self-hosted", "ARM64", "1st"]
+    env:
+      IMAGE_NAME: localhost:5000/hyuabot-backend-kotlin:latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: 21
+          distribution: 'zulu'
+          check-latest: 'true'
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          load: true
+          tags: ${{ env.IMAGE_NAME }}
+          no-cache: true
+      - name: Push docker image
+        run: |
+          docker push ${{ env.IMAGE_NAME }}
