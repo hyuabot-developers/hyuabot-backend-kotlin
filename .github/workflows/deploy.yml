@@ -19,6 +19,8 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
       DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
+      REDIS_PORT: ${{ secrets.REDIS_PORT }}
       JASYPT_PASSWORD: ${{ secrets.JASYPT_PASSWORD }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
     steps:
@@ -36,6 +38,8 @@ jobs:
           echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/encrypted.properties
           echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/encrypted.properties
           echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/encrypted.properties
+          echo "spring.redis.host=$REDIS_URL" >> src/main/resources/encrypted.properties
+          echo "spring.redis.port=$REDIS_PORT" >> src/main/resources/encrypted.properties
           echo "spring.sql.init.mode=always" >> src/main/resources/encrypted.properties
           echo "jasypt.encryptor.password=$JASYPT_PASSWORD" >> src/main/resources/encrypted.properties
           echo "jwt.secret=$JWT_SECRET" >> src/main/resources/encrypted.properties
@@ -54,3 +58,12 @@ jobs:
       - name: Push docker image
         run: |
           docker push ${{ env.IMAGE_NAME }}
+  restart:
+    if: github.ref == 'refs/heads/ci/deploy' || github.event_name == 'workflow_dispatch'
+    needs: deploy
+    runs-on: ["self-hosted", "ARM64", "2nd"]
+    environment: production
+    steps:
+      - name: Restart backend service
+        run: |
+          hyuabot rollout restart deployment/hyuabot-backend-kotlin
