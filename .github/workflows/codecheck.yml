@@ -40,6 +40,8 @@ jobs:
           echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/application-test.properties
           echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/application-test.properties
           echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/application-test.properties
+          echo "spring.data.redis.host=localhost" >> src/main/resources/application-test.properties
+          echo "spring.data.redis.port=6379" >> src/main/resources/application-test.properties
           echo "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect" >> src/main/resources/application-test.properties
           echo "spring.sql.init.mode=always" >> src/main/resources/application-test.properties
           echo "jwt.secret=secret" >> src/main/resources/application-test.properties
@@ -56,6 +58,8 @@ jobs:
           echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/encrypted.properties
           echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/encrypted.properties
           echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/encrypted.properties
+          echo "spring.data.redis.host=localhost" >> src/main/resources/encrypted.properties
+          echo "spring.data.redis.port=6379" >> src/main/resources/encrypted.properties
           echo "spring.sql.init.mode=always" >> src/main/resources/encrypted.properties
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -83,6 +87,8 @@ jobs:
           echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/application-test.properties
           echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/application-test.properties
           echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/application-test.properties
+          echo "spring.data.redis.host=localhost" >> src/main/resources/application-test.properties
+          echo "spring.data.redis.port=6379" >> src/main/resources/application-test.properties
           echo "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect" >> src/main/resources/application-test.properties
           echo "spring.sql.init.mode=always" >> src/main/resources/application-test.properties
           echo "jwt.secret=secret" >> src/main/resources/application-test.properties
@@ -99,6 +105,8 @@ jobs:
           echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/encrypted.properties
           echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/encrypted.properties
           echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/encrypted.properties
+          echo "spring.data.redis.host=localhost" >> src/main/resources/encrypted.properties
+          echo "spring.data.redis.port=6379" >> src/main/resources/encrypted.properties
           echo "spring.sql.init.mode=always" >> src/main/resources/encrypted.properties
       - name: Check unit test coverage
         run: |

@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 jobs:
   deploy:
-    if: github.event.pull_request.merged == true || github.ref == 'refs/heads/ci/deploy' || github.event_name == 'workflow_dispatch'
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/ci/deploy')
     runs-on: ["self-hosted", "ARM64", "1st"]
     environment: production
     env:
@@ -38,8 +38,8 @@ jobs:
           echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/encrypted.properties
           echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/encrypted.properties
           echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/encrypted.properties
-          echo "spring.redis.host=$REDIS_URL" >> src/main/resources/encrypted.properties
-          echo "spring.redis.port=$REDIS_PORT" >> src/main/resources/encrypted.properties
+          echo "spring.data.redis.host=$REDIS_URL" >> src/main/resources/encrypted.properties
+          echo "spring.data.redis.port=$REDIS_PORT" >> src/main/resources/encrypted.properties
           echo "spring.sql.init.mode=always" >> src/main/resources/encrypted.properties
           echo "jasypt.encryptor.password=$JASYPT_PASSWORD" >> src/main/resources/encrypted.properties
           echo "jwt.secret=$JWT_SECRET" >> src/main/resources/encrypted.properties
@@ -59,11 +59,11 @@ jobs:
         run: |
           docker push ${{ env.IMAGE_NAME }}
   restart:
-    if: github.ref == 'refs/heads/ci/deploy' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/ci/deploy')
     needs: deploy
-    runs-on: ["self-hosted", "ARM64", "2nd"]
+    runs-on: ["self-hosted", "ARM64", "1st"]
     environment: production
     steps:
       - name: Restart backend service
         run: |
-          hyuabot rollout restart deployment/hyuabot-backend-kotlin
+          microk8s kubectl -n hyuabot rollout restart deployment/hyuabot-backend-kotlin
