@@ -13,8 +13,14 @@ jobs:
   deploy:
     if: github.event.pull_request.merged == true || github.ref == 'refs/heads/ci/deploy' || github.event_name == 'workflow_dispatch'
     runs-on: ["self-hosted", "ARM64", "1st"]
+    environment: production
     env:
       IMAGE_NAME: localhost:32000/hyuabot-backend-kotlin:latest
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
+      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+      JASYPT_PASSWORD: ${{ secrets.JASYPT_PASSWORD }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,6 +30,17 @@ jobs:
           java-version: 21
           distribution: 'zulu'
           check-latest: 'true'
+      - name: Create encrypted application.properties
+        run: |
+          echo "spring.datasource.driver-class-name=org.postgresql.Driver" > src/main/resources/encrypted.properties
+          echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/encrypted.properties
+          echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/encrypted.properties
+          echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/encrypted.properties
+          echo "spring.sql.init.mode=always" >> src/main/resources/encrypted.properties
+          echo "jasypt.encryptor.password=$JASYPT_PASSWORD" >> src/main/resources/encrypted.properties
+          echo "jwt.secret=$JWT_SECRET" >> src/main/resources/encrypted.properties
+          echo "jwt.expiration=5" >> src/main/resources/encrypted.properties
+          echo "jwt.expiration.refresh=7" >> src/main/resources/encrypted.properties
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build and push
