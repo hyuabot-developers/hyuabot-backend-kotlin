@@ -24,9 +24,9 @@ data class ShuttleHoliday(
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "shuttle_holiday_seq_seq")
     val seq: Int? = null,
     @Column(name = "holiday_date", columnDefinition = "date", nullable = false)
-    val date: LocalDate,
+    var date: LocalDate,
     @Column(name = "holiday_type", length = 15, nullable = false)
-    val type: String,
+    var type: String,
     @Column(name = "calendar_type", length = 15, nullable = false)
-    val calendarType: String,
+    var calendarType: String,
 )
