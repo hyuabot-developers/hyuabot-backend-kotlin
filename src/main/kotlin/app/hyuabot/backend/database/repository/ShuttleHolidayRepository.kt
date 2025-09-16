@@ -9,4 +9,10 @@ interface ShuttleHolidayRepository : JpaRepository<ShuttleHoliday, Int> {
         date: LocalDate,
         calendarType: String,
     ): ShuttleHoliday?
+
+    fun findBySeqNotAndDateAndCalendarType(
+        seq: Int,
+        date: LocalDate,
+        calendarType: String,
+    ): ShuttleHoliday?
 }
