@@ -9,10 +9,10 @@ class CorsConfig : WebMvcConfigurer {
     override fun addCorsMappings(registry: CorsRegistry) {
         registry
             .addMapping("/**")
-            .allowedOrigins("http://localhost:8080", "https://*.hyuabot.app", "https://admin.hyuabot.app")
+            .allowedOrigins("http://localhost:3000", "http://localhost:8080", "https://*.hyuabot.app", "https://admin.hyuabot.app")
             .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
             .allowedHeaders("*")
-            .allowCredentials(false)
+            .allowCredentials(true)
             .maxAge(3600)
     }
 }
