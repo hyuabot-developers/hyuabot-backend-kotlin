@@ -217,7 +217,7 @@ class ShuttleRouteService(
         shuttleTimetableRepository
             .findByRouteNameAndPeriodTypeAndWeekdayAndDepartureTime(
                 routeName = routeName,
-                periodType = payload.periodType,
+                periodType = payload.period,
                 isWeekdays = payload.weekday,
                 departureTime = LocalTime.parse(payload.departureTime),
             )?.let {
@@ -228,7 +228,7 @@ class ShuttleRouteService(
             ShuttleTimetable(
                 seq = null,
                 routeName = routeName,
-                periodType = payload.periodType,
+                periodType = payload.period,
                 weekday = payload.weekday,
                 departureTime = LocalTime.parse(payload.departureTime),
                 route = null,
@@ -262,7 +262,7 @@ class ShuttleRouteService(
             }
         }
         shuttleTimetable.apply {
-            periodType = payload.periodType
+            periodType = payload.period
             weekday = payload.weekday
             departureTime = LocalTime.parse(payload.departureTime)
         }

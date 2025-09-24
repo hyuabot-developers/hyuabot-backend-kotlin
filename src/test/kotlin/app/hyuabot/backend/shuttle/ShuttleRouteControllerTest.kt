@@ -989,7 +989,7 @@ class ShuttleRouteControllerTest {
             )
         val payload =
             ShuttleTimetableRequest(
-                periodType = "semester",
+                period = "semester",
                 weekday = true,
                 departureTime = "14:00:00",
             )
@@ -1015,7 +1015,7 @@ class ShuttleRouteControllerTest {
         val routeName = "NonExistentRoute"
         val payload =
             ShuttleTimetableRequest(
-                periodType = "semester",
+                period = "semester",
                 weekday = true,
                 departureTime = "14:00:00",
             )
@@ -1039,7 +1039,7 @@ class ShuttleRouteControllerTest {
         val routeName = "A"
         val payload =
             ShuttleTimetableRequest(
-                periodType = "semester",
+                period = "semester",
                 weekday = true,
                 departureTime = "invalid_time_format",
             )
@@ -1063,7 +1063,7 @@ class ShuttleRouteControllerTest {
         val routeName = "A"
         val payload =
             ShuttleTimetableRequest(
-                periodType = "semester",
+                period = "semester",
                 weekday = true,
                 departureTime = "12:00:00",
             )
@@ -1087,7 +1087,7 @@ class ShuttleRouteControllerTest {
         val routeName = "A"
         val payload =
             ShuttleTimetableRequest(
-                periodType = "semester",
+                period = "semester",
                 weekday = true,
                 departureTime = "14:00:00",
             )
@@ -1199,7 +1199,7 @@ class ShuttleRouteControllerTest {
             )
         val payload =
             ShuttleTimetableRequest(
-                periodType = "semester",
+                period = "semester",
                 weekday = true,
                 departureTime = "15:00:00",
             )
@@ -1226,7 +1226,7 @@ class ShuttleRouteControllerTest {
         val timetableSeq = 1
         val payload =
             ShuttleTimetableRequest(
-                periodType = "semester",
+                period = "semester",
                 weekday = true,
                 departureTime = "15:00:00",
             )
@@ -1251,7 +1251,7 @@ class ShuttleRouteControllerTest {
         val timetableSeq = 999
         val payload =
             ShuttleTimetableRequest(
-                periodType = "semester",
+                period = "semester",
                 weekday = true,
                 departureTime = "15:00:00",
             )
@@ -1278,7 +1278,7 @@ class ShuttleRouteControllerTest {
         val timetableSeq = 1
         val payload =
             ShuttleTimetableRequest(
-                periodType = "semester",
+                period = "semester",
                 weekday = true,
                 departureTime = "invalid_time_format",
             )
@@ -1303,7 +1303,7 @@ class ShuttleRouteControllerTest {
         val timetableSeq = 1
         val payload =
             ShuttleTimetableRequest(
-                periodType = "semester",
+                period = "semester",
                 weekday = true,
                 departureTime = "15:00:00",
             )

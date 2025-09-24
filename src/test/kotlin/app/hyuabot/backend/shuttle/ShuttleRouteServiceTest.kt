@@ -1028,7 +1028,7 @@ class ShuttleRouteServiceTest {
             shuttleRouteService.createShuttleTimetable(
                 routeName,
                 ShuttleTimetableRequest(
-                    periodType = newTimetable.periodType,
+                    period = newTimetable.periodType,
                     weekday = newTimetable.weekday,
                     departureTime = "08:00:00",
                 ),
@@ -1042,7 +1042,7 @@ class ShuttleRouteServiceTest {
         val routeName = "NonExistentRoute"
         val newTimetable =
             ShuttleTimetableRequest(
-                periodType = "semester",
+                period = "semester",
                 weekday = true,
                 departureTime = "08:00:00",
             )
@@ -1075,7 +1075,7 @@ class ShuttleRouteServiceTest {
             shuttleRouteService.createShuttleTimetable(
                 routeName,
                 ShuttleTimetableRequest(
-                    periodType = "semester",
+                    period = "semester",
                     weekday = true,
                     departureTime = "invalid_time_format",
                 ),
@@ -1123,7 +1123,7 @@ class ShuttleRouteServiceTest {
             shuttleRouteService.createShuttleTimetable(
                 routeName,
                 ShuttleTimetableRequest(
-                    periodType = existingTimetable.periodType,
+                    period = existingTimetable.periodType,
                     weekday = existingTimetable.weekday,
                     departureTime = "08:00:00",
                 ),
@@ -1241,7 +1241,7 @@ class ShuttleRouteServiceTest {
             routeName,
             seq,
             ShuttleTimetableRequest(
-                periodType = existingTimetable.periodType,
+                period = existingTimetable.periodType,
                 weekday = existingTimetable.weekday,
                 departureTime = "09:00:00",
             ),
@@ -1260,7 +1260,7 @@ class ShuttleRouteServiceTest {
                 routeName,
                 seq,
                 ShuttleTimetableRequest(
-                    periodType = "semester",
+                    period = "semester",
                     weekday = true,
                     departureTime = "09:00:00",
                 ),
@@ -1294,7 +1294,7 @@ class ShuttleRouteServiceTest {
                 routeName,
                 seq,
                 ShuttleTimetableRequest(
-                    periodType = "semester",
+                    period = "semester",
                     weekday = true,
                     departureTime = "09:00:00",
                 ),
@@ -1337,7 +1337,7 @@ class ShuttleRouteServiceTest {
                 routeName,
                 seq,
                 ShuttleTimetableRequest(
-                    periodType = existingTimetable.periodType,
+                    period = existingTimetable.periodType,
                     weekday = existingTimetable.weekday,
                     departureTime = "invalid_time_format",
                 ),
