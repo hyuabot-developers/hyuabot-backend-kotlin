@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RequestMapping("/api/v1/bus/timetable")
@@ -47,9 +48,12 @@ class BusTimetableController {
         description = "노선 버스 시간표 정보 조회 성공",
         content = [Content(schema = Schema(implementation = BusRouteTimetableListResponse::class))],
     )
-    fun getBusTimetable(): BusRouteTimetableListResponse =
+    fun getBusTimetable(
+        @RequestParam(required = false) routeID: Int?,
+        @RequestParam(required = false) startStopID: Int?,
+    ): BusRouteTimetableListResponse =
         BusRouteTimetableListResponse(
-            service.getBusTimetableList().map {
+            service.getBusTimetableList(routeID, startStopID).map {
                 BusTimetableResponse(
                     seq = it.seq!!,
                     routeID = it.routeID,
