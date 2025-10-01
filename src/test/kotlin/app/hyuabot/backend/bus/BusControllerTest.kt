@@ -1441,7 +1441,12 @@ class BusControllerTest {
     @DisplayName("버스 시간표 목록 조회")
     @WithCustomMockUser(username = "test_user")
     fun testGetBusTimetables() {
-        whenever(timetableService.getBusTimetableList()).thenReturn(
+        whenever(
+            timetableService.getBusTimetableList(
+                routeID = null,
+                startStopID = null,
+            ),
+        ).thenReturn(
             listOf(
                 BusTimetable(
                     seq = 1,
@@ -1474,6 +1479,105 @@ class BusControllerTest {
             .andExpect(jsonPath("$.result[1].startStopID").value(216000358))
             .andExpect(jsonPath("$.result[1].dayType").value("weekdays"))
             .andExpect(jsonPath("$.result[1].departureTime").value("06:00:00"))
+    }
+
+    @Test
+    @DisplayName("버스 시간표 목록 조회 - 노선 ID 필터링")
+    @WithCustomMockUser(username = "test_user")
+    fun testGetBusTimetablesFilterByRouteID() {
+        whenever(
+            timetableService.getBusTimetableList(
+                routeID = TEST_ROUTE_1.id,
+                startStopID = null,
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 1,
+                    routeID = TEST_ROUTE_1.id,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("05:30:00"),
+                ),
+            ),
+        )
+        mockMvc
+            .perform(get("/api/v1/bus/timetable").param("routeID", TEST_ROUTE_1.id.toString()))
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.result.length()").value(1))
+            .andExpect(jsonPath("$.result[0].seq").value(1))
+            .andExpect(jsonPath("$.result[0].routeID").value(TEST_ROUTE_1.id))
+            .andExpect(jsonPath("$.result[0].startStopID").value(216000358))
+            .andExpect(jsonPath("$.result[0].dayType").value("weekdays"))
+            .andExpect(jsonPath("$.result[0].departureTime").value("05:30:00"))
+    }
+
+    @Test
+    @DisplayName("버스 시간표 목록 조회 - 시점 정류장 ID 필터링")
+    @WithCustomMockUser(username = "test_user")
+    fun testGetBusTimetablesFilterByStartStopID() {
+        whenever(
+            timetableService.getBusTimetableList(
+                routeID = null,
+                startStopID = TEST_STOP_1.id,
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = TEST_STOP_1.id,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("05:30:00"),
+                ),
+            ),
+        )
+        mockMvc
+            .perform(get("/api/v1/bus/timetable").param("startStopID", TEST_STOP_1.id.toString()))
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.result.length()").value(1))
+            .andExpect(jsonPath("$.result[0].seq").value(1))
+            .andExpect(jsonPath("$.result[0].routeID").value(216000068))
+            .andExpect(jsonPath("$.result[0].startStopID").value(TEST_STOP_1.id))
+            .andExpect(jsonPath("$.result[0].dayType").value("weekdays"))
+            .andExpect(jsonPath("$.result[0].departureTime").value("05:30:00"))
+    }
+
+    @Test
+    @DisplayName("버스 시간표 목록 조회 - 노선 ID 및 시점 정류장 ID 필터링")
+    @WithCustomMockUser(username = "test_user")
+    fun testGetBusTimetablesFilterByRouteIDAndStartStopID() {
+        whenever(
+            timetableService.getBusTimetableList(
+                routeID = TEST_ROUTE_1.id,
+                startStopID = TEST_STOP_1.id,
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 1,
+                    routeID = TEST_ROUTE_1.id,
+                    startStopID = TEST_STOP_1.id,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("05:30:00"),
+                ),
+            ),
+        )
+        mockMvc
+            .perform(
+                get("/api/v1/bus/timetable")
+                    .param("routeID", TEST_ROUTE_1.id.toString())
+                    .param("startStopID", TEST_STOP_1.id.toString()),
+            ).andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.result.length()").value(1))
+            .andExpect(jsonPath("$.result[0].seq").value(1))
+            .andExpect(jsonPath("$.result[0].routeID").value(TEST_ROUTE_1.id))
+            .andExpect(jsonPath("$.result[0].startStopID").value(TEST_STOP_1.id))
+            .andExpect(jsonPath("$.result[0].dayType").value("weekdays"))
+            .andExpect(jsonPath("$.result[0].departureTime").value("05:30:00"))
     }
 
     @Test

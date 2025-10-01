@@ -21,14 +21,28 @@ class BusTimetableService(
     private val stopRepository: BusStopRepository,
     private val timetableRepository: BusTimetableRepository,
 ) {
-    fun getBusTimetableList(): List<BusTimetable> =
-        timetableRepository.findAll(
+    fun getBusTimetableList(
+        routeID: Int?,
+        startStopID: Int?,
+    ): List<BusTimetable> {
+        val sort =
             Sort.by(
-                Sort.Order.asc("route_id"),
-                Sort.Order.asc("start_stop_id"),
-                Sort.Order.asc("departure_time"),
-            ),
-        )
+                Sort.Order.asc("routeID"),
+                Sort.Order.asc("startStopID"),
+                Sort.Order.asc("departureTime"),
+            )
+        return when {
+            routeID != null && startStopID != null ->
+                timetableRepository.findByRouteIDAndStartStopID(
+                    routeID,
+                    startStopID,
+                    sort,
+                )
+            routeID != null -> timetableRepository.findByRouteID(routeID, sort)
+            startStopID != null -> timetableRepository.findByStartStopID(startStopID, sort)
+            else -> timetableRepository.findAll(sort)
+        }
+    }
 
     fun createBusTimetable(payload: BusTimetableRequest): BusTimetable {
         if (!LocalDateTimeBuilder.checkLocalTimeFormat(payload.departureTime)) {
