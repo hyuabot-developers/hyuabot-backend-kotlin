@@ -27,9 +27,9 @@ class BusTimetableService(
     ): List<BusTimetable> {
         val sort =
             Sort.by(
-                Sort.Order.asc("route_id"),
-                Sort.Order.asc("start_stop_id"),
-                Sort.Order.asc("departure_time"),
+                Sort.Order.asc("routeID"),
+                Sort.Order.asc("startStopID"),
+                Sort.Order.asc("departureTime"),
             )
         return when {
             routeID != null && startStopID != null ->

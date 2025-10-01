@@ -1260,9 +1260,9 @@ class BusServiceTest {
         whenever(
             timetableRepository.findAll(
                 Sort.by(
-                    Sort.Order.asc("route_id"),
-                    Sort.Order.asc("start_stop_id"),
-                    Sort.Order.asc("departure_time"),
+                    Sort.Order.asc("routeID"),
+                    Sort.Order.asc("startStopID"),
+                    Sort.Order.asc("departureTime"),
                 ),
             ),
         ).thenReturn(
@@ -1283,7 +1283,122 @@ class BusServiceTest {
                 ),
             ),
         )
-        val result = timetableService.getBusTimetableList()
+        val result = timetableService.getBusTimetableList(null, null)
+        assertEquals(2, result.size)
+        assertEquals(216000068, result[0].routeID)
+        assertEquals(LocalTime.parse("05:30:00"), result[0].departureTime)
+        assertEquals(216000068, result[1].routeID)
+        assertEquals(LocalTime.parse("06:00:00"), result[1].departureTime)
+    }
+
+    @Test
+    @DisplayName("버스 시간표 목록 조회 - 노선 ID 필터링")
+    fun testGetBusTimetablesByRouteID() {
+        whenever(
+            timetableRepository.findByRouteID(
+                216000068,
+                Sort.by(
+                    Sort.Order.asc("routeID"),
+                    Sort.Order.asc("startStopID"),
+                    Sort.Order.asc("departureTime"),
+                ),
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("05:30:00"),
+                ),
+                BusTimetable(
+                    seq = 2,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("06:00:00"),
+                ),
+            ),
+        )
+        val result = timetableService.getBusTimetableList(216000068, null)
+        assertEquals(2, result.size)
+        assertEquals(216000068, result[0].routeID)
+        assertEquals(LocalTime.parse("05:30:00"), result[0].departureTime)
+        assertEquals(216000068, result[1].routeID)
+        assertEquals(LocalTime.parse("06:00:00"), result[1].departureTime)
+    }
+
+    @Test
+    @DisplayName("버스 시간표 목록 조회 - 정류장 ID 필터링")
+    fun testGetBusTimetablesByStopID() {
+        whenever(
+            timetableRepository.findByStartStopID(
+                216000358,
+                Sort.by(
+                    Sort.Order.asc("routeID"),
+                    Sort.Order.asc("startStopID"),
+                    Sort.Order.asc("departureTime"),
+                ),
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("05:30:00"),
+                ),
+                BusTimetable(
+                    seq = 2,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("06:00:00"),
+                ),
+            ),
+        )
+        val result = timetableService.getBusTimetableList(null, 216000358)
+        assertEquals(2, result.size)
+        assertEquals(216000068, result[0].routeID)
+        assertEquals(LocalTime.parse("05:30:00"), result[0].departureTime)
+        assertEquals(216000068, result[1].routeID)
+        assertEquals(LocalTime.parse("06:00:00"), result[1].departureTime)
+    }
+
+    @Test
+    @DisplayName("버스 시간표 목록 조회 - 노선 ID 및 정류장 ID 필터링")
+    fun testGetBusTimetablesByRouteIDAndStopID() {
+        whenever(
+            timetableRepository.findByRouteIDAndStartStopID(
+                216000068,
+                216000358,
+                Sort.by(
+                    Sort.Order.asc("routeID"),
+                    Sort.Order.asc("startStopID"),
+                    Sort.Order.asc("departureTime"),
+                ),
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("05:30:00"),
+                ),
+                BusTimetable(
+                    seq = 2,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("06:00:00"),
+                ),
+            ),
+        )
+        val result = timetableService.getBusTimetableList(216000068, 216000358)
         assertEquals(2, result.size)
         assertEquals(216000068, result[0].routeID)
         assertEquals(LocalTime.parse("05:30:00"), result[0].departureTime)

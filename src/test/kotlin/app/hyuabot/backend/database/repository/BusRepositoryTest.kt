@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
+import org.springframework.data.domain.Sort
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.TestPropertySource
 import java.time.Duration
@@ -229,7 +230,15 @@ class BusRepositoryTest {
     @DisplayName("버스 시점 출발 시간표 조회")
     fun testBusTimetableFindByRouteIDAndStartStopID() {
         val foundTimetables =
-            busTimetableRepository.findByRouteIDAndStartStopID(1, stops[0].id)
+            busTimetableRepository.findByRouteIDAndStartStopID(
+                1,
+                stops[0].id,
+                Sort.by(
+                    Sort.Order.asc("routeID"),
+                    Sort.Order.asc("startStopID"),
+                    Sort.Order.asc("departureTime"),
+                ),
+            )
         assert(foundTimetables.isNotEmpty())
         assert(foundTimetables.size == 10)
         foundTimetables.forEachIndexed { index, timetable ->
