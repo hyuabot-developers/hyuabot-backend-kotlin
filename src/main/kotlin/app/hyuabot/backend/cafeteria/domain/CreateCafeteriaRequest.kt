@@ -14,9 +14,9 @@ data class CreateCafeteriaRequest(
     @get:Schema(description = "식당 경도", example = "127.123456")
     val longitude: Double,
     @get:Schema(description = "조식 시간", example = "08:00-09:30")
-    val breakfastTime: String,
+    val breakfastTime: String?,
     @get:Schema(description = "중식 시간", example = "12:00-13:30")
-    val lunchTime: String,
+    val lunchTime: String?,
     @get:Schema(description = "석식 시간", example = "18:00-19:30")
-    val dinnerTime: String,
+    val dinnerTime: String?,
 )
