@@ -22,12 +22,12 @@ data class Cafeteria(
     var latitude: Double,
     @Column(name = "longitude", columnDefinition = "double precision", nullable = false)
     var longitude: Double,
-    @Column(name = "breakfast_time", length = 40, nullable = false)
-    var breakfastTime: String,
-    @Column(name = "lunch_time", length = 40, nullable = false)
-    var lunchTime: String,
-    @Column(name = "dinner_time", length = 40, nullable = false)
-    var dinnerTime: String,
+    @Column(name = "breakfast_time", length = 40, nullable = true)
+    var breakfastTime: String?,
+    @Column(name = "lunch_time", length = 40, nullable = true)
+    var lunchTime: String?,
+    @Column(name = "dinner_time", length = 40, nullable = true)
+    var dinnerTime: String?,
     @ManyToOne
     @JoinColumn(name = "campus_id", referencedColumnName = "campus_id", insertable = false, updatable = false)
     val campus: Campus?,
