@@ -137,6 +137,22 @@ class SubwayService(
 
     fun getTimetablesByStationID(stationID: String) = timetableRepository.findByStationID(stationID)
 
+    fun getTimetablesByStationIDAndDirection(
+        stationID: String,
+        direction: String,
+    ) = timetableRepository.findByStationIDAndHeading(stationID, direction)
+
+    fun getTimetablesByStationIDAndWeekday(
+        stationID: String,
+        weekday: String,
+    ) = timetableRepository.findByStationIDAndWeekday(stationID, weekday)
+
+    fun getTimetablesByStationIDAndDirectionAndWeekday(
+        stationID: String,
+        direction: String,
+        weekday: String,
+    ) = timetableRepository.findByStationIDAndHeadingAndWeekday(stationID, direction, weekday)
+
     fun getTimetableByStationIDAndSeq(
         stationID: String,
         seq: Int,
