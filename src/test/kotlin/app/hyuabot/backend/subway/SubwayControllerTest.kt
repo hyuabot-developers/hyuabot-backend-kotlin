@@ -730,6 +730,112 @@ class SubwayControllerTest {
     }
 
     @Test
+    @DisplayName("지하철 역별 시간표 목록 조회 - 행선 필터링")
+    @WithCustomMockUser(username = "test_user")
+    fun testGetSubwayTimetableByStationIdWithHeading() {
+        doReturn(
+            listOf(
+                SubwayTimetable(
+                    seq = 1,
+                    stationID = "K450",
+                    startStationID = "K410",
+                    terminalStationID = "K456",
+                    departureTime = LocalTime.parse("09:00"),
+                    weekday = "weekdays",
+                    heading = "up",
+                    station = null,
+                    startStation = null,
+                    terminalStation = null,
+                ),
+            ),
+        ).whenever(service).getTimetablesByStationIDAndDirection("K450", "up")
+        mockMvc
+            .perform(get("/api/v1/subway/station/K450/timetable").param("direction", "up"))
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.result").isArray)
+            .andExpect(jsonPath("$.result[0].seq").value(1))
+            .andExpect(jsonPath("$.result[0].stationID").value("K450"))
+            .andExpect(jsonPath("$.result[0].startStationID").value("K410"))
+            .andExpect(jsonPath("$.result[0].terminalStationID").value("K456"))
+            .andExpect(jsonPath("$.result[0].departureTime").value("09:00:00"))
+            .andExpect(jsonPath("$.result[0].weekday").value("weekdays"))
+            .andExpect(jsonPath("$.result[0].direction").value("up"))
+    }
+
+    @Test
+    @DisplayName("지하철 역별 시간표 목록 조회 - 요일 필터링")
+    @WithCustomMockUser(username = "test_user")
+    fun testGetSubwayTimetableByStationIdWithWeekday() {
+        doReturn(
+            listOf(
+                SubwayTimetable(
+                    seq = 1,
+                    stationID = "K450",
+                    startStationID = "K410",
+                    terminalStationID = "K456",
+                    departureTime = LocalTime.parse("09:00"),
+                    weekday = "weekdays",
+                    heading = "up",
+                    station = null,
+                    startStation = null,
+                    terminalStation = null,
+                ),
+            ),
+        ).whenever(service).getTimetablesByStationIDAndWeekday("K450", "weekdays")
+        mockMvc
+            .perform(get("/api/v1/subway/station/K450/timetable").param("weekday", "weekdays"))
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.result").isArray)
+            .andExpect(jsonPath("$.result[0].seq").value(1))
+            .andExpect(jsonPath("$.result[0].stationID").value("K450"))
+            .andExpect(jsonPath("$.result[0].startStationID").value("K410"))
+            .andExpect(jsonPath("$.result[0].terminalStationID").value("K456"))
+            .andExpect(jsonPath("$.result[0].departureTime").value("09:00:00"))
+            .andExpect(jsonPath("$.result[0].weekday").value("weekdays"))
+            .andExpect(jsonPath("$.result[0].direction").value("up"))
+    }
+
+    @Test
+    @DisplayName("지하철 역별 시간표 목록 조회 - 요일 및 행선 필터링")
+    @WithCustomMockUser(username = "test_user")
+    fun testGetSubwayTimetableByStationIdWithWeekdayAndHeading() {
+        doReturn(
+            listOf(
+                SubwayTimetable(
+                    seq = 1,
+                    stationID = "K450",
+                    startStationID = "K410",
+                    terminalStationID = "K456",
+                    departureTime = LocalTime.parse("09:00"),
+                    weekday = "weekdays",
+                    heading = "up",
+                    station = null,
+                    startStation = null,
+                    terminalStation = null,
+                ),
+            ),
+        ).whenever(service).getTimetablesByStationIDAndDirectionAndWeekday("K450", "up", "weekdays")
+        mockMvc
+            .perform(
+                get("/api/v1/subway/station/K450/timetable")
+                    .param("direction", "up")
+                    .param("weekday", "weekdays"),
+            )
+            .andExpect(status().isOk)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.result").isArray)
+            .andExpect(jsonPath("$.result[0].seq").value(1))
+            .andExpect(jsonPath("$.result[0].stationID").value("K450"))
+            .andExpect(jsonPath("$.result[0].startStationID").value("K410"))
+            .andExpect(jsonPath("$.result[0].terminalStationID").value("K456"))
+            .andExpect(jsonPath("$.result[0].departureTime").value("09:00:00"))
+            .andExpect(jsonPath("$.result[0].weekday").value("weekdays"))
+            .andExpect(jsonPath("$.result[0].direction").value("up"))
+    }
+
+    @Test
     @DisplayName("지하철 역별 시간표 목록 조회 - 없는 역 ID")
     @WithCustomMockUser(username = "test_user")
     fun testGetSubwayTimetableByStationIdNotFound() {

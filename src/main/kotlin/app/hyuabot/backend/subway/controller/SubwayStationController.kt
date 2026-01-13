@@ -36,6 +36,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RequestMapping("/api/v1/subway/station")
@@ -329,7 +330,7 @@ class SubwayStationController {
             ApiResponse(
                 responseCode = "200",
                 description = "지하철 역 시간표 조회 성공",
-                content = [Content(schema = Schema(implementation = SubwayStationListResponse::class))],
+                content = [Content(schema = Schema(implementation = SubwayTimetableListResponse::class))],
             ),
             ApiResponse(
                 responseCode = "404",
@@ -350,24 +351,79 @@ class SubwayStationController {
     )
     fun getSubwayStationTimetable(
         @PathVariable id: String,
+        @RequestParam direction: String? = null,
+        @RequestParam weekday: String? = null,
     ): ResponseEntity<*> {
         try {
-            return ResponseBuilder.response(
-                HttpStatus.OK,
-                SubwayTimetableListResponse(
-                    service.getTimetablesByStationID(id).map {
-                        SubwayTimetableResponse(
-                            seq = it.seq!!,
-                            stationID = it.stationID,
-                            startStationID = it.startStationID,
-                            terminalStationID = it.terminalStationID,
-                            departureTime = LocalDateTimeBuilder.convertLocalTimeToString(it.departureTime),
-                            weekday = it.weekday,
-                            direction = it.heading,
-                        )
-                    },
-                ),
-            )
+            if (direction != null && weekday != null) {
+                return ResponseBuilder.response(
+                    HttpStatus.OK,
+                    SubwayTimetableListResponse(
+                        service.getTimetablesByStationIDAndDirectionAndWeekday(id, direction, weekday).map {
+                            SubwayTimetableResponse(
+                                seq = it.seq!!,
+                                stationID = it.stationID,
+                                startStationID = it.startStationID,
+                                terminalStationID = it.terminalStationID,
+                                departureTime = LocalDateTimeBuilder.convertLocalTimeToString(it.departureTime),
+                                weekday = it.weekday,
+                                direction = it.heading,
+                            )
+                        },
+                    ),
+                )
+            } else if (direction != null) {
+                return ResponseBuilder.response(
+                    HttpStatus.OK,
+                    SubwayTimetableListResponse(
+                        service.getTimetablesByStationIDAndDirection(id, direction).map {
+                            SubwayTimetableResponse(
+                                seq = it.seq!!,
+                                stationID = it.stationID,
+                                startStationID = it.startStationID,
+                                terminalStationID = it.terminalStationID,
+                                departureTime = LocalDateTimeBuilder.convertLocalTimeToString(it.departureTime),
+                                weekday = it.weekday,
+                                direction = it.heading,
+                            )
+                        },
+                    ),
+                )
+            } else if (weekday != null) {
+                return ResponseBuilder.response(
+                    HttpStatus.OK,
+                    SubwayTimetableListResponse(
+                        service.getTimetablesByStationIDAndWeekday(id, weekday).map {
+                            SubwayTimetableResponse(
+                                seq = it.seq!!,
+                                stationID = it.stationID,
+                                startStationID = it.startStationID,
+                                terminalStationID = it.terminalStationID,
+                                departureTime = LocalDateTimeBuilder.convertLocalTimeToString(it.departureTime),
+                                weekday = it.weekday,
+                                direction = it.heading,
+                            )
+                        },
+                    ),
+                )
+            } else {
+                return ResponseBuilder.response(
+                    HttpStatus.OK,
+                    SubwayTimetableListResponse(
+                        service.getTimetablesByStationID(id).map {
+                            SubwayTimetableResponse(
+                                seq = it.seq!!,
+                                stationID = it.stationID,
+                                startStationID = it.startStationID,
+                                terminalStationID = it.terminalStationID,
+                                departureTime = LocalDateTimeBuilder.convertLocalTimeToString(it.departureTime),
+                                weekday = it.weekday,
+                                direction = it.heading,
+                            )
+                        },
+                    ),
+                )
+            }
         } catch (_: SubwayStationNotFoundException) {
             return ResponseBuilder.response(
                 HttpStatus.NOT_FOUND,
