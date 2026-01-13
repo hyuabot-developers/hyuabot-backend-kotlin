@@ -649,6 +649,81 @@ class SubwayServiceTest {
     }
 
     @Test
+    @DisplayName("지하철 시간표 목록 조회 - 역 ID 및 행선 필터링")
+    fun testGetTimetablesByStationIDAndHeading() {
+        whenever(timetableRepository.findByStationIDAndHeading("K450", "up")).thenReturn(
+            listOf(
+                SubwayTimetable(
+                    seq = 1,
+                    stationID = "K450",
+                    startStationID = "K410",
+                    terminalStationID = "K456",
+                    departureTime = LocalTime.parse("09:00"),
+                    weekday = "weekdays",
+                    heading = "up",
+                    station = null,
+                    startStation = null,
+                    terminalStation = null,
+                ),
+            ),
+        )
+        val timetables = service.getTimetablesByStationIDAndDirection("K450", "up")
+        assertEquals(1, timetables.size)
+        assertEquals(1, timetables[0].seq)
+        assertEquals("K450", timetables[0].stationID)
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 목록 조회 - 역 ID 및 요일 필터링")
+    fun testGetTimetablesByStationIDAndWeekday() {
+        whenever(timetableRepository.findByStationIDAndWeekday("K450", "weekdays")).thenReturn(
+            listOf(
+                SubwayTimetable(
+                    seq = 1,
+                    stationID = "K450",
+                    startStationID = "K410",
+                    terminalStationID = "K456",
+                    departureTime = LocalTime.parse("09:00"),
+                    weekday = "weekdays",
+                    heading = "up",
+                    station = null,
+                    startStation = null,
+                    terminalStation = null,
+                ),
+            ),
+        )
+        val timetables = service.getTimetablesByStationIDAndWeekday("K450", "weekdays")
+        assertEquals(1, timetables.size)
+        assertEquals(1, timetables[0].seq)
+        assertEquals("K450", timetables[0].stationID)
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 목록 조회 - 역 ID, 행선 및 요일 필터링")
+    fun testGetTimetablesByStationIDAndHeadingAndWeekday() {
+        whenever(timetableRepository.findByStationIDAndHeadingAndWeekday("K450", "up", "weekdays")).thenReturn(
+            listOf(
+                SubwayTimetable(
+                    seq = 1,
+                    stationID = "K450",
+                    startStationID = "K410",
+                    terminalStationID = "K456",
+                    departureTime = LocalTime.parse("09:00"),
+                    weekday = "weekdays",
+                    heading = "up",
+                    station = null,
+                    startStation = null,
+                    terminalStation = null,
+                ),
+            ),
+        )
+        val timetables = service.getTimetablesByStationIDAndDirectionAndWeekday("K450", "up", "weekdays")
+        assertEquals(1, timetables.size)
+        assertEquals(1, timetables[0].seq)
+        assertEquals("K450", timetables[0].stationID)
+    }
+
+    @Test
     @DisplayName("지하철 시간표 항목 조회")
     fun testGetTimetableByStationIDAndSeq() {
         val timetable =
