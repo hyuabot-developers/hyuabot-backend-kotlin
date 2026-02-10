@@ -12,7 +12,7 @@ jobs:
     runs-on: ["self-hosted", "ARM64", "1st"]
     environment: production
     env:
-      IMAGE_NAME: localhost:32000/hyuabot-backend-kotlin:latest
+      IMAGE_NAME: localhost:5000/hyuabot-backend-kotlin:latest
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
       DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
@@ -63,4 +63,4 @@ jobs:
     steps:
       - name: Restart backend service
         run: |
-          microk8s kubectl -n hyuabot rollout restart deployment/hyuabot-backend-kotlin
+          kubectl -n hyuabot rollout restart deployment/hyuabot-backend-kotlin
