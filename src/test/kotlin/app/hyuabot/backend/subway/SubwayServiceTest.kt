@@ -419,7 +419,7 @@ class SubwayServiceTest {
     }
 
     @Test
-    @DisplayName("지하철 역 수정")
+    @DisplayName("지하철 역 수정 - 존재하지 않는 역 이름으로 수정")
     fun testUpdateStation() {
         val existingStation =
             SubwayRouteStation(
@@ -446,6 +446,59 @@ class SubwayServiceTest {
                 timetable = null,
             )
         whenever(stationRepository.findById("K450")).thenReturn(Optional.of(existingStation))
+        whenever(nameRepository.findByName("중앙역 - 수정됨")).thenReturn(null)
+        whenever(nameRepository.save(SubwayStation(name = "중앙역 - 수정됨", emptyList()))).thenReturn(
+            SubwayStation(name = "중앙역 - 수정됨", emptyList()),
+        )
+        whenever(stationRepository.save(existingStation)).thenReturn(updatedStation)
+        val result =
+            service.updateStation(
+                "K450",
+                UpdateSubwayStationRequest(
+                    routeID = 1004,
+                    name = "중앙역 - 수정됨",
+                    order = 51,
+                    cumulativeTime = "00:06:00",
+                ),
+            )
+        assertEquals("K450", result.id)
+        assertEquals("중앙역 - 수정됨", result.name)
+        assertEquals(1004, result.routeID)
+        assertEquals(51, result.order)
+        assertEquals(Duration.ofMinutes(6), result.cumulativeTime)
+    }
+
+    @Test
+    @DisplayName("지하철 역 수정 - 기존 역 이름으로 수정")
+    fun testUpdateStationWithExistingName() {
+        val existingStation =
+            SubwayRouteStation(
+                id = "K450",
+                routeID = 1004,
+                name = "중앙",
+                order = 50,
+                cumulativeTime = Duration.ofMinutes(5),
+                route = null,
+                stationName = null,
+                realtime = null,
+                timetable = null,
+            )
+        val updatedStation =
+            SubwayRouteStation(
+                id = "K450",
+                routeID = 1004,
+                name = "중앙역 - 수정됨",
+                order = 51,
+                cumulativeTime = Duration.ofMinutes(6),
+                route = null,
+                stationName = null,
+                realtime = null,
+                timetable = null,
+            )
+        whenever(stationRepository.findById("K450")).thenReturn(Optional.of(existingStation))
+        whenever(nameRepository.findByName("중앙역 - 수정됨")).thenReturn(
+            SubwayStation(name = "중앙역 - 수정됨", subwayLine = listOf()),
+        )
         whenever(stationRepository.save(existingStation)).thenReturn(updatedStation)
         val result =
             service.updateStation(
