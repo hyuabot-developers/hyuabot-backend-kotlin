@@ -450,6 +450,9 @@ class SubwayServiceTest {
         whenever(nameRepository.save(SubwayStation(name = "중앙역 - 수정됨", emptyList()))).thenReturn(
             SubwayStation(name = "중앙역 - 수정됨", emptyList()),
         )
+        whenever(nameRepository.findByName("중앙")).thenReturn(
+            SubwayStation(name = "중앙", subwayLine = listOf()),
+        )
         whenever(stationRepository.save(existingStation)).thenReturn(updatedStation)
         val result =
             service.updateStation(
@@ -498,6 +501,9 @@ class SubwayServiceTest {
         whenever(stationRepository.findById("K450")).thenReturn(Optional.of(existingStation))
         whenever(nameRepository.findByName("중앙역 - 수정됨")).thenReturn(
             SubwayStation(name = "중앙역 - 수정됨", subwayLine = listOf()),
+        )
+        whenever(nameRepository.findByName("중앙")).thenReturn(
+            SubwayStation(name = "중앙", subwayLine = listOf()),
         )
         whenever(stationRepository.save(existingStation)).thenReturn(updatedStation)
         val result =

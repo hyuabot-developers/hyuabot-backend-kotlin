@@ -113,17 +113,21 @@ class SubwayService(
         payload: UpdateSubwayStationRequest,
     ): SubwayRouteStation {
         val station = stationRepository.findById(id).orElseThrow { SubwayStationNotFoundException() }
+        val oldStationName = station.name
         if (!LocalDateTimeBuilder.checkLocalTimeFormat(payload.cumulativeTime)) {
             throw DurationNotValidException()
         }
-        nameRepository.findByName(payload.name) ?: nameRepository.save(SubwayStation(name = payload.name, emptyList()))
         station.let {
             it.routeID = payload.routeID
             it.name = payload.name
             it.order = payload.order
             it.cumulativeTime = LocalDateTimeBuilder.convertStringToDuration(payload.cumulativeTime)
-            return stationRepository.save(it)
         }
+        if (oldStationName != payload.name) {
+            cleanUpUselessStationName(oldStationName)
+            nameRepository.findByName(payload.name) ?: nameRepository.save(SubwayStation(name = payload.name, emptyList()))
+        }
+        return stationRepository.save(station)
     }
 
     fun deleteStation(id: String) {
