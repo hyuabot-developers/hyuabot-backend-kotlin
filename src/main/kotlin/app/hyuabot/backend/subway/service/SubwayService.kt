@@ -116,6 +116,7 @@ class SubwayService(
         if (!LocalDateTimeBuilder.checkLocalTimeFormat(payload.cumulativeTime)) {
             throw DurationNotValidException()
         }
+        nameRepository.findByName(payload.name) ?: nameRepository.save(SubwayStation(name = payload.name, emptyList()))
         station.let {
             it.routeID = payload.routeID
             it.name = payload.name
