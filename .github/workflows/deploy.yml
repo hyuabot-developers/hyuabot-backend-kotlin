@@ -63,4 +63,4 @@ jobs:
     steps:
       - name: Restart backend service
         run: |
-          microk8s kubectl -n hyuabot rollout restart deployment/hyuabot-backend-kotlin
+          kubectl -n hyuabot rollout restart deployment/hyuabot-backend-kotlin
