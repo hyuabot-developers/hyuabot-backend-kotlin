@@ -60,6 +60,12 @@ class ContactService(
 
     fun getAllContacts(): List<Contact> = contactRepository.findAll().sortedBy { it.id }
 
+    fun getContactByCampusId(id: Int): List<Contact> {
+        contactRepository.findByCampusID(id).let { contacts ->
+            return contacts.sortedBy { it.id }
+        }
+    }
+
     fun getContactByCategoryId(id: Int): List<Contact> {
         categoryRepository.findById(id).orElseThrow { ContactCategoryNotFoundException() }.let { category ->
             return category.contact.sortedBy { it.id }
