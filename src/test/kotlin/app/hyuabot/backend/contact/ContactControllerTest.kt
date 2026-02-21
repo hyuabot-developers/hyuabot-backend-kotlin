@@ -305,6 +305,42 @@ class ContactControllerTest {
     }
 
     @Test
+    @DisplayName("연락처 목록 조회 - 캠퍼스 ID로 필터링")
+    @WithCustomMockUser(username = "test_user")
+    fun testGetContactsByCampusId() {
+        doReturn(
+            listOf(
+                Contact(
+                    id = 1,
+                    campusID = 1,
+                    name = "홍길동",
+                    phone = "010-1234-5678",
+                    categoryID = 1,
+                    category = ContactCategory(id = 1, name = "General", contact = emptyList()),
+                ),
+                Contact(
+                    id = 2,
+                    campusID = 1,
+                    name = "김철수",
+                    phone = "010-8765-4321",
+                    categoryID = 1,
+                    category = ContactCategory(id = 1, name = "General", contact = emptyList()),
+                ),
+            ),
+        ).whenever(contactService).getContactByCampusId(1)
+        mockMvc
+            .perform(get("/api/v1/contact/contact?campusID=1"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.result.length()").value(2))
+            .andExpect(jsonPath("$.result[0].seq").value(1))
+            .andExpect(jsonPath("$.result[0].name").value("홍길동"))
+            .andExpect(jsonPath("$.result[0].phone").value("010-1234-5678"))
+            .andExpect(jsonPath("$.result[1].seq").value(2))
+            .andExpect(jsonPath("$.result[1].name").value("김철수"))
+            .andExpect(jsonPath("$.result[1].phone").value("010-8765-4321"))
+    }
+
+    @Test
     @DisplayName("연락처 생성")
     @WithCustomMockUser(username = "test_user")
     fun testCreateContact() {

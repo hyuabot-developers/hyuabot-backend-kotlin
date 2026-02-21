@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RequestMapping("/api/v1/contact/contact")
@@ -43,8 +44,22 @@ class ContactController {
         description = "연락처 전체 조회 성공",
         content = [Content(schema = Schema(implementation = ContactListResponse::class))],
     )
-    fun getAllContacts(): ContactListResponse =
-        ContactListResponse(
+    fun getAllContacts(
+        @RequestParam(value = "campusID", required = false) campusID: Int?,
+    ): ContactListResponse =
+        campusID?.let {
+            ContactListResponse(
+                service.getContactByCampusId(it).map { contact ->
+                    ContactResponse(
+                        seq = contact.id!!,
+                        name = contact.name,
+                        phone = contact.phone,
+                        categoryID = contact.categoryID,
+                        campusID = contact.campusID,
+                    )
+                },
+            )
+        } ?: ContactListResponse(
             service.getAllContacts().map {
                 ContactResponse(
                     seq = it.id!!,

@@ -205,6 +205,35 @@ class ContactServiceTest {
     }
 
     @Test
+    @DisplayName("캠퍼스별 연락처 목록 조회")
+    fun testGetContactsByCampusID() {
+        whenever(contactRepository.findByCampusID(1)).thenReturn(
+            listOf(
+                Contact(
+                    id = 1,
+                    campusID = 1,
+                    categoryID = 1,
+                    name = "홍길동",
+                    phone = "010-1234-5678",
+                    category = null,
+                ),
+                Contact(
+                    id = 2,
+                    campusID = 1,
+                    categoryID = 2,
+                    name = "김철수",
+                    phone = "010-8765-4321",
+                    category = null,
+                ),
+            ),
+        )
+        val contacts = service.getContactByCampusId(1)
+        assertEquals(2, contacts.size)
+        assertEquals("홍길동", contacts[0].name)
+        assertEquals("김철수", contacts[1].name)
+    }
+
+    @Test
     @DisplayName("카테고리별 연락처 목록 조회")
     fun testGetContactsByCategoryID() {
         whenever(categoryRepository.findById(1)).thenReturn(
