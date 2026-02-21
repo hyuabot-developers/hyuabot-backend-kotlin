@@ -329,7 +329,7 @@ class ContactControllerTest {
             ),
         ).whenever(contactService).getContactByCampusId(1)
         mockMvc
-            .perform(get("/api/v1/contact/contact?campus=1"))
+            .perform(get("/api/v1/contact/contact?campusID=1"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.result.length()").value(2))
             .andExpect(jsonPath("$.result[0].seq").value(1))

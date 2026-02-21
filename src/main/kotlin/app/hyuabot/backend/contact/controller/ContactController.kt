@@ -45,7 +45,7 @@ class ContactController {
         content = [Content(schema = Schema(implementation = ContactListResponse::class))],
     )
     fun getAllContacts(
-        @RequestParam(value = "campus", required = false) campusID: Int?,
+        @RequestParam(value = "campusID", required = false) campusID: Int?,
     ): ContactListResponse =
         campusID?.let {
             ContactListResponse(
