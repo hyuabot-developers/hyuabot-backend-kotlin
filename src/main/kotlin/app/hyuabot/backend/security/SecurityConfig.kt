@@ -28,6 +28,7 @@ class SecurityConfig(
                 configuration.addAllowedOrigin("http://localhost:8080")
                 configuration.addAllowedOrigin("https://admin.hyuabot.app")
                 configuration.addAllowedOrigin("https://backend.hyuabot.app")
+                configuration.addAllowedOrigin("https://dashboard.hyuabot.app")
                 configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS") // 허용할 HTTP 메서드
                 configuration.allowCredentials = true // 자격 증명 허용
                 configuration.allowedHeaders = listOf("*") // 모든 헤더 허용
