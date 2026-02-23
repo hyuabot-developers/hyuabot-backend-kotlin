@@ -18,7 +18,7 @@ data class ContactCategory(
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "phonebook_category_category_id_seq")
     val id: Int? = null,
     @Column(name = "category_name", length = 30, nullable = false)
-    val name: String,
+    var name: String,
     @OneToMany(mappedBy = "category")
     val contact: List<Contact>,
 )

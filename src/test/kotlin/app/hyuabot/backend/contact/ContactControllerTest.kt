@@ -191,6 +191,92 @@ class ContactControllerTest {
     }
 
     @Test
+    @DisplayName("전화부 카테고리 수정")
+    @WithCustomMockUser(username = "test_user")
+    fun testUpdateContactCategoryById() {
+        doReturn(
+            ContactCategory(
+                id = 1,
+                name = "General",
+                contact = emptyList(),
+            ),
+        ).whenever(contactService).updateContactCategoryById(
+            1,
+            ContactCategoryRequest(
+                name = "General",
+            ),
+        )
+        mockMvc
+            .perform(
+                put("/api/v1/contact/category/1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(ContactCategoryRequest(name = "General"))),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.seq").value(1))
+            .andExpect(jsonPath("$.name").value("General"))
+    }
+
+    @Test
+    @DisplayName("전화부 카테고리 수정 - 존재하지 않는 ID")
+    @WithCustomMockUser(username = "test_user")
+    fun testUpdateContactCategoryByIdNotFound() {
+        doThrow(ContactCategoryNotFoundException()).whenever(contactService).updateContactCategoryById(
+            999,
+            ContactCategoryRequest(
+                name = "General",
+            ),
+        )
+        mockMvc
+            .perform(
+                put("/api/v1/contact/category/999")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(ContactCategoryRequest(name = "General"))),
+            )
+            .andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.message").value("CATEGORY_NOT_FOUND"))
+    }
+
+    @Test
+    @DisplayName("전화부 카테고리 수정 - 중복된 이름")
+    @WithCustomMockUser(username = "test_user")
+    fun testUpdateContactCategoryByIdDuplicateName() {
+        doThrow(DuplicateCategoryException()).whenever(contactService).updateContactCategoryById(
+            1,
+            ContactCategoryRequest(
+                name = "Existing Category",
+            ),
+        )
+        mockMvc
+            .perform(
+                put("/api/v1/contact/category/1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(ContactCategoryRequest(name = "Existing Category"))),
+            )
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.message").value("DUPLICATE_CATEGORY_NAME"))
+    }
+
+    @Test
+    @DisplayName("전화부 카테고리 수정 - 기타 예외")
+    @WithCustomMockUser(username = "test_user")
+    fun testUpdateContactCategoryByIdOtherException() {
+        doThrow(RuntimeException("Unexpected error")).whenever(contactService).updateContactCategoryById(
+            1,
+            ContactCategoryRequest(
+                name = "General",
+            ),
+        )
+        mockMvc
+            .perform(
+                put("/api/v1/contact/category/1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(ContactCategoryRequest(name = "General"))),
+            )
+            .andExpect(status().isInternalServerError)
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
+    }
+
+    @Test
     @DisplayName("전화부 카테고리 삭제")
     @WithCustomMockUser(username = "test_user")
     fun testDeleteContactCategoryById() {

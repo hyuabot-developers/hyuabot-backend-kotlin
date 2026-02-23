@@ -46,6 +46,22 @@ class ContactService(
         )
     }
 
+    fun updateContactCategoryById(
+        id: Int,
+        payload: ContactCategoryRequest,
+    ): ContactCategory {
+        categoryRepository.findById(id).orElseThrow { ContactCategoryNotFoundException() }.let { category ->
+            categoryRepository.findByName(payload.name)?.let {
+                if (it.id!! != id) {
+                    throw DuplicateCategoryException()
+                }
+            }
+            category.name = payload.name
+            updateContactVersion()
+            return categoryRepository.save(category)
+        }
+    }
+
     fun getContactCategoryById(id: Int): ContactCategory =
         categoryRepository.findById(id).orElseThrow { ContactCategoryNotFoundException() }
 
