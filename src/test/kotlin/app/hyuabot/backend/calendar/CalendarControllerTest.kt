@@ -220,7 +220,7 @@ class CalendarControllerTest {
     }
 
     @Test
-    @DisplayName("전화부 카테고리 수정 - 중복된 이름")
+    @DisplayName("학사일정 카테고리 수정 - 중복된 이름")
     @WithCustomMockUser(username = "test_user")
     fun testUpdateCalendarCategoryByIdWithDuplicateName() {
         val request = CalendarCategoryRequest(name = "Existing Category")
