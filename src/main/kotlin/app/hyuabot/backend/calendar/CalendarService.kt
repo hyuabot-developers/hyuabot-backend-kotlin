@@ -47,6 +47,22 @@ class CalendarService(
     fun getCalendarCategoryById(id: Int): CalendarCategory =
         categoryRepository.findById(id).orElseThrow { CalendarCategoryNotFoundException() }
 
+    fun updateCalendarCategoryById(
+        id: Int,
+        payload: CalendarCategoryRequest,
+    ): CalendarCategory {
+        categoryRepository.findById(id).orElseThrow { CalendarCategoryNotFoundException() }.let { category ->
+            categoryRepository.findByName(payload.name)?.let {
+                if (it.id!! != id) {
+                    throw DuplicateCategoryException()
+                }
+            }
+            category.name = payload.name
+            updateCalendarVersion()
+            return categoryRepository.save(category)
+        }
+    }
+
     fun deleteCalendarCategoryById(id: Int) {
         categoryRepository.findById(id).orElseThrow { CalendarCategoryNotFoundException() }.let { category ->
             // 해당 카테고리에 속한 일정도 모두 삭제
