@@ -156,6 +156,97 @@ class ContactServiceTest {
     }
 
     @Test
+    @DisplayName("전화부 카테고리 항목 수정 - ID로 수정")
+    fun testUpdateContactCategoryByID() {
+        val payload =
+            ContactCategoryRequest(
+                name = "Support",
+            )
+        val existingCategory =
+            ContactCategory(
+                id = 1,
+                name = "General",
+                contact = listOf(),
+            )
+        whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
+        whenever(categoryRepository.findByName(payload.name)).thenReturn(null)
+        whenever(categoryRepository.save(existingCategory)).thenReturn(
+            existingCategory.apply {
+                name = payload.name
+            },
+        )
+        val result = service.updateContactCategoryById(1, payload)
+        assertEquals(1, result.id)
+        assertEquals("Support", result.name)
+    }
+
+    @Test
+    @DisplayName("전화부 카테고리 항목 수정 - ID로 수정, 이름이 동일한 경우")
+    fun testUpdateContactCategoryByIDSameName() {
+        val payload =
+            ContactCategoryRequest(
+                name = "General",
+            )
+        val existingCategory =
+            ContactCategory(
+                id = 1,
+                name = "General",
+                contact = listOf(),
+            )
+        whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
+        whenever(categoryRepository.findByName(payload.name)).thenReturn(
+            ContactCategory(
+                id = 1,
+                name = payload.name,
+                contact = listOf(),
+            ),
+        )
+        whenever(categoryRepository.save(existingCategory)).thenReturn(existingCategory)
+        val result = service.updateContactCategoryById(1, payload)
+        assertEquals(1, result.id)
+        assertEquals("General", result.name)
+    }
+
+    @Test
+    @DisplayName("전화부 카테고리 항목 수정 실패 - 중복된 이름으로 수정")
+    fun testUpdateContactCategoryByIDDuplicateName() {
+        val payload =
+            ContactCategoryRequest(
+                name = "Emergency",
+            )
+        val existingCategory =
+            ContactCategory(
+                id = 1,
+                name = "General",
+                contact = listOf(),
+            )
+        whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
+        whenever(categoryRepository.findByName(payload.name)).thenReturn(
+            ContactCategory(
+                id = 2,
+                name = payload.name,
+                contact = listOf(),
+            ),
+        )
+        assertThrows<DuplicateCategoryException> {
+            service.updateContactCategoryById(1, payload)
+        }
+    }
+
+    @Test
+    @DisplayName("전화부 카테고리 항목 수정 실패 - 없는 ID로 수정")
+    fun testUpdateContactCategoryByIDNotFound() {
+        val payload =
+            ContactCategoryRequest(
+                name = "Support",
+            )
+        whenever(categoryRepository.findById(1)).thenReturn(Optional.empty())
+        assertThrows<ContactCategoryNotFoundException> {
+            service.updateContactCategoryById(1, payload)
+        }
+    }
+
+    @Test
     @DisplayName("전화부 카테고리 항목 삭제 - ID로 삭제")
     fun testDeleteContactCategoryByID() {
         val category =

@@ -181,6 +181,77 @@ class CalendarControllerTest {
     }
 
     @Test
+    @DisplayName("학사일정 카테고리 수정")
+    @WithCustomMockUser(username = "test_user")
+    fun testUpdateCalendarCategoryById() {
+        val request = CalendarCategoryRequest(name = "Updated Category")
+        doReturn(
+            CalendarCategory(
+                id = 1,
+                name = "Updated Category",
+                event = emptyList(),
+            ),
+        ).whenever(calendarService).updateCalendarCategoryById(1, request)
+        mockMvc
+            .perform(
+                MockMvcRequestBuilders
+                    .put("/api/v1/calendar/category/1")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(request)),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.seq").value(1))
+            .andExpect(jsonPath("$.name").value("Updated Category"))
+    }
+
+    @Test
+    @DisplayName("학사일정 카테고리 수정 - 존재하지 않는 카테고리")
+    @WithCustomMockUser(username = "test_user")
+    fun testUpdateCalendarCategoryByIdNotFound() {
+        val request = CalendarCategoryRequest(name = "Updated Category")
+        doThrow(CalendarCategoryNotFoundException()).whenever(calendarService).updateCalendarCategoryById(999, request)
+        mockMvc
+            .perform(
+                MockMvcRequestBuilders
+                    .put("/api/v1/calendar/category/999")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(request)),
+            ).andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.message").value("CATEGORY_NOT_FOUND"))
+    }
+
+    @Test
+    @DisplayName("학사일정 카테고리 수정 - 중복된 이름")
+    @WithCustomMockUser(username = "test_user")
+    fun testUpdateCalendarCategoryByIdWithDuplicateName() {
+        val request = CalendarCategoryRequest(name = "Existing Category")
+        doThrow(DuplicateCategoryException()).whenever(calendarService).updateCalendarCategoryById(1, request)
+        mockMvc
+            .perform(
+                MockMvcRequestBuilders
+                    .put("/api/v1/calendar/category/1")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(request)),
+            ).andExpect(status().isConflict)
+            .andExpect(jsonPath("$.message").value("DUPLICATE_CATEGORY_NAME"))
+    }
+
+    @Test
+    @DisplayName("학사일정 카테고리 수정 - 기타 예외")
+    @WithCustomMockUser(username = "test_user")
+    fun testUpdateCalendarCategoryByIdWithException() {
+        val request = CalendarCategoryRequest(name = "Updated Category")
+        doThrow(RuntimeException("Unexpected Error")).whenever(calendarService).updateCalendarCategoryById(1, request)
+        mockMvc
+            .perform(
+                MockMvcRequestBuilders
+                    .put("/api/v1/calendar/category/1")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(request)),
+            ).andExpect(status().isInternalServerError)
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
+    }
+
+    @Test
     @DisplayName("학사일정 카테고리 삭제")
     @WithCustomMockUser(username = "test_user")
     fun testDeleteCalendarCategoryById() {

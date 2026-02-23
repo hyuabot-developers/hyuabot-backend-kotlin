@@ -151,6 +151,97 @@ class CalendarServiceTest {
     }
 
     @Test
+    @DisplayName("학사일정 카테고리 항목 수정 - ID로 수정")
+    fun testUpdateCalendarCategoryByID() {
+        val payload =
+            CalendarCategoryRequest(
+                name = "Support",
+            )
+        val existingCategory =
+            CalendarCategory(
+                id = 1,
+                name = "General",
+                event = listOf(),
+            )
+        whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
+        whenever(categoryRepository.findByName(payload.name)).thenReturn(null)
+        whenever(categoryRepository.save(existingCategory)).thenReturn(
+            existingCategory.apply {
+                name = payload.name
+            },
+        )
+        val result = service.updateCalendarCategoryById(1, payload)
+        assertEquals(1, result.id)
+        assertEquals("Support", result.name)
+    }
+
+    @Test
+    @DisplayName("학사일정 카테고리 항목 수정 - ID로 수정, 이름이 동일한 경우")
+    fun testUpdateCalendarCategoryByIDSameName() {
+        val payload =
+            CalendarCategoryRequest(
+                name = "General",
+            )
+        val existingCategory =
+            CalendarCategory(
+                id = 1,
+                name = "General",
+                event = listOf(),
+            )
+        whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
+        whenever(categoryRepository.findByName(payload.name)).thenReturn(
+            CalendarCategory(
+                id = 1,
+                name = payload.name,
+                event = listOf(),
+            ),
+        )
+        whenever(categoryRepository.save(existingCategory)).thenReturn(existingCategory)
+        val result = service.updateCalendarCategoryById(1, payload)
+        assertEquals(1, result.id)
+        assertEquals("General", result.name)
+    }
+
+    @Test
+    @DisplayName("학사일정 카테고리 항목 수정 실패 - 중복된 이름으로 수정")
+    fun testUpdateCalendarCategoryByIDDuplicateName() {
+        val payload =
+            CalendarCategoryRequest(
+                name = "Emergency",
+            )
+        val existingCategory =
+            CalendarCategory(
+                id = 1,
+                name = "General",
+                event = listOf(),
+            )
+        whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
+        whenever(categoryRepository.findByName(payload.name)).thenReturn(
+            CalendarCategory(
+                id = 2,
+                name = payload.name,
+                event = listOf(),
+            ),
+        )
+        assertThrows<DuplicateCategoryException> {
+            service.updateCalendarCategoryById(1, payload)
+        }
+    }
+
+    @Test
+    @DisplayName("학사일정 카테고리 항목 수정 실패 - 없는 ID로 수정")
+    fun testUpdateCalendarCategoryByIDNotFound() {
+        val payload =
+            CalendarCategoryRequest(
+                name = "Support",
+            )
+        whenever(categoryRepository.findById(1)).thenReturn(Optional.empty())
+        assertThrows<CalendarCategoryNotFoundException> {
+            service.updateCalendarCategoryById(1, payload)
+        }
+    }
+
+    @Test
     @DisplayName("학사일정 카테고리 삭제 - ID로 삭제")
     fun testDeleteCalendarCategoryById() {
         val categoryId = 1

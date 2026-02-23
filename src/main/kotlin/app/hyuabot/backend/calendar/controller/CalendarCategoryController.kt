@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -167,6 +168,94 @@ class CalendarCategoryController {
             )
         } catch (e: Exception) {
             logger.error("Unexpected error occurred while retrieving calendar category", e)
+            return ResponseBuilder.response(
+                status = HttpStatus.INTERNAL_SERVER_ERROR,
+                body = ResponseBuilder.Message("INTERNAL_SERVER_ERROR"),
+            )
+        }
+    }
+
+    @PutMapping("/{seq}")
+    @Operation(
+        summary = "학사일정 카테고리 수정",
+        description = "학사일정 카테고리를 수정합니다.",
+        parameters = [
+            io.swagger.v3.oas.annotations.Parameter(
+                name = "seq",
+                description = "학사일정 카테고리 ID",
+                example = "1",
+                required = true,
+            ),
+        ],
+        requestBody =
+            io.swagger.v3.oas.annotations.parameters.RequestBody(
+                content = [Content(schema = Schema(implementation = CalendarCategoryRequest::class))],
+                description = "수정할 학사일정 카테고리 정보",
+            ),
+    )
+    @ApiResponses(
+        ApiResponse(
+            responseCode = "200",
+            description = "학사일정 카테고리 수정 성공",
+            content = [Content(schema = Schema(implementation = CalendarCategoryResponse::class))],
+        ),
+        ApiResponse(
+            responseCode = "404",
+            description = "학사일정 카테고리 수정 실패 - 존재하지 않는 ID",
+            content = [
+                Content(
+                    schema = Schema(implementation = ResponseBuilder.Message::class),
+                    examples = [
+                        ExampleObject(
+                            name = "존재하지 않는 ID",
+                            value = """{"message": "CATEGORY_NOT_FOUND"}""",
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        ApiResponse(
+            responseCode = "409",
+            description = "학사일정 카테고리 수정 실패 - 중복된 이름",
+            content = [
+                Content(
+                    schema = Schema(implementation = ResponseBuilder.Message::class),
+                    examples = [
+                        ExampleObject(
+                            name = "중복된 이름",
+                            value = """{"message": "DUPLICATE_CATEGORY_NAME"}""",
+                        ),
+                    ],
+                ),
+            ],
+        ),
+    )
+    fun updateCalendarCategory(
+        @PathVariable seq: Int,
+        @RequestBody request: CalendarCategoryRequest,
+    ): ResponseEntity<*> {
+        try {
+            val category = service.updateCalendarCategoryById(seq, request)
+            return ResponseBuilder.response(
+                status = HttpStatus.OK,
+                body =
+                    CalendarCategoryResponse(
+                        seq = category.id!!,
+                        name = category.name,
+                    ),
+            )
+        } catch (_: CalendarCategoryNotFoundException) {
+            return ResponseBuilder.response(
+                status = HttpStatus.NOT_FOUND,
+                body = ResponseBuilder.Message("CATEGORY_NOT_FOUND"),
+            )
+        } catch (_: DuplicateCategoryException) {
+            return ResponseBuilder.response(
+                status = HttpStatus.CONFLICT,
+                body = ResponseBuilder.Message("DUPLICATE_CATEGORY_NAME"),
+            )
+        } catch (e: Exception) {
+            logger.error("Unexpected error occurred while updating calendar category", e)
             return ResponseBuilder.response(
                 status = HttpStatus.INTERNAL_SERVER_ERROR,
                 body = ResponseBuilder.Message("INTERNAL_SERVER_ERROR"),
