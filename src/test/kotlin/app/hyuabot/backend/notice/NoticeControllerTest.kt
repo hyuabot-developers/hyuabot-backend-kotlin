@@ -155,6 +155,73 @@ class NoticeControllerTest {
     }
 
     @Test
+    @DisplayName("공지사항 카테고리 수정")
+    @WithCustomMockUser(username = "test_user")
+    fun testUpdateNoticeCategoryById() {
+        val request = NoticeCategoryRequest(name = "Updated Category")
+        doReturn(
+            NoticeCategory(
+                id = 1,
+                name = "Updated Category",
+                notice = emptyList(),
+            ),
+        ).whenever(noticeService).updateNoticeCategoryById(1, request)
+        mockMvc
+            .perform(
+                put("/api/v1/notice/category/1")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(request)),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.seq").value(1))
+            .andExpect(jsonPath("$.name").value("Updated Category"))
+    }
+
+    @Test
+    @DisplayName("공지사항 카테고리 수정 - 존재하지 않는 카테고리")
+    @WithCustomMockUser(username = "test_user")
+    fun testUpdateNoticeCategoryByIdNotFound() {
+        val request = NoticeCategoryRequest(name = "Updated Category")
+        doThrow(NoticeCategoryNotFoundException()).whenever(noticeService).updateNoticeCategoryById(999, request)
+        mockMvc
+            .perform(
+                put("/api/v1/notice/category/999")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(request)),
+            ).andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.message").value("CATEGORY_NOT_FOUND"))
+    }
+
+    @Test
+    @DisplayName("공지사항 카테고리 수정 - 중복된 이름")
+    @WithCustomMockUser(username = "test_user")
+    fun testUpdateNoticeCategoryByIdWithDuplicateName() {
+        val request = NoticeCategoryRequest(name = "Existing Category")
+        doThrow(DuplicateCategoryException()).whenever(noticeService).updateNoticeCategoryById(1, request)
+        mockMvc
+            .perform(
+                put("/api/v1/notice/category/1")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(request)),
+            ).andExpect(status().isConflict)
+            .andExpect(jsonPath("$.message").value("DUPLICATE_CATEGORY_NAME"))
+    }
+
+    @Test
+    @DisplayName("공지사항 카테고리 수정 - 기타 예외")
+    @WithCustomMockUser(username = "test_user")
+    fun testUpdateNoticeCategoryByIdWithException() {
+        val request = NoticeCategoryRequest(name = "Updated Category")
+        doThrow(RuntimeException("Unexpected Error")).whenever(noticeService).updateNoticeCategoryById(1, request)
+        mockMvc
+            .perform(
+                put("/api/v1/notice/category/1")
+                    .contentType("application/json")
+                    .content(objectMapper.writeValueAsString(request)),
+            ).andExpect(status().isInternalServerError)
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
+    }
+
+    @Test
     @DisplayName("공지사항 카테고리 삭제")
     @WithCustomMockUser(username = "test_user")
     fun testDeleteNoticeCategoryById() {

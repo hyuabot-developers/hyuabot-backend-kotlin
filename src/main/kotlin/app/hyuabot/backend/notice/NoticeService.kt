@@ -36,6 +36,21 @@ class NoticeService(
 
     fun getNoticeCategoryById(id: Int): NoticeCategory = categoryRepository.findById(id).orElseThrow { NoticeCategoryNotFoundException() }
 
+    fun updateNoticeCategoryById(
+        id: Int,
+        payload: NoticeCategoryRequest,
+    ): NoticeCategory {
+        categoryRepository.findById(id).orElseThrow { NoticeCategoryNotFoundException() }.let { category ->
+            categoryRepository.findByName(payload.name)?.let {
+                if (it.id!! != id) {
+                    throw DuplicateCategoryException()
+                }
+            }
+            category.name = payload.name
+            return categoryRepository.save(category)
+        }
+    }
+
     fun deleteNoticeCategoryById(id: Int) {
         categoryRepository.findById(id).orElseThrow { NoticeCategoryNotFoundException() }.let { category ->
             // 해당 카테고리에 속한 공지사항도 모두 삭제
