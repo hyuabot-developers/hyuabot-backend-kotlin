@@ -122,6 +122,97 @@ class NoticeServiceTest {
     }
 
     @Test
+    @DisplayName("공지사항 카테고리 항목 수정 - ID로 수정")
+    fun testUpdateNoticeCategoryByID() {
+        val payload =
+            NoticeCategoryRequest(
+                name = "Support",
+            )
+        val existingCategory =
+            NoticeCategory(
+                id = 1,
+                name = "General",
+                notice = listOf(),
+            )
+        whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
+        whenever(categoryRepository.findByName(payload.name)).thenReturn(null)
+        whenever(categoryRepository.save(existingCategory)).thenReturn(
+            existingCategory.apply {
+                name = payload.name
+            },
+        )
+        val result = service.updateNoticeCategoryById(1, payload)
+        assertEquals(1, result.id)
+        assertEquals("Support", result.name)
+    }
+
+    @Test
+    @DisplayName("공지사항 카테고리 항목 수정 - ID로 수정, 이름이 동일한 경우")
+    fun testUpdateNoticeCategoryByIDSameName() {
+        val payload =
+            NoticeCategoryRequest(
+                name = "General",
+            )
+        val existingCategory =
+            NoticeCategory(
+                id = 1,
+                name = "General",
+                notice = listOf(),
+            )
+        whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
+        whenever(categoryRepository.findByName(payload.name)).thenReturn(
+            NoticeCategory(
+                id = 1,
+                name = payload.name,
+                notice = listOf(),
+            ),
+        )
+        whenever(categoryRepository.save(existingCategory)).thenReturn(existingCategory)
+        val result = service.updateNoticeCategoryById(1, payload)
+        assertEquals(1, result.id)
+        assertEquals("General", result.name)
+    }
+
+    @Test
+    @DisplayName("공지사항 카테고리 항목 수정 실패 - 중복된 이름으로 수정")
+    fun testUpdateNoticeCategoryByIDDuplicateName() {
+        val payload =
+            NoticeCategoryRequest(
+                name = "Emergency",
+            )
+        val existingCategory =
+            NoticeCategory(
+                id = 1,
+                name = "General",
+                notice = listOf(),
+            )
+        whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
+        whenever(categoryRepository.findByName(payload.name)).thenReturn(
+            NoticeCategory(
+                id = 2,
+                name = payload.name,
+                notice = listOf(),
+            ),
+        )
+        assertThrows<DuplicateCategoryException> {
+            service.updateNoticeCategoryById(1, payload)
+        }
+    }
+
+    @Test
+    @DisplayName("공지사항 카테고리 항목 수정 실패 - 없는 ID로 수정")
+    fun testUpdateNoticeCategoryByIDNotFound() {
+        val payload =
+            NoticeCategoryRequest(
+                name = "Support",
+            )
+        whenever(categoryRepository.findById(1)).thenReturn(Optional.empty())
+        assertThrows<NoticeCategoryNotFoundException> {
+            service.updateNoticeCategoryById(1, payload)
+        }
+    }
+
+    @Test
     @DisplayName("공지사항 카테고리 항목 ID로 삭제")
     fun testDeleteNoticeCategoryById() {
         val category =
