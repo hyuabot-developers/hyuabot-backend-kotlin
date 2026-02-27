@@ -1,13 +1,13 @@
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
-    kotlin("jvm") version "1.9.25"
-    kotlin("plugin.spring") version "1.9.25"
-    kotlin("plugin.jpa") version "1.9.25"
-    id("org.springframework.boot") version "3.4.5"
+    kotlin("jvm") version "2.3.10"
+    kotlin("plugin.spring") version "2.3.10"
+    kotlin("plugin.jpa") version "2.3.10"
+    id("org.springframework.boot") version "4.0.3"
     id("io.spring.dependency-management") version "1.1.7"
-    id("com.netflix.dgs.codegen") version "7.0.3"
-    id("org.jlleitschuh.gradle.ktlint").version("12.2.0")
+    id("com.netflix.dgs.codegen") version "8.3.0"
+    id("org.jlleitschuh.gradle.ktlint").version("14.0.1")
     id("jacoco")
 }
 
@@ -28,38 +28,43 @@ repositories {
     mavenCentral()
 }
 
-extra["netflixDgsVersion"] = "10.1.2"
+extra["netflixDgsVersion"] = "11.1.0"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-graphql")
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
     implementation("org.springframework.boot:spring-boot-starter-security")
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
+    // Test dependencies
+    implementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+    implementation("org.springframework.boot:spring-boot-starter-jdbc-test")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
+    implementation("org.springframework.boot:spring-boot-starter-security-test")
+    implementation("tools.jackson.module:jackson-module-kotlin")
     implementation("com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:6.2.3")
     testImplementation("com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.springframework.graphql:spring-graphql-test")
     testImplementation("org.springframework.security:spring-security-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     // Encrypt secret variables
-    implementation("com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.5")
+    implementation("com.github.ulisesbocchio:jasypt-spring-boot-starter:4.0.4")
     // Hibernate utilities
-    implementation("io.hypersistence:hypersistence-utils-hibernate-63:3.9.10")
+    implementation("io.hypersistence:hypersistence-utils-hibernate-73:3.15.2")
     // jwt
-    implementation("io.jsonwebtoken:jjwt-api:0.12.6")
+    implementation("io.jsonwebtoken:jjwt-api:0.13.0")
     // Swagger
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1")
     // Redis
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
-    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
-    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
 }
 
 dependencyManagement {

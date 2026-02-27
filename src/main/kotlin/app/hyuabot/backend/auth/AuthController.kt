@@ -341,10 +341,12 @@ class AuthController {
         ],
     )
     fun logout(request: HttpServletRequest): ResponseEntity<ResponseBuilder.Message> {
-        if (SecurityContextHolder.getContext().authentication.principal == "anonymousUser") {
+        val authentication = SecurityContextHolder.getContext().authentication!!
+        val principal = authentication.principal
+        if (principal !is JWTUser) {
             return ResponseBuilder.response(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
         }
-        val userID = (SecurityContextHolder.getContext().authentication.principal as JWTUser).username
+        val userID = principal.username
         val userInfo = authService.getUserInfo(userID)
         val expireAccessToken =
             ResponseCookie
@@ -427,7 +429,12 @@ class AuthController {
         ],
     )
     fun getProfile(): ResponseEntity<*> {
-        val userID = (SecurityContextHolder.getContext().authentication.principal as JWTUser).username
+        val authentication = SecurityContextHolder.getContext().authentication!!
+        val principal = authentication.principal
+        if (principal !is JWTUser) {
+            return ResponseBuilder.response(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
+        }
+        val userID = principal.username
         return try {
             authService.getUserInfo(userID).let { user ->
                 ResponseBuilder.response(
@@ -441,7 +448,7 @@ class AuthController {
                     ),
                 )
             }
-        } catch (e: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             return ResponseBuilder.response(HttpStatus.NOT_FOUND, "NO_USER_INFO")
         }
     }

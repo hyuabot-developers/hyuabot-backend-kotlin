@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration
 
 @Configuration
 class JasyptConfig(
-    @Value("\${jasypt.encryptor.password}") private val jasyptPassword: String,
+    @param:Value("\${jasypt.encryptor.password}") private val jasyptPassword: String,
 ) {
     @Bean("jasyptStringEncryptor")
     fun provideJasyptEncryptor(): StandardPBEStringEncryptor =

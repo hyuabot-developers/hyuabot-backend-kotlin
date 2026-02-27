@@ -50,7 +50,9 @@ class JWTAuthenticationFilter(
         resolveAuthInfo: () -> Pair<Authentication, String>,
     ) = try {
         val (authentication, token) = resolveAuthInfo()
-        SecurityContextHolder.getContext().authentication = authentication
+        val context = SecurityContextHolder.createEmptyContext()
+        context.authentication = authentication
+        SecurityContextHolder.setContext(context)
         response.addHeader("Set-Cookie", "access_token=$token; Path=/; HttpOnly; SameSite=None; Secure")
     } catch (e: Exception) {
         request.setAttribute("error", e.message)

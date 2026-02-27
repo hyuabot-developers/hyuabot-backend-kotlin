@@ -76,9 +76,7 @@ class ContactService(
 
     fun getAllContacts(): List<Contact> = contactRepository.findAll().sortedBy { it.id }
 
-    fun getContactByCampusId(id: Int): List<Contact> {
-        return contactRepository.findByCampusID(id).sortedBy { it.id }
-    }
+    fun getContactByCampusId(id: Int): List<Contact> = contactRepository.findByCampusID(id).sortedBy { it.id }
 
     fun getContactByCategoryId(id: Int): List<Contact> {
         categoryRepository.findById(id).orElseThrow { ContactCategoryNotFoundException() }.let { category ->

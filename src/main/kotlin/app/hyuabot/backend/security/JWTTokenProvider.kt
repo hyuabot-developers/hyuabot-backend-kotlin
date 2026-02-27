@@ -20,9 +20,9 @@ import java.util.UUID
 
 @Component
 class JWTTokenProvider(
-    @Value("\${jwt.secret}") private val secret: String,
-    @Value("\${jwt.expiration}") private val expirationMinutes: Long,
-    @Value("\${jwt.expiration.refresh}") private val refreshExpirationDays: Long,
+    @param:Value("\${jwt.secret}") private val secret: String,
+    @param:Value("\${jwt.expiration}") private val expirationMinutes: Long,
+    @param:Value("\${jwt.expiration.refresh}") private val refreshExpirationDays: Long,
     private val refreshTokenRepository: RefreshTokenRepository,
     private val redisTemplate: RedisTemplate<String, String>,
 ) {

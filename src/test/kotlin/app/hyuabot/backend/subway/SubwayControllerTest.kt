@@ -21,15 +21,14 @@ import app.hyuabot.backend.subway.exception.SubwayStationNotFoundException
 import app.hyuabot.backend.subway.exception.SubwayTerminalStationNotFoundException
 import app.hyuabot.backend.subway.exception.SubwayTimetableNotFoundException
 import app.hyuabot.backend.subway.service.SubwayService
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -41,6 +40,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import tools.jackson.databind.ObjectMapper
 import java.time.Duration
 import java.time.LocalTime
 import java.time.ZonedDateTime
@@ -822,8 +822,7 @@ class SubwayControllerTest {
                 get("/api/v1/subway/station/K450/timetable")
                     .param("direction", "up")
                     .param("weekday", "weekdays"),
-            )
-            .andExpect(status().isOk)
+            ).andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.result").isArray)
             .andExpect(jsonPath("$.result[0].seq").value(1))

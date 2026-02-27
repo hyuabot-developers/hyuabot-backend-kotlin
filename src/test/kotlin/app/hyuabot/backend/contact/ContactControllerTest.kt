@@ -11,15 +11,14 @@ import app.hyuabot.backend.database.entity.ContactCategory
 import app.hyuabot.backend.database.entity.ContactVersion
 import app.hyuabot.backend.database.exception.PhoneNumberNotValidException
 import app.hyuabot.backend.security.WithCustomMockUser
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -30,6 +29,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import tools.jackson.databind.ObjectMapper
 import java.time.ZonedDateTime
 
 @SpringBootTest
@@ -231,8 +231,7 @@ class ContactControllerTest {
                 put("/api/v1/contact/category/999")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(ContactCategoryRequest(name = "General"))),
-            )
-            .andExpect(status().isNotFound)
+            ).andExpect(status().isNotFound)
             .andExpect(jsonPath("$.message").value("CATEGORY_NOT_FOUND"))
     }
 
@@ -251,8 +250,7 @@ class ContactControllerTest {
                 put("/api/v1/contact/category/1")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(ContactCategoryRequest(name = "Existing Category"))),
-            )
-            .andExpect(status().isConflict)
+            ).andExpect(status().isConflict)
             .andExpect(jsonPath("$.message").value("DUPLICATE_CATEGORY_NAME"))
     }
 
@@ -271,8 +269,7 @@ class ContactControllerTest {
                 put("/api/v1/contact/category/1")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(ContactCategoryRequest(name = "General"))),
-            )
-            .andExpect(status().isInternalServerError)
+            ).andExpect(status().isInternalServerError)
             .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
     }
 

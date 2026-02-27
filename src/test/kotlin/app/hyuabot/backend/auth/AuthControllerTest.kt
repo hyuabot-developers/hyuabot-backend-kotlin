@@ -6,7 +6,6 @@ import app.hyuabot.backend.auth.exception.DuplicateUserIDException
 import app.hyuabot.backend.database.entity.User
 import app.hyuabot.backend.database.repository.UserRepository
 import app.hyuabot.backend.security.WithCustomMockUser
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.jsonwebtoken.ExpiredJwtException
 import jakarta.servlet.http.Cookie
 import org.junit.jupiter.api.AfterEach
@@ -18,10 +17,12 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.MediaType
 import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
@@ -32,6 +33,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import tools.jackson.databind.ObjectMapper
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -303,6 +305,34 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("로그아웃 테스트 (Authentication is null)")
+    fun testLogoutUnauthenticatedNoAuthentication() {
+        mockMvc
+            .perform(
+                delete("/api/v1/user/token")
+                    .with(SecurityMockMvcRequestPostProcessors.anonymous()),
+            ).andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$.message").value("UNAUTHORIZED"))
+    }
+
+    @Test
+    @DisplayName("로그아웃 테스트 (Authentication principal is not User)")
+    fun testLogoutUnauthenticatedInvalidPrincipal() {
+        val auth =
+            UsernamePasswordAuthenticationToken(
+                "notJWTUser",
+                null,
+                emptyList(),
+            )
+        mockMvc
+            .perform(
+                delete("/api/v1/user/token")
+                    .with(SecurityMockMvcRequestPostProcessors.authentication(auth)),
+            ).andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$.message").value("UNAUTHORIZED"))
+    }
+
+    @Test
     @DisplayName("로그아웃 테스트 (인증되지 않은 사용자)")
     fun testLogoutUnauthenticated() {
         mockMvc
@@ -353,5 +383,22 @@ class AuthControllerTest {
                 get("/api/v1/user/profile"),
             ).andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("NO_USER_INFO"))
+    }
+
+    @Test
+    @DisplayName("사용자 정보 조회 테스트 (Authentication principal is not User)")
+    fun testGetUserInfoUnauthenticatedInvalidPrincipal() {
+        val auth =
+            UsernamePasswordAuthenticationToken(
+                "notJWTUser",
+                null,
+                emptyList(),
+            )
+        mockMvc
+            .perform(
+                get("/api/v1/user/profile")
+                    .with(SecurityMockMvcRequestPostProcessors.authentication(auth)),
+            ).andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$.message").value("UNAUTHORIZED"))
     }
 }

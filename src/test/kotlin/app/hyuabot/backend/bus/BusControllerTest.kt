@@ -28,15 +28,14 @@ import app.hyuabot.backend.database.entity.BusStop
 import app.hyuabot.backend.database.entity.BusTimetable
 import app.hyuabot.backend.database.exception.LocalTimeNotValidException
 import app.hyuabot.backend.security.WithCustomMockUser
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -48,6 +47,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import tools.jackson.databind.ObjectMapper
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
@@ -80,24 +80,6 @@ class BusControllerTest {
             BusRoute(
                 id = 216000068,
                 name = "10-1",
-                typeCode = "13",
-                typeName = "일반형시내버스",
-                startStopID = 216000358,
-                endStopID = 216000138,
-                upFirstTime = LocalTime.parse("05:30"),
-                upLastTime = LocalTime.parse("23:10"),
-                downFirstTime = LocalTime.parse("06:00"),
-                downLastTime = LocalTime.parse("23:40"),
-                districtCode = 2,
-                companyID = 4100700,
-                companyName = "경원여객",
-                companyPhone = "031-492-2260",
-                stop = emptyList(),
-            )
-        val TEST_ROUTE_2 =
-            BusRoute(
-                id = 216000069,
-                name = "10-2",
                 typeCode = "13",
                 typeName = "일반형시내버스",
                 startStopID = 216000358,

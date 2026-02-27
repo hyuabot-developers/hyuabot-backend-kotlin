@@ -248,7 +248,7 @@ class ReadingRoomServiceTest {
         whenever(readingRoomRepository.findById(999)).thenReturn(Optional.empty())
         whenever(
             readingRoomRepository.save(
-                any(),
+                any(ReadingRoom::class.java),
             ),
         ).thenReturn(
             ReadingRoom(

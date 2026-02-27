@@ -32,11 +32,11 @@ class ResponseBuilderTest {
             )
         assertEquals(response.statusCode, HttpStatus.OK)
         assertEquals(response.body?.message, "Success")
-        response.headers.forEach {
-            if (it.key == "Set-Cookie") {
-                assertEquals(it.value.size, 2)
-                assertEquals(it.value[0].contains("accessToken"), true)
-                assertEquals(it.value[1].contains("refreshToken"), true)
+        response.headers.forEach { key, value ->
+            if (key == "Set-Cookie") {
+                assertEquals(value.size, 2)
+                assertEquals(value[0].contains("accessToken"), true)
+                assertEquals(value[1].contains("refreshToken"), true)
             }
         }
     }
