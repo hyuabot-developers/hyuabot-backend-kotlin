@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -109,6 +110,24 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("회원가입 테스트 (비밀번호 인코딩 실패)")
+    fun signUpPasswordEncodingFailureTest() {
+        val payload =
+            CreateUserRequest(
+                userID = "testUser",
+                password = "testPassword",
+                nickname = "Test User",
+                email = "test@example.com",
+                phone = "1234567890",
+            )
+        whenever(userRepository.findByUserID(payload.userID)).thenReturn(null)
+        whenever(userRepository.findByEmail(payload.email)).thenReturn(null)
+        whenever(passwordEncoder.encode(payload.password)).thenReturn(null)
+        authService.signUp(payload)
+        verify(userRepository, never()).save(any())
+    }
+
+    @Test
     @DisplayName("로그인 테스트")
     fun loginTest() {
         val userID = "testUser"
@@ -166,6 +185,16 @@ class AuthServiceTest {
         authService.logout(user, request)
         verify(tokenProvider).invalidateAccessToken(user, accessToken)
         verify(refreshTokenRepository).delete(any())
+    }
+
+    @Test
+    @DisplayName("로그아웃 테스트 (Cookie 없음)")
+    fun logoutNoCookieTest() {
+        val user = mock<User>()
+        val cookies = arrayOf(Cookie("access_token", null))
+        whenever(request.cookies).thenReturn(cookies)
+        val exception = assertThrows<IllegalArgumentException> { authService.logout(user, request) }
+        assertEquals("NO_ACCESS_TOKEN", exception.message)
     }
 
     @Test

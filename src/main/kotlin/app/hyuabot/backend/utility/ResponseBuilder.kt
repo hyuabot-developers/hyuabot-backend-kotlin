@@ -26,7 +26,7 @@ object ResponseBuilder {
         return ResponseEntity(body, header, status)
     }
 
-    fun <T: Any> response(
+    fun <T : Any> response(
         status: HttpStatus,
         body: T?,
     ): ResponseEntity<T> {

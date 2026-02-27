@@ -10,15 +10,16 @@ import app.hyuabot.backend.notice.exception.NoticeCategoryNotFoundException
 import app.hyuabot.backend.notice.exception.NoticeNotFoundException
 import app.hyuabot.backend.security.WithCustomMockUser
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
@@ -28,6 +29,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import tools.jackson.databind.ObjectMapper
 import java.time.ZonedDateTime
 
 @SpringBootTest
@@ -453,6 +455,33 @@ class NoticeControllerTest {
                     .content(objectMapper.writeValueAsString(noticeRequest)),
             ).andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.message").value("CATEGORY_NOT_FOUND"))
+    }
+
+    @Test
+    @DisplayName("공지사항 등록 - Authentication principal is not User")
+    fun testCreateNoticeAuthenticationPrincipalNotUser() {
+        val noticeRequest =
+            NoticeRequest(
+                title = "New Notice",
+                url = "https://example.com/new_notice",
+                expiredAt = "2024-12-31 23:59:59",
+                categoryID = 1,
+                language = "English",
+            )
+        val auth =
+            UsernamePasswordAuthenticationToken(
+                "notJWTUser",
+                null,
+                emptyList(),
+            )
+        mockMvc
+            .perform(
+                post("/api/v1/notice/notices")
+                    .contentType("application/json")
+                    .with(SecurityMockMvcRequestPostProcessors.authentication(auth))
+                    .content(objectMapper.writeValueAsString(noticeRequest)),
+            ).andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$.message").value("UNAUTHORIZED"))
     }
 
     @Test

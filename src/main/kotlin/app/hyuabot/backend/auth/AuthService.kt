@@ -33,16 +33,20 @@ class AuthService(
             throw DuplicateEmailException()
         }
         // 사용자 생성
-        val user =
-            User(
-                userID = payload.userID,
-                password = passwordEncoder.encode(payload.password)?.toByteArray() ?: throw IllegalArgumentException("PASSWORD_ENCODING_FAILED"),
-                name = payload.nickname,
-                email = payload.email,
-                phone = payload.phone,
-                active = false,
-            )
-        userRepository.save(user)
+        val encodedPassword = passwordEncoder.encode(payload.password)
+        if (encodedPassword != null) {
+            val user =
+                User(
+                    userID = payload.userID,
+                    password = encodedPassword.toByteArray(),
+                    name = payload.nickname,
+                    email = payload.email,
+                    phone = payload.phone,
+                    active = false,
+                )
+            userRepository.save(user)
+            return
+        }
     }
 
     @Transactional

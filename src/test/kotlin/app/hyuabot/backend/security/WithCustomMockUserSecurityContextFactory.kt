@@ -6,12 +6,11 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.test.context.support.WithSecurityContextFactory
 
 class WithCustomMockUserSecurityContextFactory : WithSecurityContextFactory<WithCustomMockUser> {
-    override fun createSecurityContext(annotation: WithCustomMockUser?): SecurityContext? {
-        val username = annotation?.username ?: return null
+    override fun createSecurityContext(annotation: WithCustomMockUser): SecurityContext {
         val auth =
             UsernamePasswordAuthenticationToken(
                 JWTUser(
-                    username = username,
+                    username = annotation.username,
                     password = "testPassword",
                 ),
                 null,

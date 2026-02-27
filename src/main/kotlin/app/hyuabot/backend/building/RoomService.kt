@@ -57,14 +57,12 @@ class RoomService(
         buildingName: String,
         seq: Int,
         payload: RoomRequest,
-    ): Room =
-        roomRepository.findByBuildingNameAndSeq(buildingName, seq)?.let { room ->
-            room.number = payload.number
-            room.name = payload.name
-            roomRepository.save(room)
-        } ?: run {
-            throw RoomNotFoundException()
-        }
+    ): Room {
+        val room = roomRepository.findByBuildingNameAndSeq(buildingName, seq) ?: throw RoomNotFoundException()
+        room.number = payload.number
+        room.name = payload.name
+        return roomRepository.save(room)
+    }
 
     fun deleteRoom(
         buildingName: String,

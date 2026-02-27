@@ -98,11 +98,12 @@ class NoticeController {
         @RequestBody payload: NoticeRequest,
     ): ResponseEntity<*> =
         try {
-            val authentication = SecurityContextHolder.getContext().authentication
-            if (authentication == null || authentication.principal !is JWTUser) {
+            val authentication = SecurityContextHolder.getContext().authentication!!
+            val principal = authentication.principal
+            if (principal !is JWTUser) {
                 return ResponseBuilder.response(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
             }
-            val userID = (authentication.principal as JWTUser).username
+            val userID = principal.username
             service.createNotice(userID, payload).let {
                 ResponseBuilder.response(
                     status = HttpStatus.CREATED,
