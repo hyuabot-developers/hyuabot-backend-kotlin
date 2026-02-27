@@ -822,8 +822,7 @@ class SubwayControllerTest {
                 get("/api/v1/subway/station/K450/timetable")
                     .param("direction", "up")
                     .param("weekday", "weekdays"),
-            )
-            .andExpect(status().isOk)
+            ).andExpect(status().isOk)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.result").isArray)
             .andExpect(jsonPath("$.result[0].seq").value(1))

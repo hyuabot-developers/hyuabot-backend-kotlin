@@ -231,8 +231,7 @@ class ContactControllerTest {
                 put("/api/v1/contact/category/999")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(ContactCategoryRequest(name = "General"))),
-            )
-            .andExpect(status().isNotFound)
+            ).andExpect(status().isNotFound)
             .andExpect(jsonPath("$.message").value("CATEGORY_NOT_FOUND"))
     }
 
@@ -251,8 +250,7 @@ class ContactControllerTest {
                 put("/api/v1/contact/category/1")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(ContactCategoryRequest(name = "Existing Category"))),
-            )
-            .andExpect(status().isConflict)
+            ).andExpect(status().isConflict)
             .andExpect(jsonPath("$.message").value("DUPLICATE_CATEGORY_NAME"))
     }
 
@@ -271,8 +269,7 @@ class ContactControllerTest {
                 put("/api/v1/contact/category/1")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(ContactCategoryRequest(name = "General"))),
-            )
-            .andExpect(status().isInternalServerError)
+            ).andExpect(status().isInternalServerError)
             .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
     }
 
