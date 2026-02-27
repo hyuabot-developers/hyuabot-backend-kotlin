@@ -36,7 +36,7 @@ class AuthService(
         val user =
             User(
                 userID = payload.userID,
-                password = passwordEncoder.encode(payload.password).toByteArray(),
+                password = passwordEncoder.encode(payload.password)?.toByteArray() ?: throw IllegalArgumentException("PASSWORD_ENCODING_FAILED"),
                 name = payload.nickname,
                 email = payload.email,
                 phone = payload.phone,

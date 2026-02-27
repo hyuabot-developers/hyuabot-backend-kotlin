@@ -341,10 +341,11 @@ class AuthController {
         ],
     )
     fun logout(request: HttpServletRequest): ResponseEntity<ResponseBuilder.Message> {
-        if (SecurityContextHolder.getContext().authentication.principal == "anonymousUser") {
+        val authentication = SecurityContextHolder.getContext().authentication
+        if (authentication == null || authentication.principal !is JWTUser) {
             return ResponseBuilder.response(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
         }
-        val userID = (SecurityContextHolder.getContext().authentication.principal as JWTUser).username
+        val userID = (authentication.principal as JWTUser).username
         val userInfo = authService.getUserInfo(userID)
         val expireAccessToken =
             ResponseCookie
@@ -427,7 +428,11 @@ class AuthController {
         ],
     )
     fun getProfile(): ResponseEntity<*> {
-        val userID = (SecurityContextHolder.getContext().authentication.principal as JWTUser).username
+        val authentication = SecurityContextHolder.getContext().authentication
+        if (authentication == null || authentication.principal !is JWTUser) {
+            return ResponseBuilder.response(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
+        }
+        val userID = (authentication.principal as JWTUser).username
         return try {
             authService.getUserInfo(userID).let { user ->
                 ResponseBuilder.response(

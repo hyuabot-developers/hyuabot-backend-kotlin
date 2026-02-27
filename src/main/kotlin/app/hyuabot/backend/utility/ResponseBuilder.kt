@@ -26,9 +26,9 @@ object ResponseBuilder {
         return ResponseEntity(body, header, status)
     }
 
-    fun <T> response(
+    fun <T: Any> response(
         status: HttpStatus,
-        body: T,
+        body: T?,
     ): ResponseEntity<T> {
         val header = HttpHeaders().apply { contentType = MediaType.APPLICATION_JSON }
         return ResponseEntity(body, header, status)
