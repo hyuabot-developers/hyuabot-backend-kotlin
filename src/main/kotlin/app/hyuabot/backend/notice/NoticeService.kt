@@ -29,7 +29,7 @@ class NoticeService(
         return categoryRepository.save(
             NoticeCategory(
                 name = payload.name,
-                notice = emptyList(),
+                notice = mutableListOf(),
             ),
         )
     }
@@ -118,6 +118,25 @@ class NoticeService(
     fun deleteNoticeById(id: Int) {
         noticeRepository.findById(id).orElseThrow { NoticeNotFoundException() }.let { notice ->
             noticeRepository.delete(notice)
+        }
+    }
+
+    fun fetchNotices(
+        category: String?,
+        language: String?,
+        since: ZonedDateTime?,
+        currentTime: ZonedDateTime
+    ): List<NoticeCategory> {
+        val categories = noticeRepository.findAllWithNotices()
+        val timestamp = since ?: currentTime
+        return categories.filter { cat ->
+            category == null || cat.name.contains(category, ignoreCase = true)
+        }.map { cat ->
+            cat.apply {
+                notice = notice.filter { n ->
+                    (language == null || n.language == language) && n.expiredAt.isAfter(timestamp)
+                }.toMutableList()
+            }
         }
     }
 }

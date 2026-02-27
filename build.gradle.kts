@@ -1,3 +1,4 @@
+import com.netflix.graphql.dgs.codegen.gradle.GenerateJavaTask
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
@@ -42,7 +43,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     implementation("org.springframework.boot:spring-boot-starter-security-test")
     implementation("tools.jackson.module:jackson-module-kotlin")
+    // DGS dependencies
     implementation("com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter")
+    implementation("com.netflix.graphql.dgs:graphql-dgs-extended-scalars")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("org.postgresql:postgresql")
@@ -131,5 +134,11 @@ tasks.jacocoTestReport {
                 }
             },
         ),
+    )
+}
+
+tasks.withType<GenerateJavaTask> {
+    typeMapping = mutableMapOf(
+        "DateTime" to "java.time.ZonedDateTime",
     )
 }

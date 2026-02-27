@@ -1,0 +1,20 @@
+scalar DateTime
+
+type Query {
+    notices(category: String, language: String, timestamp: DateTime): [NoticeCategory!]!
+}
+
+type NoticeCategory {
+    seq: Int!
+    name: String!
+    notices: [Notice!]!
+}
+
+type Notice {
+    seq: Int!
+    title: String!
+    url: String!
+    userID: String!
+    language: String!
+    expiredAt: DateTime!
+}

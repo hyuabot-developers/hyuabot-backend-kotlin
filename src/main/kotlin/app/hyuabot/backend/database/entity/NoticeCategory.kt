@@ -20,5 +20,5 @@ data class NoticeCategory(
     @Column(name = "category_name", length = 20, nullable = false)
     var name: String,
     @OneToMany(mappedBy = "category")
-    val notice: List<Notice>,
+    var notice: MutableList<Notice>,
 )
