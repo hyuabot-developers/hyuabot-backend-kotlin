@@ -17,27 +17,28 @@ class NoticeDataFetcher(
         @InputArgument category: String?,
         @InputArgument language: String?,
         @InputArgument timestamp: ZonedDateTime?,
-    ): List<NoticeCategory> {
-        return noticeService.fetchNotices(
-            category = category,
-            language = language,
-            since = timestamp,
-            currentTime = ZonedDateTime.now(),
-        ).map {
-            NoticeCategory(
-                seq = it.id!!,
-                name = it.name,
-                notices = it.notice.map { notice ->
-                    Notice(
-                        seq = notice.id!!,
-                        title = notice.title,
-                        url = notice.url,
-                        language = notice.language,
-                        expiredAt = notice.expiredAt,
-                        userID = notice.userID,
-                    )
-                },
-            )
-        }
-    }
+    ): List<NoticeCategory> =
+        noticeService
+            .fetchNotices(
+                category = category,
+                language = language,
+                since = timestamp,
+                currentTime = ZonedDateTime.now(),
+            ).map {
+                NoticeCategory(
+                    seq = it.id!!,
+                    name = it.name,
+                    notices =
+                        it.notice.map { notice ->
+                            Notice(
+                                seq = notice.id!!,
+                                title = notice.title,
+                                url = notice.url,
+                                language = notice.language,
+                                expiredAt = notice.expiredAt,
+                                userID = notice.userID,
+                            )
+                        },
+                )
+            }
 }

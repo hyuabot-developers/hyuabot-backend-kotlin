@@ -125,18 +125,21 @@ class NoticeService(
         category: String?,
         language: String?,
         since: ZonedDateTime?,
-        currentTime: ZonedDateTime
+        currentTime: ZonedDateTime,
     ): List<NoticeCategory> {
         val categories = noticeRepository.findAllWithNotices()
         val timestamp = since ?: currentTime
-        return categories.filter { cat ->
-            category == null || cat.name.contains(category, ignoreCase = true)
-        }.map { cat ->
-            cat.apply {
-                notice = notice.filter { n ->
-                    (language == null || n.language == language) && n.expiredAt.isAfter(timestamp)
-                }.toMutableList()
+        return categories
+            .filter { cat ->
+                category == null || cat.name.contains(category, ignoreCase = true)
+            }.map { cat ->
+                cat.apply {
+                    notice =
+                        notice
+                            .filter { n ->
+                                (language == null || n.language == language) && n.expiredAt.isAfter(timestamp)
+                            }.toMutableList()
+                }
             }
-        }
     }
 }

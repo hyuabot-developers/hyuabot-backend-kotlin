@@ -58,7 +58,7 @@ class NoticeDataFetcherTest {
         userID = userID,
         categoryID = categoryID,
         category = null,
-        user = null
+        user = null,
     )
 
     @Test
@@ -67,31 +67,34 @@ class NoticeDataFetcherTest {
         val notice1 = createNotice(id = 1, title = "셔틀버스 운행 안내")
         val notice2 = createNotice(id = 2, title = "학사 일정 변경 안내")
         val category = createNoticeCategory(id = 1, name = "셔틀버스", notice = mutableListOf(notice1, notice2))
-        whenever(noticeService.fetchNotices(
-            anyOrNull(),
-            anyOrNull(),
-            anyOrNull(),
-            any()
-        )).thenReturn(listOf(category))
-        val result = dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
-            """
-            {
-                notices {
-                    seq
-                    name
+        whenever(
+            noticeService.fetchNotices(
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+                any(),
+            ),
+        ).thenReturn(listOf(category))
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
                     notices {
                         seq
-                        title
-                        url
-                        language
-                        expiredAt
-                        userID
+                        name
+                        notices {
+                            seq
+                            title
+                            url
+                            language
+                            expiredAt
+                            userID
+                        }
                     }
                 }
-            }
-            """.trimIndent(),
-            "data.notices"
-        )
+                """.trimIndent(),
+                "data.notices",
+            )
         assertNotNull(result)
         assertEquals(1, result.size)
         assertEquals("셔틀버스", result[0]["name"])
@@ -111,28 +114,29 @@ class NoticeDataFetcherTest {
                 eq("학사"),
                 anyOrNull(),
                 anyOrNull(),
-                any()
-            )
+                any(),
+            ),
         ).thenReturn(listOf(category2))
-        val result = dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
-            """
-            {
-                notices(category: "학사") {
-                    seq
-                    name
-                    notices {
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    notices(category: "학사") {
                         seq
-                        title
-                        url
-                        language
-                        expiredAt
-                        userID
+                        name
+                        notices {
+                            seq
+                            title
+                            url
+                            language
+                            expiredAt
+                            userID
+                        }
                     }
                 }
-            }
-            """.trimIndent(),
-            "data.notices"
-        )
+                """.trimIndent(),
+                "data.notices",
+            )
         assertNotNull(result)
         assertEquals(1, result.size)
         assertEquals("학사", result[0]["name"])
@@ -151,28 +155,29 @@ class NoticeDataFetcherTest {
                 anyOrNull(),
                 eq("KOREAN"),
                 anyOrNull(),
-                any()
-            )
+                any(),
+            ),
         ).thenReturn(listOf(category.copy(notice = mutableListOf(notice1))))
-        val result = dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
-            """
-            {
-                notices(language: "KOREAN") {
-                    seq
-                    name
-                    notices {
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    notices(language: "KOREAN") {
                         seq
-                        title
-                        url
-                        language
-                        expiredAt
-                        userID
+                        name
+                        notices {
+                            seq
+                            title
+                            url
+                            language
+                            expiredAt
+                            userID
+                        }
                     }
                 }
-            }
-            """.trimIndent(),
-            "data.notices"
-        )
+                """.trimIndent(),
+                "data.notices",
+            )
         assertNotNull(result)
         assertEquals(1, result.size)
         assertEquals("셔틀버스", result[0]["name"])
@@ -194,28 +199,29 @@ class NoticeDataFetcherTest {
                 anyOrNull(),
                 anyOrNull(),
                 any(),
-            )
+            ),
         ).thenReturn(listOf(category.copy(notice = mutableListOf(notice1))))
         val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
-        val result = dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
-            """
-            {
-                notices(timestamp: "${dateTimeFormatter.format(now)}") {
-                    seq
-                    name
-                    notices {
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    notices(timestamp: "${dateTimeFormatter.format(now)}") {
                         seq
-                        title
-                        url
-                        language
-                        expiredAt
-                        userID
+                        name
+                        notices {
+                            seq
+                            title
+                            url
+                            language
+                            expiredAt
+                            userID
+                        }
                     }
                 }
-            }
-            """.trimIndent(),
-            "data.notices"
-        )
+                """.trimIndent(),
+                "data.notices",
+            )
         print(dateTimeFormatter.format(now))
         assertNotNull(result)
         assertEquals(1, result.size)

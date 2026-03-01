@@ -86,6 +86,11 @@ ktlint {
     reporters {
         reporter(ReporterType.JSON)
     }
+    filter {
+        exclude { element ->
+            element.file.path.contains("build/generated")
+        }
+    }
 }
 
 tasks.generateJava {
@@ -152,7 +157,8 @@ tasks.jacocoTestReport {
 }
 
 tasks.withType<GenerateJavaTask> {
-    typeMapping = mutableMapOf(
-        "DateTime" to "java.time.ZonedDateTime",
-    )
+    typeMapping =
+        mutableMapOf(
+            "DateTime" to "java.time.ZonedDateTime",
+        )
 }

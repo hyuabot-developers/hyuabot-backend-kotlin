@@ -633,12 +633,13 @@ class NoticeServiceTest {
         val cat2 = NoticeCategory(name = "Academic", notice = mutableListOf())
         whenever(noticeRepository.findAllWithNotices()).thenReturn(listOf(cat1, cat2))
 
-        val result = service.fetchNotices(
-            "general",
-            null,
-            null,
-            ZonedDateTime.now()
-        )
+        val result =
+            service.fetchNotices(
+                "general",
+                null,
+                null,
+                ZonedDateTime.now(),
+            )
         assertEquals(1, result.size)
         assertEquals("General Notice", result[0].name)
     }
@@ -648,19 +649,20 @@ class NoticeServiceTest {
     fun shouldIncludeCategoryEvenIfNoNoticesMatchCriteria() {
         val now = ZonedDateTime.now()
         val category = NoticeCategory(name = "Empty Category", notice = mutableListOf())
-        val expired = Notice(
-            title = "Expired",
-            expiredAt = now.minusDays(1),
-            language = "KOREAN",
-            url = "https://example.com/notice_1",
-            categoryID = 1,
-            userID = "user1",
-            category = category,
-            user = null,
-        )
+        val expired =
+            Notice(
+                title = "Expired",
+                expiredAt = now.minusDays(1),
+                language = "KOREAN",
+                url = "https://example.com/notice_1",
+                categoryID = 1,
+                userID = "user1",
+                category = category,
+                user = null,
+            )
         category.notice.add(expired)
         whenever(
-            noticeRepository.findAllWithNotices()
+            noticeRepository.findAllWithNotices(),
         ).thenReturn(listOf(category))
         val result = service.fetchNotices(null, null, null, now)
         assertEquals(1, result.size)
@@ -672,26 +674,28 @@ class NoticeServiceTest {
     fun shouldFilterByLanguageWhenProvided() {
         val now = ZonedDateTime.now()
         val category = NoticeCategory(name = "Lang Test", notice = mutableListOf())
-        val koNotice = Notice(
-            title = "Korean",
-            language = "KOREAN",
-            expiredAt = now.plusDays(1),
-            url = "https://example.com/notice_ko",
-            categoryID = 1,
-            userID = "user1",
-            category = category,
-            user = null,
-        )
-        val enNotice = Notice(
-            title = "English",
-            language = "ENGLISH",
-            expiredAt = now.plusDays(1),
-            url = "https://example.com/notice_en",
-            categoryID = 1,
-            userID = "user2",
-            category = category,
-            user = null,
-        )
+        val koNotice =
+            Notice(
+                title = "Korean",
+                language = "KOREAN",
+                expiredAt = now.plusDays(1),
+                url = "https://example.com/notice_ko",
+                categoryID = 1,
+                userID = "user1",
+                category = category,
+                user = null,
+            )
+        val enNotice =
+            Notice(
+                title = "English",
+                language = "ENGLISH",
+                expiredAt = now.plusDays(1),
+                url = "https://example.com/notice_en",
+                categoryID = 1,
+                userID = "user2",
+                category = category,
+                user = null,
+            )
         category.notice.addAll(listOf(koNotice, enNotice))
         whenever(noticeRepository.findAllWithNotices()).thenReturn(listOf(category))
         val result = service.fetchNotices(null, "ENGLISH", null, now)
@@ -707,26 +711,28 @@ class NoticeServiceTest {
         val futureDate = now.plusDays(2)
         val pastDate = now.plusDays(1)
 
-        val validNotice = Notice(
-            title = "Valid",
-            expiredAt = futureDate.plusHours(1),
-            language = "KOREAN",
-            url = "https://example.com/notice_valid",
-            categoryID = 1,
-            userID = "user1",
-            category = category,
-            user = null,
-        )
-        val invalidNotice = Notice(
-            title = "Invalid",
-            expiredAt = pastDate,
-            language = "KOREAN",
-            url = "https://example.com/notice_invalid",
-            categoryID = 1,
-            userID = "user2",
-            category = category,
-            user = null,
-        )
+        val validNotice =
+            Notice(
+                title = "Valid",
+                expiredAt = futureDate.plusHours(1),
+                language = "KOREAN",
+                url = "https://example.com/notice_valid",
+                categoryID = 1,
+                userID = "user1",
+                category = category,
+                user = null,
+            )
+        val invalidNotice =
+            Notice(
+                title = "Invalid",
+                expiredAt = pastDate,
+                language = "KOREAN",
+                url = "https://example.com/notice_invalid",
+                categoryID = 1,
+                userID = "user2",
+                category = category,
+                user = null,
+            )
         category.notice.addAll(listOf(validNotice, invalidNotice))
         whenever(noticeRepository.findAllWithNotices()).thenReturn(listOf(category))
         val result = service.fetchNotices(null, null, pastDate, now)
