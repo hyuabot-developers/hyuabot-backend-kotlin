@@ -43,7 +43,8 @@ class SecurityConfig(
                         "/api/v1/user/token",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
-                        "/graphql/client/**",
+                        "/graphql/**",
+                        "/graphiql/**",
                         "/error",
                     ).permitAll()
                     .anyRequest()

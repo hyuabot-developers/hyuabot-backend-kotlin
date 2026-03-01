@@ -3,7 +3,9 @@ package app.hyuabot.backend.database.repository
 import app.hyuabot.backend.database.entity.Notice
 import app.hyuabot.backend.database.entity.NoticeCategory
 import app.hyuabot.backend.database.entity.User
+import jakarta.persistence.EntityManager
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -25,6 +27,8 @@ class NoticeRepositoryTest {
 
     @Autowired lateinit var noticeCategoryRepository: NoticeCategoryRepository
 
+    @Autowired lateinit var entityManager: EntityManager
+
     val currentTime: ZonedDateTime = ZonedDateTime.now()
     val user =
         User(
@@ -38,13 +42,13 @@ class NoticeRepositoryTest {
     val category =
         NoticeCategory(
             name = "General",
-            notice = listOf(),
+            notice = mutableListOf(),
         )
 
     @BeforeEach
     fun setUp() {
         val savedUser = userRepository.save(user)
-        noticeCategoryRepository.save(category)
+        val savedCategory = noticeCategoryRepository.save(category)
         noticeRepository.saveAll(
             (0..3)
                 .map {
@@ -52,10 +56,10 @@ class NoticeRepositoryTest {
                         title = "Notice $it",
                         url = "https://example.com/notice_$it",
                         expiredAt = currentTime.plusDays(it.toLong()),
-                        categoryID = category.id ?: 0,
+                        categoryID = savedCategory.id!!,
                         userID = savedUser.userID,
                         language = "English",
-                        category = category,
+                        category = savedCategory,
                         user = savedUser,
                     )
                 }.toList(),
@@ -119,6 +123,30 @@ class NoticeRepositoryTest {
             assert(notice.title.contains("Notice"))
             assert(notice.url.startsWith("https://"))
             assert(notice.language == "English")
+        }
+    }
+
+    @Test
+    @DisplayName("공지사항 카테고리 및 공지사항 목록 조회")
+    fun testFindAllWithNotices() {
+        entityManager.flush()
+        entityManager.clear()
+
+        val categories = noticeRepository.findAllWithNotices()
+
+        // 카테고리 검증
+        assert(categories.isNotEmpty())
+        assertEquals(1, categories.size)
+        assertEquals("General", categories[0].name)
+
+        // 공지사항 검증 (BeforeEach에서 4개 저장)
+        assertEquals(4, categories[0].notice.size)
+        categories[0].notice.forEach { notice ->
+            assert(notice.title.contains("Notice"))
+            assert(notice.url.startsWith("https://"))
+            assert(notice.language == "English")
+            assert(notice.categoryID == categories[0].id)
+            assert(notice.userID == user.userID)
         }
     }
 }

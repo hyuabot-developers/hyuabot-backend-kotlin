@@ -51,8 +51,8 @@ class NoticeControllerTest {
     fun testGetNoticeCategories() {
         doReturn(
             listOf(
-                NoticeCategory(id = 1, name = "General", notice = emptyList()),
-                NoticeCategory(id = 2, name = "Events", notice = emptyList()),
+                NoticeCategory(id = 1, name = "General", notice = mutableListOf()),
+                NoticeCategory(id = 2, name = "Events", notice = mutableListOf()),
             ),
         ).whenever(noticeService).getNoticeCategories()
         mockMvc
@@ -69,7 +69,7 @@ class NoticeControllerTest {
     @DisplayName("공지사항 카테고리 생성")
     @WithCustomMockUser(username = "test_user")
     fun testCreateNoticeCategory() {
-        val newCategory = NoticeCategory(id = 3, name = "Updates", notice = emptyList())
+        val newCategory = NoticeCategory(id = 3, name = "Updates", notice = mutableListOf())
         doReturn(newCategory).whenever(noticeService).createNoticeCategory(
             NoticeCategoryRequest(
                 name = "Updates",
@@ -125,7 +125,7 @@ class NoticeControllerTest {
     @DisplayName("공지사항 카테고리 항목 조회")
     @WithCustomMockUser(username = "test_user")
     fun testGetNoticeCategoryById() {
-        val category = NoticeCategory(id = 1, name = "General", notice = emptyList())
+        val category = NoticeCategory(id = 1, name = "General", notice = mutableListOf())
         doReturn(category).whenever(noticeService).getNoticeCategoryById(1)
         mockMvc
             .perform(get("/api/v1/notice/category/1"))
@@ -165,7 +165,7 @@ class NoticeControllerTest {
             NoticeCategory(
                 id = 1,
                 name = "Updated Category",
-                notice = emptyList(),
+                notice = mutableListOf(),
             ),
         ).whenever(noticeService).updateNoticeCategoryById(1, request)
         mockMvc
@@ -472,7 +472,7 @@ class NoticeControllerTest {
             UsernamePasswordAuthenticationToken(
                 "notJWTUser",
                 null,
-                emptyList(),
+                mutableListOf(),
             )
         mockMvc
             .perform(

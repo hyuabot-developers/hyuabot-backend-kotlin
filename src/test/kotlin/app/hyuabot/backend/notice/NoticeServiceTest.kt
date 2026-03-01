@@ -42,12 +42,12 @@ class NoticeServiceTest {
                 NoticeCategory(
                     id = 1,
                     name = "General",
-                    notice = emptyList(),
+                    notice = mutableListOf(),
                 ),
                 NoticeCategory(
                     id = 2,
                     name = "Events",
-                    notice = emptyList(),
+                    notice = mutableListOf(),
                 ),
             ),
         )
@@ -64,14 +64,14 @@ class NoticeServiceTest {
             NoticeCategory(
                 id = 3,
                 name = "Announcements",
-                notice = emptyList(),
+                notice = mutableListOf(),
             )
         whenever(categoryRepository.findByName("Announcements")).thenReturn(null)
         whenever(
             categoryRepository.save(
                 NoticeCategory(
                     name = "Announcements",
-                    notice = emptyList(),
+                    notice = mutableListOf(),
                 ),
             ),
         ).thenReturn(newCategory)
@@ -93,7 +93,7 @@ class NoticeServiceTest {
             NoticeCategory(
                 id = 1,
                 name = "General",
-                notice = emptyList(),
+                notice = mutableListOf(),
             )
         whenever(categoryRepository.findByName("General")).thenReturn(existingCategory)
         assertThrows<DuplicateCategoryException> { service.createNoticeCategory(NoticeCategoryRequest("General")) }
@@ -106,7 +106,7 @@ class NoticeServiceTest {
             NoticeCategory(
                 id = 1,
                 name = "General",
-                notice = emptyList(),
+                notice = mutableListOf(),
             )
         whenever(categoryRepository.findById(1)).thenReturn(Optional.of(category))
         val foundCategory = service.getNoticeCategoryById(1)
@@ -132,7 +132,7 @@ class NoticeServiceTest {
             NoticeCategory(
                 id = 1,
                 name = "General",
-                notice = listOf(),
+                notice = mutableListOf(),
             )
         whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
         whenever(categoryRepository.findByName(payload.name)).thenReturn(null)
@@ -157,14 +157,14 @@ class NoticeServiceTest {
             NoticeCategory(
                 id = 1,
                 name = "General",
-                notice = listOf(),
+                notice = mutableListOf(),
             )
         whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
         whenever(categoryRepository.findByName(payload.name)).thenReturn(
             NoticeCategory(
                 id = 1,
                 name = payload.name,
-                notice = listOf(),
+                notice = mutableListOf(),
             ),
         )
         whenever(categoryRepository.save(existingCategory)).thenReturn(existingCategory)
@@ -184,14 +184,14 @@ class NoticeServiceTest {
             NoticeCategory(
                 id = 1,
                 name = "General",
-                notice = listOf(),
+                notice = mutableListOf(),
             )
         whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
         whenever(categoryRepository.findByName(payload.name)).thenReturn(
             NoticeCategory(
                 id = 2,
                 name = payload.name,
-                notice = listOf(),
+                notice = mutableListOf(),
             ),
         )
         assertThrows<DuplicateCategoryException> {
@@ -219,7 +219,7 @@ class NoticeServiceTest {
             NoticeCategory(
                 id = 1,
                 name = "General",
-                notice = emptyList(),
+                notice = mutableListOf(),
             )
         whenever(categoryRepository.findById(1)).thenReturn(Optional.of(category))
         service.deleteNoticeCategoryById(1)
@@ -239,7 +239,7 @@ class NoticeServiceTest {
             NoticeCategory(
                 id = 1,
                 name = "General",
-                notice = emptyList(),
+                notice = mutableListOf(),
             )
         whenever(categoryRepository.findById(1)).thenReturn(Optional.of(category))
         whenever(noticeRepository.findByCategoryID(1)).thenReturn(
@@ -331,7 +331,7 @@ class NoticeServiceTest {
             NoticeCategory(
                 id = 1,
                 name = "General",
-                notice = emptyList(),
+                notice = mutableListOf(),
             )
         whenever(categoryRepository.findById(1)).thenReturn(Optional.of(category))
         whenever(
@@ -425,7 +425,7 @@ class NoticeServiceTest {
             NoticeCategory(
                 id = 1,
                 name = "General",
-                notice = emptyList(),
+                notice = mutableListOf(),
             )
         val notice =
             Notice(
@@ -467,7 +467,7 @@ class NoticeServiceTest {
             NoticeCategory(
                 id = 1,
                 name = "General",
-                notice = emptyList(),
+                notice = mutableListOf(),
             )
         val existingNotice =
             Notice(
@@ -584,7 +584,7 @@ class NoticeServiceTest {
                 NoticeCategory(
                     id = 1,
                     name = "General",
-                    notice = emptyList(),
+                    notice = mutableListOf(),
                 ),
             ),
         )
@@ -601,7 +601,7 @@ class NoticeServiceTest {
             NoticeCategory(
                 id = 1,
                 name = "General",
-                notice = emptyList(),
+                notice = mutableListOf(),
             )
         val notice =
             Notice(
@@ -624,5 +624,119 @@ class NoticeServiceTest {
     fun testDeleteNoticeByIdNotFound() {
         whenever(noticeRepository.findById(999)).thenReturn(Optional.empty())
         assertThrows<NoticeNotFoundException> { service.deleteNoticeById(999) }
+    }
+
+    @Test
+    @DisplayName("공지사항 카테고리 이름으로 필터링 - 대소문자 무시")
+    fun shouldFilterByCategoryNameIgnoringCase() {
+        val cat1 = NoticeCategory(name = "General Notice", notice = mutableListOf())
+        val cat2 = NoticeCategory(name = "Academic", notice = mutableListOf())
+        whenever(noticeRepository.findAllWithNotices()).thenReturn(listOf(cat1, cat2))
+
+        val result =
+            service.fetchNotices(
+                "general",
+                null,
+                null,
+                ZonedDateTime.now(),
+            )
+        assertEquals(1, result.size)
+        assertEquals("General Notice", result[0].name)
+    }
+
+    @Test
+    @DisplayName("카테고리에 해당하는 공지사항이 없더라도 카테고리는 포함되어야 함")
+    fun shouldIncludeCategoryEvenIfNoNoticesMatchCriteria() {
+        val now = ZonedDateTime.now()
+        val category = NoticeCategory(name = "Empty Category", notice = mutableListOf())
+        val expired =
+            Notice(
+                title = "Expired",
+                expiredAt = now.minusDays(1),
+                language = "KOREAN",
+                url = "https://example.com/notice_1",
+                categoryID = 1,
+                userID = "user1",
+                category = category,
+                user = null,
+            )
+        category.notice.add(expired)
+        whenever(
+            noticeRepository.findAllWithNotices(),
+        ).thenReturn(listOf(category))
+        val result = service.fetchNotices(null, null, null, now)
+        assertEquals(1, result.size)
+        assertEquals("Empty Category", result[0].name)
+        assertEquals(0, result[0].notice.size)
+    }
+
+    @Test
+    fun shouldFilterByLanguageWhenProvided() {
+        val now = ZonedDateTime.now()
+        val category = NoticeCategory(name = "Lang Test", notice = mutableListOf())
+        val koNotice =
+            Notice(
+                title = "Korean",
+                language = "KOREAN",
+                expiredAt = now.plusDays(1),
+                url = "https://example.com/notice_ko",
+                categoryID = 1,
+                userID = "user1",
+                category = category,
+                user = null,
+            )
+        val enNotice =
+            Notice(
+                title = "English",
+                language = "ENGLISH",
+                expiredAt = now.plusDays(1),
+                url = "https://example.com/notice_en",
+                categoryID = 1,
+                userID = "user2",
+                category = category,
+                user = null,
+            )
+        category.notice.addAll(listOf(koNotice, enNotice))
+        whenever(noticeRepository.findAllWithNotices()).thenReturn(listOf(category))
+        val result = service.fetchNotices(null, "ENGLISH", null, now)
+        assertEquals(1, result[0].notice.size)
+        assertEquals("ENGLISH", result[0].notice[0].language)
+    }
+
+    @Test
+    @DisplayName("since 파라미터로 공지사항 필터링 - expiredAt이 since 이후인 공지만 반환되어야 함")
+    fun shouldFilterByTimestampCorrectly() {
+        val now = ZonedDateTime.now()
+        val category = NoticeCategory(name = "Time Test", notice = mutableListOf())
+        val futureDate = now.plusDays(2)
+        val pastDate = now.plusDays(1)
+
+        val validNotice =
+            Notice(
+                title = "Valid",
+                expiredAt = futureDate.plusHours(1),
+                language = "KOREAN",
+                url = "https://example.com/notice_valid",
+                categoryID = 1,
+                userID = "user1",
+                category = category,
+                user = null,
+            )
+        val invalidNotice =
+            Notice(
+                title = "Invalid",
+                expiredAt = pastDate,
+                language = "KOREAN",
+                url = "https://example.com/notice_invalid",
+                categoryID = 1,
+                userID = "user2",
+                category = category,
+                user = null,
+            )
+        category.notice.addAll(listOf(validNotice, invalidNotice))
+        whenever(noticeRepository.findAllWithNotices()).thenReturn(listOf(category))
+        val result = service.fetchNotices(null, null, pastDate, now)
+        assertEquals(1, result[0].notice.size)
+        assertEquals("Valid", result[0].notice[0].title)
     }
 }

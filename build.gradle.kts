@@ -1,3 +1,4 @@
+import com.netflix.graphql.dgs.codegen.gradle.GenerateJavaTask
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
@@ -42,7 +43,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
     implementation("org.springframework.boot:spring-boot-starter-security-test")
     implementation("tools.jackson.module:jackson-module-kotlin")
+    // DGS dependencies
     implementation("com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter")
+    implementation("com.netflix.graphql.dgs:graphql-dgs-extended-scalars")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("org.postgresql:postgresql")
@@ -83,6 +86,11 @@ ktlint {
     reporters {
         reporter(ReporterType.JSON)
     }
+    filter {
+        exclude { element ->
+            element.file.path.contains("build/generated")
+        }
+    }
 }
 
 tasks.generateJava {
@@ -111,6 +119,19 @@ tasks.jacocoTestCoverageVerification {
             }
         }
     }
+    classDirectories.setFrom(
+        files(
+            classDirectories.files.map {
+                fileTree(it) {
+                    exclude(
+                        "**/app/hyuabot/backend/HyuabotBackendKotlinApplication**",
+                        "**/app/hyuabot/backend/database/key/**",
+                        "**/app/hyuabot/backend/codegen/**",
+                    )
+                }
+            },
+        ),
+    )
 }
 
 tasks.jacocoTestReport {
@@ -127,9 +148,17 @@ tasks.jacocoTestReport {
                     exclude(
                         "**/app/hyuabot/backend/HyuabotBackendKotlinApplication**",
                         "**/app/hyuabot/backend/database/key/**",
+                        "**/app/hyuabot/backend/codegen/**",
                     )
                 }
             },
         ),
     )
+}
+
+tasks.withType<GenerateJavaTask> {
+    typeMapping =
+        mutableMapOf(
+            "DateTime" to "java.time.ZonedDateTime",
+        )
 }
