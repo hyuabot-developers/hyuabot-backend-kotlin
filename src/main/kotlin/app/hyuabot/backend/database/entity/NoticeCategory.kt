@@ -21,5 +21,5 @@ data class NoticeCategory(
     @Column(name = "category_name", length = 20, nullable = false)
     var name: String,
     @OneToMany(mappedBy = "category", fetch = FetchType.EAGER)
-    var notice: MutableList<Notice>,
+    val notice: MutableList<Notice>,
 )
