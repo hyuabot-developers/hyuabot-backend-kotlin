@@ -1,7 +1,16 @@
+scalar Date
 scalar DateTime
 
 type Query {
-    notices(category: String, language: String, timestamp: DateTime): [NoticeCategory!]!
+    notices(input: NoticeInput): [NoticeCategory!]!
+    calendar(input: AcademicCalendarInput): AcademicCalendar!
+}
+
+# 공지사항 카테고리와 공지사항을 반환하는 쿼리입니다.
+input NoticeInput {
+    category: String
+    language: String
+    timestamp: DateTime
 }
 
 type NoticeCategory {
@@ -17,4 +26,30 @@ type Notice {
     userID: String!
     language: String!
     expiredAt: DateTime!
+}
+
+# 학사일정 버전, 학사일정 카테고리 및 학사일정을 반환하는 쿼리입니다.
+input AcademicCalendarInput {
+    category: String
+    start: Date
+    end: Date
+}
+
+type AcademicCalendar {
+    version: String!
+    categories: [AcademicCalendarCategory!]!
+}
+
+type AcademicCalendarCategory {
+    seq: Int!
+    name: String!
+    events: [AcademicCalendarEvent!]!
+}
+
+type AcademicCalendarEvent {
+    seq: Int!
+    title: String!
+    description: String!
+    start: Date!
+    end: Date!
 }
