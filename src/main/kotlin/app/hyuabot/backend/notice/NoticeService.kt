@@ -133,10 +133,11 @@ class NoticeService(
             .filter { cat ->
                 category == null || cat.name.contains(category, ignoreCase = true)
             }.map { cat ->
-                val filteredNotices = cat.notice
-                    .filter { n ->
-                        (language == null || n.language == language) && n.expiredAt.isAfter(timestamp)
-                    }.toMutableList()
+                val filteredNotices =
+                    cat.notice
+                        .filter { n ->
+                            (language == null || n.language == language) && n.expiredAt.isAfter(timestamp)
+                        }.toMutableList()
                 cat.copy(notice = filteredNotices)
             }
     }
