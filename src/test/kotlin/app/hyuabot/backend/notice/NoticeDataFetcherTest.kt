@@ -222,7 +222,6 @@ class NoticeDataFetcherTest {
                 """.trimIndent(),
                 "data.notices",
             )
-        print(dateTimeFormatter.format(now))
         assertNotNull(result)
         assertEquals(1, result.size)
         assertEquals("셔틀버스", result[0]["name"])
