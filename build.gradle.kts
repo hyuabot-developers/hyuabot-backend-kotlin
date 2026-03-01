@@ -114,6 +114,19 @@ tasks.jacocoTestCoverageVerification {
             }
         }
     }
+    classDirectories.setFrom(
+        files(
+            classDirectories.files.map {
+                fileTree(it) {
+                    exclude(
+                        "**/app/hyuabot/backend/HyuabotBackendKotlinApplication**",
+                        "**/app/hyuabot/backend/database/key/**",
+                        "**/app/hyuabot/backend/codegen/**",
+                    )
+                }
+            },
+        ),
+    )
 }
 
 tasks.jacocoTestReport {
@@ -130,6 +143,7 @@ tasks.jacocoTestReport {
                     exclude(
                         "**/app/hyuabot/backend/HyuabotBackendKotlinApplication**",
                         "**/app/hyuabot/backend/database/key/**",
+                        "**/app/hyuabot/backend/codegen/**",
                     )
                 }
             },
