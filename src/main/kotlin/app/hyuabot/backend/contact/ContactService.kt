@@ -158,6 +158,31 @@ class ContactService(
         }
     }
 
+    fun fetchContacts(
+        category: String?,
+        campus: Int?,
+        name: String?,
+        phone: String?,
+    ): List<ContactCategory> {
+        println("fetchContacts called with category=$category, campus=$campus, name=$name, phone=$phone")
+        val categories =
+            contactRepository.findAllCategoryWithContact()
+        return categories
+            .filter {
+                category == null || it.name.contains(category, ignoreCase = true)
+            }.map {
+                it.copy(
+                    contact =
+                        it.contact
+                            .filter { contact ->
+                                (campus == null || contact.campusID == campus) &&
+                                    (name == null || contact.name.contains(name, ignoreCase = true)) &&
+                                    (phone == null || contact.phone.contains(phone))
+                            }.sortedBy { contact -> contact.id },
+                )
+            }
+    }
+
     companion object {
         private val phoneRegex = Regex("^\\d{2,3}-\\d{3,4}-\\d{4}$")
         private val dateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
