@@ -3,6 +3,7 @@ package app.hyuabot.backend.database.repository
 import app.hyuabot.backend.database.entity.CalendarCategory
 import app.hyuabot.backend.database.entity.CalendarEvent
 import app.hyuabot.backend.database.entity.CalendarVersion
+import jakarta.persistence.EntityManager
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -15,6 +16,7 @@ import org.springframework.test.context.TestPropertySource
 import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.test.assertEquals
 
 @ActiveProfiles("test")
 @DataJpaTest
@@ -26,6 +28,8 @@ class CalendarRepositoryTest {
     @Autowired lateinit var calendarCategoryRepository: CalendarCategoryRepository
 
     @Autowired lateinit var calendarVersionRepository: CalendarVersionRepository
+
+    @Autowired lateinit var entityManager: EntityManager
 
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
@@ -45,16 +49,16 @@ class CalendarRepositoryTest {
     @BeforeEach
     fun setUp() {
         calendarVersionRepository.save(calendarVersion)
-        calendarCategoryRepository.save(category)
+        val savedCategory = calendarCategoryRepository.save(category)
         calendarEventRepository.saveAll(
             listOf(
                 CalendarEvent(
-                    categoryID = category.id ?: 0,
+                    categoryID = savedCategory.id!!,
                     title = "Event 1",
                     description = "Description for Event 1",
                     start = currentTime.minusDays(1),
                     end = currentTime.plusDays(1),
-                    category = category,
+                    category = savedCategory,
                 ),
             ),
         )
@@ -114,5 +118,20 @@ class CalendarRepositoryTest {
         assert(latestVersion?.id != null)
         assert(latestVersion?.name == "1.0")
         assert(latestVersion?.createdAt != null)
+    }
+
+    @Test
+    @DisplayName("학사력 카테고리 및 학사 일정 조회")
+    fun testFindCategoryWithEvents() {
+        entityManager.flush()
+        entityManager.clear()
+
+        val categories = calendarEventRepository.findCategoriesWithEventsBetween(currentTime, currentTime)
+        assertEquals(categories.size, 1)
+        val categoryWithEvents = categories[0]
+        assertEquals(categoryWithEvents.name, "General")
+        assertEquals(categoryWithEvents.event.size, 1)
+        val event = categoryWithEvents.event[0]
+        assertEquals(event.title, "Event 1")
     }
 }

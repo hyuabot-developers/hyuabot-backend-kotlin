@@ -121,7 +121,7 @@ class NoticeDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    notices(category: "학사") {
+                    notices(input: { category: "학사" }) {
                         seq
                         name
                         notices {
@@ -162,7 +162,7 @@ class NoticeDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    notices(language: "KOREAN") {
+                    notices(input: { language: "KOREAN" }) {
                         seq
                         name
                         notices {
@@ -206,7 +206,7 @@ class NoticeDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    notices(timestamp: "${dateTimeFormatter.format(now)}") {
+                    notices(input: { timestamp: "${dateTimeFormatter.format(now)}" }) {
                         seq
                         name
                         notices {

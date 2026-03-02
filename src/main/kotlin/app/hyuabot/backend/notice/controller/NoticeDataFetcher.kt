@@ -2,6 +2,7 @@ package app.hyuabot.backend.notice.controller
 
 import app.hyuabot.backend.codegen.types.Notice
 import app.hyuabot.backend.codegen.types.NoticeCategory
+import app.hyuabot.backend.codegen.types.NoticeInput
 import app.hyuabot.backend.notice.NoticeService
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsQuery
@@ -14,15 +15,13 @@ class NoticeDataFetcher(
 ) {
     @DgsQuery
     fun notices(
-        @InputArgument category: String?,
-        @InputArgument language: String?,
-        @InputArgument timestamp: ZonedDateTime?,
+        @InputArgument input: NoticeInput?,
     ): List<NoticeCategory> =
         noticeService
             .fetchNotices(
-                category = category,
-                language = language,
-                since = timestamp,
+                category = input?.category,
+                language = input?.language,
+                since = input?.timestamp,
                 currentTime = ZonedDateTime.now(),
             ).map {
                 NoticeCategory(
