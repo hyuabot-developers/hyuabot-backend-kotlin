@@ -8,9 +8,8 @@ import graphql.schema.idl.RuntimeWiring
 @DgsComponent
 class ScalarRegistration {
     @DgsRuntimeWiring
-    fun addScalar(builder: RuntimeWiring.Builder): RuntimeWiring.Builder {
-        return builder
+    fun addScalar(builder: RuntimeWiring.Builder): RuntimeWiring.Builder =
+        builder
             .scalar(ExtendedScalars.Date)
             .scalar(ExtendedScalars.DateTime)
-    }
 }

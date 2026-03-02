@@ -152,4 +152,20 @@ class CalendarService(
             }
         }
     }
+
+    fun fetchCalendarEvents(
+        category: String?,
+        start: LocalDate = LocalDate.parse("1900-01-01"),
+        end: LocalDate = LocalDate.parse("2100-12-31"),
+    ): List<CalendarCategory> {
+        val categories = eventRepository.findCategoriesWithEventsBetween(start, end)
+        return categories
+            .filter { cat ->
+                category == null || cat.name.contains(category, ignoreCase = true)
+            }.map {
+                it.copy(
+                    event = it.event.sortedBy { event -> event.id },
+                )
+            }
+    }
 }

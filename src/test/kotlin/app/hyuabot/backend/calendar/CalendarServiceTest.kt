@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import java.time.LocalDate
 import java.time.ZonedDateTime
@@ -40,6 +41,29 @@ class CalendarServiceTest {
 
     @InjectMocks
     lateinit var service: CalendarService
+
+    private fun createEvent(
+        id: Int = 1,
+        title: String = "Test Event",
+        description: String = "Test Description",
+        start: LocalDate = LocalDate.parse("2025-03-01"),
+        end: LocalDate = LocalDate.parse("2025-03-31"),
+        categoryID: Int = 1,
+    ) = CalendarEvent(
+        id = id,
+        title = title,
+        description = description,
+        start = start,
+        end = end,
+        categoryID = categoryID,
+        category = null,
+    )
+
+    private fun createCategory(
+        id: Int = 1,
+        name: String = "학사",
+        events: MutableList<CalendarEvent> = mutableListOf(),
+    ) = CalendarCategory(id = id, name = name, event = events)
 
     @Test
     @DisplayName("학사일정 버전 조회 테스트")
@@ -654,5 +678,134 @@ class CalendarServiceTest {
         whenever(versionRepository.findAll()).thenReturn(listOf(newVersion))
         whenever(versionRepository.save(newVersion)).thenReturn(newVersion)
         service.updateCalendarVersion()
+    }
+
+    @Test
+    @DisplayName("학사일정 조회 - 전체")
+    fun testFetchAllCalendarEvents() {
+        val mockCategories =
+            listOf(
+                createCategory(
+                    id = 1,
+                    name = "학사",
+                    events =
+                        mutableListOf(
+                            createEvent(id = 1, title = "수강신청"),
+                            createEvent(id = 2, title = "개강"),
+                        ),
+                ),
+                createCategory(
+                    id = 2,
+                    name = "행사",
+                    events =
+                        mutableListOf(
+                            createEvent(id = 3, title = "축제", categoryID = 2),
+                        ),
+                ),
+            )
+        whenever(eventRepository.findCategoriesWithEventsBetween(any(), any()))
+            .thenReturn(mockCategories)
+
+        val result = service.fetchCalendarEvents(category = null)
+
+        assertEquals(2, result.size)
+        assertEquals(2, result[0].event.size)
+        assertEquals(1, result[1].event.size)
+    }
+
+    @Test
+    @DisplayName("학사일정 조회 - 카테고리 필터링")
+    fun testFetchCalendarEventsByCategory() {
+        val mockCategories =
+            listOf(
+                createCategory(id = 1, name = "학사", events = mutableListOf(createEvent(id = 1))),
+                createCategory(id = 2, name = "행사", events = mutableListOf(createEvent(id = 2, categoryID = 2))),
+            )
+        whenever(eventRepository.findCategoriesWithEventsBetween(any(), any()))
+            .thenReturn(mockCategories)
+
+        val result = service.fetchCalendarEvents(category = "학사")
+
+        assertEquals(1, result.size)
+        assertEquals("학사", result[0].name)
+    }
+
+    @Test
+    @DisplayName("학사일정 조회 - 카테고리 대소문자 무시 필터링")
+    fun testFetchCalendarEventsByCategoryIgnoreCase() {
+        val mockCategories =
+            listOf(
+                createCategory(id = 1, name = "Academic", events = mutableListOf(createEvent(id = 1))),
+                createCategory(id = 2, name = "Event", events = mutableListOf(createEvent(id = 2, categoryID = 2))),
+            )
+        whenever(eventRepository.findCategoriesWithEventsBetween(any(), any()))
+            .thenReturn(mockCategories)
+
+        val result = service.fetchCalendarEvents(category = "academic")
+
+        assertEquals(1, result.size)
+        assertEquals("Academic", result[0].name)
+    }
+
+    @Test
+    @DisplayName("학사일정 조회 - 날짜 범위 필터링")
+    fun testFetchCalendarEventsByDateRange() {
+        val mockCategories =
+            listOf(
+                createCategory(
+                    id = 1,
+                    name = "학사",
+                    events =
+                        mutableListOf(
+                            createEvent(id = 1, start = LocalDate.parse("2025-03-01"), end = LocalDate.parse("2025-03-31")),
+                            createEvent(id = 2, start = LocalDate.parse("2025-07-01"), end = LocalDate.parse("2025-07-31")),
+                        ),
+                ),
+            )
+        whenever(eventRepository.findCategoriesWithEventsBetween(any(), any()))
+            .thenReturn(mockCategories)
+
+        val result =
+            service.fetchCalendarEvents(
+                category = null,
+                start = LocalDate.parse("2025-03-01"),
+                end = LocalDate.parse("2025-04-30"),
+            )
+
+        assertEquals(1, result.size)
+        // 범위 내 이벤트만 포함
+        assertEquals(2, result[0].event.size)
+        assertEquals(1, result[0].event[0].id)
+    }
+
+    @Test
+    @DisplayName("학사일정 조회 - 날짜 범위를 완전히 벗어난 이벤트 제외")
+    fun testFetchCalendarEventsOutOfRange() {
+        val mockCategories =
+            listOf(
+                createCategory(
+                    id = 1,
+                    name = "학사",
+                    events =
+                        mutableListOf(
+                            createEvent(id = 1, start = LocalDate.parse("2025-03-01"), end = LocalDate.parse("2025-03-31")),
+                        ),
+                ),
+            )
+        whenever(eventRepository.findCategoriesWithEventsBetween(any(), any()))
+            .thenReturn(mockCategories)
+
+        val result =
+            service
+                .fetchCalendarEvents(
+                    category = null,
+                    start = LocalDate.parse("2025-03-01"),
+                    end = LocalDate.parse("2025-04-30"),
+                )
+
+        assertEquals(1, result.size)
+        // 범위 밖 이벤트는 제외되어 1개만 남아야 함
+        assertEquals(1, result[0].event.size)
+        assertEquals(1, result[0].event[0].id)
     }
 }

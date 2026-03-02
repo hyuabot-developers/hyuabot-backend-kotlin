@@ -15,9 +15,9 @@ class NoticeDataFetcher(
 ) {
     @DgsQuery
     fun notices(
-        @InputArgument input: NoticeInput?
-    ): List<NoticeCategory> {
-        return noticeService
+        @InputArgument input: NoticeInput?,
+    ): List<NoticeCategory> =
+        noticeService
             .fetchNotices(
                 category = input?.category,
                 language = input?.language,
@@ -40,5 +40,4 @@ class NoticeDataFetcher(
                         },
                 )
             }
-    }
 }
