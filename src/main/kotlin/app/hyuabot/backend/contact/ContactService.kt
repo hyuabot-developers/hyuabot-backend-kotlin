@@ -41,7 +41,7 @@ class ContactService(
         return categoryRepository.save(
             ContactCategory(
                 name = payload.name,
-                contact = emptyList(),
+                contact = mutableListOf(),
             ),
         )
     }
@@ -164,12 +164,11 @@ class ContactService(
         name: String?,
         phone: String?,
     ): List<ContactCategory> {
-        println("fetchContacts called with category=$category, campus=$campus, name=$name, phone=$phone")
         val categories =
             contactRepository.findAllCategoryWithContact()
         return categories
-            .filter {
-                category == null || it.name.contains(category, ignoreCase = true)
+            .filter { cat ->
+                category == null || cat.name.contains(category, ignoreCase = true)
             }.map {
                 it.copy(
                     contact =
@@ -178,7 +177,9 @@ class ContactService(
                                 (campus == null || contact.campusID == campus) &&
                                     (name == null || contact.name.contains(name, ignoreCase = true)) &&
                                     (phone == null || contact.phone.contains(phone))
-                            }.sortedBy { contact -> contact.id },
+                            }.sortedBy { contact ->
+                                contact.id
+                            }.toMutableList(),
                 )
             }
     }

@@ -46,6 +46,31 @@ class ContactServiceTest {
     @InjectMocks
     lateinit var service: ContactService
 
+    private fun createContact(
+        id: Int = 1,
+        campusID: Int = 1,
+        categoryID: Int = 1,
+        name: String = "TEST",
+        phone: String = "031-0000-0000",
+    ) = Contact(
+        id = id,
+        campusID = campusID,
+        categoryID = categoryID,
+        name = name,
+        phone = phone,
+        category = null,
+    )
+
+    private fun createCategory(
+        id: Int = 1,
+        name: String = "TEST",
+        contacts: MutableList<Contact> = mutableListOf(),
+    ) = ContactCategory(
+        id = id,
+        name = name,
+        contact = contacts,
+    )
+
     @Test
     @DisplayName("전화부 버전 조회 테스트")
     fun testGetContactVersion() {
@@ -75,12 +100,12 @@ class ContactServiceTest {
                 ContactCategory(
                     id = 1,
                     name = "General",
-                    contact = listOf(),
+                    contact = mutableListOf(),
                 ),
                 ContactCategory(
                     id = 2,
                     name = "Emergency",
-                    contact = listOf(),
+                    contact = mutableListOf(),
                 ),
             )
         whenever(categoryRepository.findAll()).thenReturn(categories)
@@ -101,14 +126,14 @@ class ContactServiceTest {
             ContactCategory(
                 id = null,
                 name = payload.name,
-                contact = listOf(),
+                contact = mutableListOf(),
             )
         whenever(categoryRepository.findByName(payload.name)).thenReturn(null)
         whenever(categoryRepository.save(newCategory)).thenReturn(
             ContactCategory(
                 id = 1,
                 name = payload.name,
-                contact = listOf(),
+                contact = mutableListOf(),
             ),
         )
         val result = service.createContactCategory(payload)
@@ -127,7 +152,7 @@ class ContactServiceTest {
             ContactCategory(
                 id = 1,
                 name = payload.name,
-                contact = listOf(),
+                contact = mutableListOf(),
             ),
         )
         assertThrows<DuplicateCategoryException> { service.createContactCategory(payload) }
@@ -140,7 +165,7 @@ class ContactServiceTest {
             ContactCategory(
                 id = 1,
                 name = "General",
-                contact = listOf(),
+                contact = mutableListOf(),
             )
         whenever(categoryRepository.findById(1)).thenReturn(Optional.of(category))
         val result = service.getContactCategoryById(1)
@@ -166,7 +191,7 @@ class ContactServiceTest {
             ContactCategory(
                 id = 1,
                 name = "General",
-                contact = listOf(),
+                contact = mutableListOf(),
             )
         whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
         whenever(categoryRepository.findByName(payload.name)).thenReturn(null)
@@ -191,14 +216,14 @@ class ContactServiceTest {
             ContactCategory(
                 id = 1,
                 name = "General",
-                contact = listOf(),
+                contact = mutableListOf(),
             )
         whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
         whenever(categoryRepository.findByName(payload.name)).thenReturn(
             ContactCategory(
                 id = 1,
                 name = payload.name,
-                contact = listOf(),
+                contact = mutableListOf(),
             ),
         )
         whenever(categoryRepository.save(existingCategory)).thenReturn(existingCategory)
@@ -218,14 +243,14 @@ class ContactServiceTest {
             ContactCategory(
                 id = 1,
                 name = "General",
-                contact = listOf(),
+                contact = mutableListOf(),
             )
         whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
         whenever(categoryRepository.findByName(payload.name)).thenReturn(
             ContactCategory(
                 id = 2,
                 name = payload.name,
-                contact = listOf(),
+                contact = mutableListOf(),
             ),
         )
         assertThrows<DuplicateCategoryException> {
@@ -253,7 +278,7 @@ class ContactServiceTest {
             ContactCategory(
                 id = 1,
                 name = "General",
-                contact = listOf(),
+                contact = mutableListOf(),
             )
         whenever(categoryRepository.findById(1)).thenReturn(Optional.of(category))
         service.deleteContactCategoryById(1)
@@ -333,7 +358,7 @@ class ContactServiceTest {
                     id = 1,
                     name = "General",
                     contact =
-                        listOf(
+                        mutableListOf(
                             Contact(
                                 id = 1,
                                 campusID = 1,
@@ -381,7 +406,7 @@ class ContactServiceTest {
                 ContactCategory(
                     id = 1,
                     name = "General",
-                    contact = listOf(),
+                    contact = mutableListOf(),
                 ),
             ),
         )
@@ -523,7 +548,7 @@ class ContactServiceTest {
                 ContactCategory(
                     id = 2,
                     name = "Emergency",
-                    contact = listOf(),
+                    contact = mutableListOf(),
                 ),
             ),
         )
@@ -620,7 +645,7 @@ class ContactServiceTest {
                 ContactCategory(
                     id = 2,
                     name = "Emergency",
-                    contact = listOf(),
+                    contact = mutableListOf(),
                 ),
             ),
         )
@@ -682,5 +707,184 @@ class ContactServiceTest {
                 assert(saved.name != "oldVersion")
             },
         )
+    }
+
+    @Test
+    @DisplayName("전화부 조회 - 전체")
+    fun testFetchAllContacts() {
+        val mockCategories =
+            listOf(
+                createCategory(
+                    id = 1,
+                    name = "TEST1",
+                    contacts =
+                        mutableListOf(
+                            createContact(
+                                id = 4,
+                                name = "Test4",
+                                phone = "010-1234-5678",
+                            ),
+                            createContact(
+                                id = 3,
+                                name = "Test3",
+                                phone = "010-1234-5678",
+                            ),
+                            createContact(
+                                id = 1,
+                                name = "Test1",
+                                phone = "010-1234-5678",
+                            ),
+                        ),
+                ),
+                createCategory(
+                    id = 2,
+                    name = "Test2",
+                    contacts =
+                        mutableListOf(
+                            createContact(
+                                id = 2,
+                                name = "Test2",
+                                phone = "010-8765-4321",
+                            ),
+                        ),
+                ),
+            )
+        whenever(contactRepository.findAllCategoryWithContact()).thenReturn(mockCategories)
+        val result = service.fetchContacts(null, null, null, null)
+        assertEquals(2, result.size)
+        assertEquals(mockCategories[0].contact.sortedBy { it.id }, result[0].contact)
+    }
+
+    @Test
+    @DisplayName("전화부 조회 - 카테고리 이름으로 필터링")
+    fun testFetchAllCategoriesWithCategoryFilter() {
+        val mockCategories =
+            listOf(
+                createCategory(
+                    id = 1,
+                    name = "학사",
+                    contacts = mutableListOf(),
+                ),
+            )
+        whenever(contactRepository.findAllCategoryWithContact()).thenReturn(mockCategories)
+        val result = service.fetchContacts("학사", null, null, null)
+        assertEquals(1, result.size)
+        assertEquals(mockCategories, result)
+    }
+
+    @Test
+    @DisplayName("전화부 조회 - 카테고리 이름으로 필터링 - 일치하는 카테고리 없음")
+    fun testFetchAllCategoriesWithCategoryFilterNoMatch() {
+        val mockCategories =
+            listOf(
+                createCategory(
+                    id = 1,
+                    name = "학사",
+                    contacts = mutableListOf(),
+                ),
+            )
+        whenever(contactRepository.findAllCategoryWithContact()).thenReturn(mockCategories)
+        val result = service.fetchContacts("비학사", null, null, null)
+        assertEquals(0, result.size)
+    }
+
+    @Test
+    @DisplayName("전화부 조회 - 캠퍼스 ID로 필터링")
+    fun testFetchAllCategoriesWithCampusFilter() {
+        val mockCategories =
+            listOf(
+                createCategory(
+                    id = 1,
+                    name = "Test1",
+                    contacts =
+                        mutableListOf(
+                            createContact(
+                                id = 1,
+                                campusID = 1,
+                                name = "Test1",
+                                phone = "010-1234-5678",
+                            ),
+                        ),
+                ),
+                createCategory(
+                    id = 2,
+                    name = "Test2",
+                    contacts =
+                        mutableListOf(
+                            createContact(
+                                id = 2,
+                                campusID = 2,
+                                name = "Test2",
+                                phone = "010-8765-4321",
+                            ),
+                        ),
+                ),
+            )
+        whenever(contactRepository.findAllCategoryWithContact()).thenReturn(mockCategories)
+        val result = service.fetchContacts(null, 1, null, null)
+        println(result)
+        assertEquals(2, result.size)
+        assertEquals(mockCategories[0], result[0])
+        assertEquals(0, result[1].contact.size)
+    }
+
+    @Test
+    @DisplayName("전화부 조회 - 이름으로 필터링")
+    fun testFetchAllCategoriesWithNameFilter() {
+        val mockCategories =
+            listOf(
+                createCategory(
+                    id = 1,
+                    name = "Test1",
+                    contacts =
+                        mutableListOf(
+                            createContact(
+                                id = 1,
+                                name = "홍길동",
+                                phone = "010-1234-5678",
+                            ),
+                            createContact(
+                                id = 2,
+                                name = "김철수",
+                                phone = "010-8765-4321",
+                            ),
+                        ),
+                ),
+            )
+        whenever(contactRepository.findAllCategoryWithContact()).thenReturn(mockCategories)
+        val result = service.fetchContacts(null, null, "홍", null)
+        assertEquals(1, result.size)
+        assertEquals(1, result[0].contact.size)
+        assertEquals("홍길동", result[0].contact[0].name)
+    }
+
+    @Test
+    @DisplayName("전화부 조회 - 전화번호로 필터링")
+    fun testFetchAllCategoriesWithPhoneFilter() {
+        val mockCategories =
+            listOf(
+                createCategory(
+                    id = 1,
+                    name = "Test1",
+                    contacts =
+                        mutableListOf(
+                            createContact(
+                                id = 1,
+                                name = "홍길동",
+                                phone = "010-1234-5678",
+                            ),
+                            createContact(
+                                id = 2,
+                                name = "김철수",
+                                phone = "010-8765-4321",
+                            ),
+                        ),
+                ),
+            )
+        whenever(contactRepository.findAllCategoryWithContact()).thenReturn(mockCategories)
+        val result = service.fetchContacts(null, null, null, "8765")
+        assertEquals(1, result.size)
+        assertEquals(1, result[0].contact.size)
+        assertEquals("김철수", result[0].contact[0].name)
     }
 }
