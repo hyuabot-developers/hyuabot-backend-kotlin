@@ -17,7 +17,7 @@ interface ContactRepository : JpaRepository<Contact, Int> {
 
     @Query(
         "SELECT DISTINCT cc FROM contact_category cc " +
-            "LEFT JOIN contact c ON cc.id = c.categoryID",
+            "LEFT JOIN FETCH cc.contact",
     )
     fun findAllCategoryWithContact(): List<ContactCategory>
 }

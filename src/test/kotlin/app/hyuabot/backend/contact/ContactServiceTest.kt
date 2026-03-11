@@ -822,7 +822,6 @@ class ContactServiceTest {
             )
         whenever(contactRepository.findAllCategoryWithContact()).thenReturn(mockCategories)
         val result = service.fetchContacts(null, 1, null, null)
-        println(result)
         assertEquals(2, result.size)
         assertEquals(mockCategories[0], result[0])
         assertEquals(0, result[1].contact.size)
