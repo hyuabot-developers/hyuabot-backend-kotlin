@@ -70,12 +70,12 @@ class ContactControllerTest {
                 ContactCategory(
                     id = 1,
                     name = "General",
-                    contact = emptyList(),
+                    contact = mutableListOf(),
                 ),
                 ContactCategory(
                     id = 2,
                     name = "Emergency",
-                    contact = emptyList(),
+                    contact = mutableListOf(),
                 ),
             ),
         ).whenever(contactService).getContactCategories()
@@ -97,7 +97,7 @@ class ContactControllerTest {
             ContactCategory(
                 id = 1,
                 name = "General",
-                contact = emptyList(),
+                contact = mutableListOf(),
             ),
         ).whenever(contactService).createContactCategory(
             ContactCategoryRequest(
@@ -158,7 +158,7 @@ class ContactControllerTest {
             ContactCategory(
                 id = 1,
                 name = "General",
-                contact = emptyList(),
+                contact = mutableListOf(),
             ),
         ).whenever(contactService).getContactCategoryById(1)
         mockMvc
@@ -198,7 +198,7 @@ class ContactControllerTest {
             ContactCategory(
                 id = 1,
                 name = "General",
-                contact = emptyList(),
+                contact = mutableListOf(),
             ),
         ).whenever(contactService).updateContactCategoryById(
             1,
@@ -316,7 +316,7 @@ class ContactControllerTest {
                     name = "홍길동",
                     phone = "010-1234-5678",
                     categoryID = 1,
-                    category = ContactCategory(id = 1, name = "General", contact = emptyList()),
+                    category = ContactCategory(id = 1, name = "General", contact = mutableListOf()),
                 ),
                 Contact(
                     id = 2,
@@ -324,7 +324,7 @@ class ContactControllerTest {
                     name = "김철수",
                     phone = "010-8765-4321",
                     categoryID = 1,
-                    category = ContactCategory(id = 1, name = "General", contact = emptyList()),
+                    category = ContactCategory(id = 1, name = "General", contact = mutableListOf()),
                 ),
             ),
         ).whenever(contactService).getContactByCategoryId(1)
@@ -363,7 +363,7 @@ class ContactControllerTest {
                     name = "홍길동",
                     phone = "010-1234-5678",
                     categoryID = 1,
-                    category = ContactCategory(id = 1, name = "General", contact = emptyList()),
+                    category = ContactCategory(id = 1, name = "General", contact = mutableListOf()),
                 ),
                 Contact(
                     id = 2,
@@ -371,7 +371,7 @@ class ContactControllerTest {
                     name = "김철수",
                     phone = "010-8765-4321",
                     categoryID = 1,
-                    category = ContactCategory(id = 1, name = "General", contact = emptyList()),
+                    category = ContactCategory(id = 1, name = "General", contact = mutableListOf()),
                 ),
             ),
         ).whenever(contactService).getAllContacts()
@@ -399,7 +399,7 @@ class ContactControllerTest {
                     name = "홍길동",
                     phone = "010-1234-5678",
                     categoryID = 1,
-                    category = ContactCategory(id = 1, name = "General", contact = emptyList()),
+                    category = ContactCategory(id = 1, name = "General", contact = mutableListOf()),
                 ),
                 Contact(
                     id = 2,
@@ -407,7 +407,7 @@ class ContactControllerTest {
                     name = "김철수",
                     phone = "010-8765-4321",
                     categoryID = 1,
-                    category = ContactCategory(id = 1, name = "General", contact = emptyList()),
+                    category = ContactCategory(id = 1, name = "General", contact = mutableListOf()),
                 ),
             ),
         ).whenever(contactService).getContactByCampusId(1)
@@ -434,7 +434,7 @@ class ContactControllerTest {
                 name = "홍길동",
                 phone = "010-1234-5678",
                 categoryID = 1,
-                category = ContactCategory(id = 1, name = "General", contact = emptyList()),
+                category = ContactCategory(id = 1, name = "General", contact = mutableListOf()),
             ),
         ).whenever(contactService).createContact(
             ContactRequest(
@@ -595,7 +595,7 @@ class ContactControllerTest {
                 name = "홍길동",
                 phone = "010-1234-5678",
                 categoryID = 1,
-                category = ContactCategory(id = 1, name = "General", contact = emptyList()),
+                category = ContactCategory(id = 1, name = "General", contact = mutableListOf()),
             ),
         ).whenever(contactService).getContactById(1)
         mockMvc
@@ -639,7 +639,7 @@ class ContactControllerTest {
                 name = "홍길동",
                 phone = "010-1234-5678",
                 categoryID = 1,
-                category = ContactCategory(id = 1, name = "General", contact = emptyList()),
+                category = ContactCategory(id = 1, name = "General", contact = mutableListOf()),
             ),
         ).whenever(contactService).updateContact(
             1,

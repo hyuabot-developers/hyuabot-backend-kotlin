@@ -31,7 +31,7 @@ class ContactRepositoryTest {
     val category =
         ContactCategory(
             name = "General",
-            contact = listOf(),
+            contact = mutableListOf(),
         )
 
     private val campus = Campus(name = "Main Campus")

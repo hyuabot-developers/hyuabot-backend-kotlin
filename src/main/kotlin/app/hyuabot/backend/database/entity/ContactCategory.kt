@@ -20,5 +20,5 @@ data class ContactCategory(
     @Column(name = "category_name", length = 30, nullable = false)
     var name: String,
     @OneToMany(mappedBy = "category")
-    val contact: List<Contact>,
+    val contact: MutableList<Contact>,
 )

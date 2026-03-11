@@ -41,7 +41,7 @@ class ContactService(
         return categoryRepository.save(
             ContactCategory(
                 name = payload.name,
-                contact = emptyList(),
+                contact = mutableListOf(),
             ),
         )
     }
@@ -156,6 +156,32 @@ class ContactService(
             current.createdAt = now
             versionRepository.save(current)
         }
+    }
+
+    fun fetchContacts(
+        category: String?,
+        campus: Int?,
+        name: String?,
+        phone: String?,
+    ): List<ContactCategory> {
+        val categories =
+            contactRepository.findAllCategoryWithContact()
+        return categories
+            .filter { cat ->
+                category == null || cat.name.contains(category, ignoreCase = true)
+            }.map {
+                it.copy(
+                    contact =
+                        it.contact
+                            .filter { contact ->
+                                (campus == null || contact.campusID == campus) &&
+                                    (name == null || contact.name.contains(name, ignoreCase = true)) &&
+                                    (phone == null || contact.phone.contains(phone))
+                            }.sortedBy { contact ->
+                                contact.id
+                            }.toMutableList(),
+                )
+            }
     }
 
     companion object {

@@ -4,6 +4,7 @@ scalar DateTime
 type Query {
     notices(input: NoticeInput): [NoticeCategory!]!
     calendar(input: AcademicCalendarInput): AcademicCalendar!
+    phonebook(input: PhonebookInput): Phonebook!
 }
 
 # 공지사항 카테고리와 공지사항을 반환하는 쿼리입니다.
@@ -52,4 +53,29 @@ type AcademicCalendarEvent {
     description: String!
     start: Date!
     end: Date!
+}
+
+# 전화부 버전, 전화부 카테고리 및 전화부 항목을 반환하는 쿼리입니다.
+input PhonebookInput {
+    category: String
+    campus: Int
+    name: String
+    phone: String
+}
+
+type Phonebook {
+    version: String!
+    categories: [PhonebookCategory!]!
+}
+
+type PhonebookCategory {
+    seq: Int!
+    name: String!
+    entries: [PhonebookEntry!]!
+}
+
+type PhonebookEntry {
+    seq: Int!
+    name: String!
+    phone: String!
 }
