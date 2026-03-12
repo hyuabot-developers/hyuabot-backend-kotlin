@@ -33,7 +33,6 @@ class ReadingRoomDataFetcherTest {
         total: Int = 100,
         active: Int = 100,
         occupied: Int = 0,
-        available: Int = 100,
     ) = ReadingRoom(
         id = id,
         name = name,
@@ -43,7 +42,6 @@ class ReadingRoomDataFetcherTest {
         total = total,
         active = active,
         occupied = occupied,
-        available = available,
         updatedAt = now,
         campus = null,
     )
@@ -63,7 +61,6 @@ class ReadingRoomDataFetcherTest {
                     total = 50,
                     active = 50,
                     occupied = 25,
-                    available = 25,
                 ),
                 createReadingRoom(
                     id = 3,
@@ -74,7 +71,6 @@ class ReadingRoomDataFetcherTest {
                     total = 50,
                     active = 50,
                     occupied = 50,
-                    available = 50,
                 ),
             ),
         )
@@ -130,6 +126,6 @@ class ReadingRoomDataFetcherTest {
         assertEquals(50, seats3["total"])
         assertEquals(50, seats3["active"])
         assertEquals(50, seats3["occupied"])
-        assertEquals(50, seats3["available"])
+        assertEquals(0, seats3["available"])
     }
 }
