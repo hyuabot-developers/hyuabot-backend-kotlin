@@ -5,6 +5,7 @@ type Query {
     notices(input: NoticeInput): [NoticeCategory!]!
     calendar(input: AcademicCalendarInput): AcademicCalendar!
     phonebook(input: PhonebookInput): Phonebook!
+    readingRoom: [ReadingRoom!]!
 }
 
 # 공지사항 카테고리와 공지사항을 반환하는 쿼리입니다.
@@ -78,4 +79,22 @@ type PhonebookEntry {
     seq: Int!
     name: String!
     phone: String!
+}
+
+# 열람실 정보와 열람실 좌석 정보를 반환하는 쿼리입니다.
+type ReadingRoom {
+    seq: Int!
+    name: String!
+    campus: Int!
+    active: Boolean!
+    reservable: Boolean!
+    seats: ReadingRoomSeat!
+    updatedAt: DateTime!
+}
+
+type ReadingRoomSeat {
+    total: Int!
+    available: Int!
+    active: Int!
+    occupied: Int!
 }
