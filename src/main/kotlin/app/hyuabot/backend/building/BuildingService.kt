@@ -4,6 +4,7 @@ import app.hyuabot.backend.building.domain.CreateBuildingRequest
 import app.hyuabot.backend.building.domain.UpdateBuildingRequest
 import app.hyuabot.backend.building.exception.BuildingNotFoundException
 import app.hyuabot.backend.building.exception.DuplicateBuildingNameException
+import app.hyuabot.backend.codegen.types.BuildingInput
 import app.hyuabot.backend.database.entity.Building
 import app.hyuabot.backend.database.repository.BuildingRepository
 import org.springframework.stereotype.Service
@@ -62,4 +63,24 @@ class BuildingService(
             buildingRepository.delete(building)
         } ?: throw BuildingNotFoundException()
     }
+
+    fun fetchBuildings(input: BuildingInput?): List<Building> =
+        if (input == null) {
+            buildingRepository.findAll()
+        } else if (input.name == null) {
+            buildingRepository.findByLatitudeBetweenAndLongitudeBetween(
+                input.south,
+                input.north,
+                input.west,
+                input.east,
+            )
+        } else {
+            buildingRepository.findByNameContainingAndLatitudeBetweenAndLongitudeBetween(
+                input.name,
+                input.south,
+                input.north,
+                input.west,
+                input.east,
+            )
+        }
 }

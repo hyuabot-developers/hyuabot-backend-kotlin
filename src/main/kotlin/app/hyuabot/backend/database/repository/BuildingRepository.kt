@@ -19,10 +19,18 @@ interface BuildingRepository : JpaRepository<Building, String> {
         name: String,
     ): List<Building>
 
+    fun findByNameContainingAndLatitudeBetweenAndLongitudeBetween(
+        name: String,
+        south: Double?,
+        north: Double?,
+        west: Double?,
+        east: Double?,
+    ): List<Building>
+
     fun findByLatitudeBetweenAndLongitudeBetween(
-        south: Double,
-        north: Double,
-        west: Double,
-        east: Double,
+        south: Double?,
+        north: Double?,
+        west: Double?,
+        east: Double?,
     ): List<Building>
 }

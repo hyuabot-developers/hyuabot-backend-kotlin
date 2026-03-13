@@ -8,6 +8,7 @@ type Query {
     phonebook(input: PhonebookInput): Phonebook!
     readingRoom: [ReadingRoom!]!
     commute: [CommuteShuttleRoute!]!
+    building(input: BuildingInput): [Building!]!
 }
 
 # 공지사항 카테고리와 공지사항을 반환하는 쿼리입니다.
@@ -125,4 +126,28 @@ type CommuteShuttleStop {
     latitude: Float!
     longitude: Float!
     description: String!
+}
+
+# 건물 및 강의실 정보를 반환하는 쿼리입니다.
+input BuildingInput {
+    name: String
+    north: Float
+    south: Float
+    east: Float
+    west: Float
+}
+
+type Building {
+    seq: String
+    name: String!
+    latitude: Float!
+    longitude: Float!
+    url: String
+    rooms: [Room!]!
+}
+
+type Room {
+    seq: Int!
+    name: String!
+    number: String!
 }
