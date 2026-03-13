@@ -1,11 +1,13 @@
 scalar Date
 scalar DateTime
+scalar LocalTime
 
 type Query {
     notices(input: NoticeInput): [NoticeCategory!]!
     calendar(input: AcademicCalendarInput): AcademicCalendar!
     phonebook(input: PhonebookInput): Phonebook!
     readingRoom: [ReadingRoom!]!
+    commute: [CommuteShuttleRoute!]!
 }
 
 # 공지사항 카테고리와 공지사항을 반환하는 쿼리입니다.
@@ -97,4 +99,30 @@ type ReadingRoomSeat {
     available: Int!
     active: Int!
     occupied: Int!
+}
+
+# 통학버스 노선 및 시간표를 반환하는 쿼리입니다.
+type CommuteShuttleRoute {
+    name: String!
+    description: CommuteShuttleDescription!
+    timetable: [CommuteShuttleTimetable!]!
+}
+
+type CommuteShuttleDescription {
+    korean: String!
+    english: String!
+}
+
+type CommuteShuttleTimetable {
+    name: String!
+    order: Int!
+    stop: CommuteShuttleStop
+    time: LocalTime!
+}
+
+type CommuteShuttleStop {
+    name: String!
+    latitude: Float!
+    longitude: Float!
+    description: String!
 }

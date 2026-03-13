@@ -63,7 +63,7 @@ dependencies {
     // jwt
     implementation("io.jsonwebtoken:jjwt-api:0.13.0")
     // Swagger
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
     // Redis
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
@@ -160,5 +160,6 @@ tasks.withType<GenerateJavaTask> {
     typeMapping =
         mutableMapOf(
             "DateTime" to "java.time.ZonedDateTime",
+            "Date" to "java.time.LocalDate",
         )
 }
