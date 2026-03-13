@@ -12,4 +12,5 @@ class ScalarRegistration {
         builder
             .scalar(ExtendedScalars.Date)
             .scalar(ExtendedScalars.DateTime)
+            .scalar(ExtendedScalars.LocalTime)
 }
