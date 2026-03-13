@@ -9,6 +9,7 @@ type Query {
     readingRoom: [ReadingRoom!]!
     commute: [CommuteShuttleRoute!]!
     building(input: BuildingInput): [Building!]!
+    cafeteria(input: CafeteriaInput!): [Cafeteria!]!
 }
 
 # 공지사항 카테고리와 공지사항을 반환하는 쿼리입니다.
@@ -150,4 +151,33 @@ type Room {
     seq: Int!
     name: String!
     number: String!
+}
+
+# 학식 식당 및 메뉴 정보를 반환하는 쿼리입니다.
+input CafeteriaInput {
+    date: Date
+    campus: Int
+}
+
+type Cafeteria {
+    seq: Int!
+    name: String!
+    campus: Int!
+    latitude: Float!
+    longitude: Float!
+    runningTime: CafeteriaRunningTime!
+    menus: [Menu!]!
+}
+
+type CafeteriaRunningTime {
+    breakfast: String
+    lunch: String
+    dinner: String
+}
+
+type Menu {
+    seq: Int!
+    type: String!
+    food: String!
+    price: String!
 }
