@@ -4,6 +4,7 @@ import app.hyuabot.backend.building.domain.CreateBuildingRequest
 import app.hyuabot.backend.building.domain.UpdateBuildingRequest
 import app.hyuabot.backend.building.exception.BuildingNotFoundException
 import app.hyuabot.backend.building.exception.DuplicateBuildingNameException
+import app.hyuabot.backend.codegen.types.BuildingInput
 import app.hyuabot.backend.database.entity.Building
 import app.hyuabot.backend.database.repository.BuildingRepository
 import org.junit.jupiter.api.DisplayName
@@ -13,6 +14,8 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.util.Optional
@@ -304,5 +307,113 @@ class BuildingServiceTest {
         assertThrows<BuildingNotFoundException> {
             buildingService.deleteBuildingByName("Nonexistent Building")
         }
+    }
+
+    @Test
+    @DisplayName("건물 목록 조회 테스트 (전체)")
+    fun testFetchBuildingsWithoutCondition() {
+        whenever(buildingRepository.findAll()).thenReturn(
+            listOf(
+                Building(
+                    id = "Y001",
+                    name = "Building A",
+                    campusID = 1,
+                    latitude = 37.5665,
+                    longitude = 126.978,
+                    url = "http://example.com/building-a",
+                ),
+                Building(
+                    id = "Y002",
+                    name = "Building B",
+                    campusID = 2,
+                    latitude = 37.5665,
+                    longitude = 126.978,
+                ),
+            ),
+        )
+        val buildings = buildingService.fetchBuildings(null)
+        assertEquals(2, buildings.size)
+        assertEquals("Building A", buildings[0].name)
+        assertEquals("Building B", buildings[1].name)
+    }
+
+    @Test
+    @DisplayName("건물 목록 조회 테스트 (이름 필터링 + 위도/경도 범위)")
+    fun testFetchBuildingsWithNameAndLocation() {
+        whenever(
+            buildingRepository.findByNameContainingAndLatitudeBetweenAndLongitudeBetween(
+                any(),
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+            ),
+        ).thenReturn(
+            listOf(
+                Building(
+                    id = "Y001",
+                    name = "Building A",
+                    campusID = 1,
+                    latitude = 37.5665,
+                    longitude = 126.978,
+                    url = "http://example.com/building-a",
+                ),
+                Building(
+                    id = "Y002",
+                    name = "Building B",
+                    campusID = 2,
+                    latitude = 37.5665,
+                    longitude = 126.978,
+                ),
+            ),
+        )
+        val buildings =
+            buildingService.fetchBuildings(
+                BuildingInput(
+                    name = "Building",
+                    south = 37.5660,
+                    north = 37.5670,
+                    west = 126.9770,
+                    east = 126.9790,
+                ),
+            )
+        assertEquals(2, buildings.size)
+        assertEquals("Building A", buildings[0].name)
+        assertEquals("Building B", buildings[1].name)
+    }
+
+    @Test
+    @DisplayName("건물 목록 조회 테스트 (위도/경도 범위)")
+    fun testFetchBuildingsWithLocation() {
+        whenever(
+            buildingRepository.findByLatitudeBetweenAndLongitudeBetween(
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+                anyOrNull(),
+            ),
+        ).thenReturn(
+            listOf(
+                Building(
+                    id = "Y001",
+                    name = "Building A",
+                    campusID = 1,
+                    latitude = 37.5665,
+                    longitude = 126.978,
+                    url = "http://example.com/building-a",
+                ),
+            ),
+        )
+        val buildings =
+            buildingService.fetchBuildings(
+                BuildingInput(
+                    south = 37.5660,
+                    north = 37.5670,
+                    west = 126.978,
+                    east = 126.979,
+                ),
+            )
+        assertEquals(1, buildings.size)
+        assertEquals("Building A", buildings[0].name)
     }
 }
