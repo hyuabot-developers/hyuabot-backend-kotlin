@@ -16,7 +16,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import java.time.Duration
 import java.time.LocalTime
-import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.test.assertEquals
 
 @EnableDgsTest
@@ -27,7 +27,7 @@ class CommuteShuttleDataFetcherTest {
 
     @MockitoBean lateinit var commuteShuttleService: CommuteShuttleService
 
-    private val now = ZonedDateTime.now()
+    private val defaultDepartureTime = LocalTime.of(11, 0)
 
     private fun createCommuteShuttleRoute(
         name: String = "Route 1",
@@ -60,7 +60,7 @@ class CommuteShuttleDataFetcherTest {
         routeName: String,
         stop: CommuteShuttleStop? = null,
         stopName: String = "Stop 1",
-        departureTime: LocalTime = now.toLocalTime(),
+        departureTime: LocalTime = defaultDepartureTime,
     ) = CommuteShuttleTimetable(
         seq = seq,
         order = order,
@@ -87,7 +87,7 @@ class CommuteShuttleDataFetcherTest {
                                 order = 1,
                                 routeName = "Route 1",
                                 stopName = "Stop 1",
-                                departureTime = now.toLocalTime(),
+                                departureTime = defaultDepartureTime,
                                 stop =
                                     createCommuteShuttleStop(
                                         name = "Stop 1",
@@ -101,7 +101,7 @@ class CommuteShuttleDataFetcherTest {
                                 order = 2,
                                 routeName = "Route 1",
                                 stopName = "Stop 2",
-                                departureTime = now.toLocalTime() + Duration.ofMinutes(30),
+                                departureTime = defaultDepartureTime + Duration.ofMinutes(30),
                                 stop = null,
                             ),
                         ),
@@ -136,6 +136,7 @@ class CommuteShuttleDataFetcherTest {
             )
         assertEquals(1, result.size)
         val route = result[0]
+        val localTimeFormatter = DateTimeFormatter.ofPattern("hh:mm:ss")
         assertEquals("Route 1", route["name"])
         val description = route["description"] as Map<*, *>
         assertEquals("통학버스 노선 1", description["korean"])
@@ -145,10 +146,10 @@ class CommuteShuttleDataFetcherTest {
         val firstStop = timetable[0] as Map<*, *>
         assertEquals(1, firstStop["order"])
         assertEquals("Stop 1", firstStop["name"])
-        assertEquals(now.toLocalTime().toString(), firstStop["time"])
+        assertEquals(localTimeFormatter.format(defaultDepartureTime), firstStop["time"])
         val secondStop = timetable[1] as Map<*, *>
         assertEquals(2, secondStop["order"])
         assertEquals("Stop 2", secondStop["name"])
-        assertEquals((now.toLocalTime() + Duration.ofMinutes(30)).toString(), secondStop["time"])
+        assertEquals(localTimeFormatter.format(defaultDepartureTime + Duration.ofMinutes(30)), secondStop["time"])
     }
 }

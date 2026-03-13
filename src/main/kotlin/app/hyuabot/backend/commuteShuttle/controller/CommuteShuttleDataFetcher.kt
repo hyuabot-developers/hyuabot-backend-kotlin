@@ -7,12 +7,14 @@ import app.hyuabot.backend.codegen.types.CommuteShuttleTimetable
 import app.hyuabot.backend.commuteShuttle.CommuteShuttleService
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsQuery
+import org.springframework.transaction.annotation.Transactional
 
 @DgsComponent
 class CommuteShuttleDataFetcher(
     private val commuteShuttleService: CommuteShuttleService,
 ) {
     @DgsQuery
+    @Transactional
     fun commute(): List<CommuteShuttleRoute> =
         commuteShuttleService.getAllRoutes().let { routes ->
             routes.map { route ->
