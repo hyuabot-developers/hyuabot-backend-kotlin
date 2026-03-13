@@ -2,6 +2,7 @@ package app.hyuabot.backend.commuteShuttle.controller
 
 import app.hyuabot.backend.codegen.types.CommuteShuttleDescription
 import app.hyuabot.backend.codegen.types.CommuteShuttleRoute
+import app.hyuabot.backend.codegen.types.CommuteShuttleStop
 import app.hyuabot.backend.codegen.types.CommuteShuttleTimetable
 import app.hyuabot.backend.commuteShuttle.CommuteShuttleService
 import com.netflix.graphql.dgs.DgsComponent
@@ -31,6 +32,15 @@ class CommuteShuttleDataFetcher(
                                     order = timetable.order,
                                     name = timetable.stopName,
                                     time = timetable.departureTime,
+                                    stop =
+                                        timetable.stop?.let { stop ->
+                                            CommuteShuttleStop(
+                                                name = stop.name,
+                                                latitude = stop.latitude,
+                                                longitude = stop.longitude,
+                                                description = stop.description,
+                                            )
+                                        },
                                 )
                             },
                 )

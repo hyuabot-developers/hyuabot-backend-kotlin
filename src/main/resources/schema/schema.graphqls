@@ -116,5 +116,13 @@ type CommuteShuttleDescription {
 type CommuteShuttleTimetable {
     name: String!
     order: Int!
+    stop: CommuteShuttleStop
     time: LocalTime!
+}
+
+type CommuteShuttleStop {
+    name: String!
+    latitude: Float!
+    longitude: Float!
+    description: String!
 }

@@ -2,6 +2,7 @@ package app.hyuabot.backend.commuteShuttle
 
 import app.hyuabot.backend.commuteShuttle.controller.CommuteShuttleDataFetcher
 import app.hyuabot.backend.database.entity.CommuteShuttleRoute
+import app.hyuabot.backend.database.entity.CommuteShuttleStop
 import app.hyuabot.backend.database.entity.CommuteShuttleTimetable
 import app.hyuabot.backend.utility.ScalarRegistration
 import com.netflix.graphql.dgs.DgsQueryExecutor
@@ -40,10 +41,24 @@ class CommuteShuttleDataFetcherTest {
         timetable = timetable,
     )
 
+    private fun createCommuteShuttleStop(
+        name: String = "Stop 1",
+        description: String = "Description of Stop 1",
+        latitude: Double,
+        longitude: Double,
+    ) = CommuteShuttleStop(
+        name = name,
+        description = description,
+        latitude = latitude,
+        longitude = longitude,
+        timetable = listOf(),
+    )
+
     private fun createCommuteShuttleTimetable(
         seq: Int = 1,
         order: Int = 1,
         routeName: String,
+        stop: CommuteShuttleStop? = null,
         stopName: String = "Stop 1",
         departureTime: LocalTime = now.toLocalTime(),
     ) = CommuteShuttleTimetable(
@@ -53,7 +68,7 @@ class CommuteShuttleDataFetcherTest {
         stopName = stopName,
         departureTime = departureTime,
         route = null,
-        stop = null,
+        stop = stop,
     )
 
     @Test
@@ -73,6 +88,13 @@ class CommuteShuttleDataFetcherTest {
                                 routeName = "Route 1",
                                 stopName = "Stop 1",
                                 departureTime = now.toLocalTime(),
+                                stop =
+                                    createCommuteShuttleStop(
+                                        name = "Stop 1",
+                                        description = "Description of Stop 1",
+                                        latitude = 37.123456,
+                                        longitude = 127.123456,
+                                    ),
                             ),
                             createCommuteShuttleTimetable(
                                 seq = 2,
@@ -80,6 +102,7 @@ class CommuteShuttleDataFetcherTest {
                                 routeName = "Route 1",
                                 stopName = "Stop 2",
                                 departureTime = now.toLocalTime() + Duration.ofMinutes(30),
+                                stop = null,
                             ),
                         ),
                 ),
@@ -99,6 +122,12 @@ class CommuteShuttleDataFetcherTest {
                             order
                             name
                             time
+                            stop {
+                                name
+                                latitude
+                                longitude
+                                description
+                            }
                         }
                     }
                 }
