@@ -10,6 +10,7 @@ import app.hyuabot.backend.bus.exception.BusStartStopNotFoundException
 import app.hyuabot.backend.bus.exception.BusStopNotFoundException
 import app.hyuabot.backend.bus.exception.DuplicateBusRouteException
 import app.hyuabot.backend.bus.exception.DuplicateBusRouteStopException
+import app.hyuabot.backend.codegen.types.BusRouteStopInput
 import app.hyuabot.backend.database.entity.BusDepartureLog
 import app.hyuabot.backend.database.entity.BusRoute
 import app.hyuabot.backend.database.entity.BusRouteStop
@@ -20,7 +21,9 @@ import app.hyuabot.backend.database.repository.BusRouteStopRepository
 import app.hyuabot.backend.database.repository.BusStopRepository
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 import java.time.LocalTime
+import kotlin.collections.map
 
 @Service
 class BusRouteService(
@@ -116,6 +119,15 @@ class BusRouteService(
             }.stop
             .sortedBy { it.order }
 
+    fun fetchRouteStops(keys: List<BusRouteStopInput>): List<BusRouteStop> {
+        val routes = keys.map { it.route }.distinct()
+        val orders = keys.map { it.order }.distinct()
+        val keySet = keys.map { it.route to it.order }.toSet()
+        return routeStopRepository.fetchBusRouteStops(routes, orders).filter { rs ->
+            (rs.routeID to rs.order) in keySet
+        }
+    }
+
     fun createBusRouteStop(
         routeID: Int,
         payload: BusRouteStopRequest,
@@ -182,4 +194,15 @@ class BusRouteService(
         val stop = routeStopRepository.findByRouteIDAndSeq(routeID, seq) ?: throw BusRouteStopNotFoundException()
         return departureLogRepository.findByRouteIDAndStopID(routeID, stop.stopID)
     }
+
+    fun getBusDepartureLogByRouteStopAndDate(
+        routeID: Int,
+        stopID: Int,
+        dates: List<LocalDate>,
+    ): List<BusDepartureLog> =
+        departureLogRepository.findByRouteIDAndStopIDAndDepartureDateIsIn(
+            routeID,
+            stopID,
+            dates,
+        )
 }

@@ -53,7 +53,7 @@ class BusTimetableController {
         @RequestParam(required = false) startStopID: Int?,
     ): BusRouteTimetableListResponse =
         BusRouteTimetableListResponse(
-            service.getBusTimetableList(routeID, startStopID).map {
+            service.getBusTimetableList(routeID, startStopID, null).map {
                 BusTimetableResponse(
                     seq = it.seq!!,
                     routeID = it.routeID,

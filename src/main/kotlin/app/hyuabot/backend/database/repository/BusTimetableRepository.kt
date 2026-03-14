@@ -6,9 +6,35 @@ import org.springframework.data.jpa.repository.JpaRepository
 import java.time.LocalTime
 
 interface BusTimetableRepository : JpaRepository<BusTimetable, Int> {
+    fun findByRouteIDAndStartStopIDAndWeekdayAndDepartureTime(
+        routeID: Int,
+        startStopID: Int,
+        weekday: String,
+        departureTime: LocalTime,
+    ): BusTimetable?
+
+    fun findByRouteIDAndStartStopIDAndWeekday(
+        routeID: Int,
+        startStopID: Int,
+        weekday: String,
+        sort: Sort,
+    ): List<BusTimetable>
+
     fun findByRouteIDAndStartStopID(
         routeID: Int,
         startStopID: Int,
+        sort: Sort,
+    ): List<BusTimetable>
+
+    fun findByRouteIDAndWeekday(
+        routeID: Int,
+        weekday: String,
+        sort: Sort,
+    ): List<BusTimetable>
+
+    fun findByStartStopIDAndWeekday(
+        startStopID: Int,
+        weekday: String,
         sort: Sort,
     ): List<BusTimetable>
 
@@ -22,16 +48,8 @@ interface BusTimetableRepository : JpaRepository<BusTimetable, Int> {
         sort: Sort,
     ): List<BusTimetable>
 
-    fun findByRouteIDAndStartStopIDAndWeekday(
-        routeID: Int,
-        startStopID: Int,
+    fun findByWeekday(
         weekday: String,
+        sort: Sort,
     ): List<BusTimetable>
-
-    fun findByRouteIDAndStartStopIDAndWeekdayAndDepartureTime(
-        routeID: Int,
-        startStopID: Int,
-        weekday: String,
-        departureTime: LocalTime,
-    ): BusTimetable?
 }

@@ -15,4 +15,10 @@ interface BusDepartureLogRepository : JpaRepository<BusDepartureLog, Int> {
         stopID: Int,
         departureDate: LocalDate,
     ): List<BusDepartureLog>
+
+    fun findByRouteIDAndStopIDAndDepartureDateIsIn(
+        routeID: Int,
+        stopID: Int,
+        dates: List<LocalDate>,
+    ): List<BusDepartureLog>
 }

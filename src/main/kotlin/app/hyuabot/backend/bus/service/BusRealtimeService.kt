@@ -9,4 +9,9 @@ class BusRealtimeService(
     private val realtimeRepository: BusRealtimeRepository,
 ) {
     fun getBusRealtimeList(): List<BusRealtime> = realtimeRepository.findAll()
+
+    fun getBusRealtimeListByBusStop(
+        routeID: Int,
+        stopID: Int,
+    ): List<BusRealtime> = realtimeRepository.findByRouteIDAndStopID(routeID, stopID)
 }

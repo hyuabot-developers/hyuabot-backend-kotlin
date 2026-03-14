@@ -2,6 +2,8 @@ package app.hyuabot.backend.database.repository
 
 import app.hyuabot.backend.database.entity.BusRouteStop
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 
 interface BusRouteStopRepository : JpaRepository<BusRouteStop, Int> {
     fun findByRouteID(routeID: Int): List<BusRouteStop>
@@ -23,4 +25,18 @@ interface BusRouteStopRepository : JpaRepository<BusRouteStop, Int> {
         routeID: Int,
         seq: Int,
     ): BusRouteStop?
+
+    @Query(
+        """
+                    SELECT rs FROM bus_route_stop rs
+        JOIN FETCH rs.route r
+        JOIN FETCH rs.stop s
+        JOIN FETCH rs.startStop ss
+        WHERE rs.routeID in :routes AND rs.order in :orders
+        """,
+    )
+    fun fetchBusRouteStops(
+        @Param("routes") routes: List<Int>,
+        @Param("orders") orders: List<Int>,
+    ): List<BusRouteStop>
 }

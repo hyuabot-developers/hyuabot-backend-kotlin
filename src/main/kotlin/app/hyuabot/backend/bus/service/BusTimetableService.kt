@@ -24,6 +24,7 @@ class BusTimetableService(
     fun getBusTimetableList(
         routeID: Int?,
         startStopID: Int?,
+        weekdays: String?,
     ): List<BusTimetable> {
         val sort =
             Sort.by(
@@ -32,15 +33,50 @@ class BusTimetableService(
                 Sort.Order.asc("departureTime"),
             )
         return when {
-            routeID != null && startStopID != null ->
+            routeID != null && startStopID != null && weekdays != null -> {
+                timetableRepository.findByRouteIDAndStartStopIDAndWeekday(
+                    routeID,
+                    startStopID,
+                    weekdays,
+                    sort,
+                )
+            }
+
+            routeID != null && startStopID != null -> {
                 timetableRepository.findByRouteIDAndStartStopID(
                     routeID,
                     startStopID,
                     sort,
                 )
-            routeID != null -> timetableRepository.findByRouteID(routeID, sort)
-            startStopID != null -> timetableRepository.findByStartStopID(startStopID, sort)
-            else -> timetableRepository.findAll(sort)
+            }
+
+            routeID != null && weekdays != null -> {
+                timetableRepository.findByRouteIDAndWeekday(routeID, weekdays, sort)
+            }
+
+            startStopID != null && weekdays != null -> {
+                timetableRepository.findByStartStopIDAndWeekday(
+                    startStopID,
+                    weekdays,
+                    sort,
+                )
+            }
+
+            routeID != null -> {
+                timetableRepository.findByRouteID(routeID, sort)
+            }
+
+            startStopID != null -> {
+                timetableRepository.findByStartStopID(startStopID, sort)
+            }
+
+            weekdays != null -> {
+                timetableRepository.findByWeekday(weekdays, sort)
+            }
+
+            else -> {
+                timetableRepository.findAll(sort)
+            }
         }
     }
 
