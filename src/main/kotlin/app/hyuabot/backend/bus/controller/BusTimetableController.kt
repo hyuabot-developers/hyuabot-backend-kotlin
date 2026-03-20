@@ -57,11 +57,7 @@ class BusTimetableController {
                 .getBusTimetableList(
                     routeID,
                     startStopID,
-                    listOf(
-                        "weekdays",
-                        "saturdays",
-                        "sundays",
-                    ),
+                    null,
                 ).map {
                     BusTimetableResponse(
                         seq = it.seq!!,

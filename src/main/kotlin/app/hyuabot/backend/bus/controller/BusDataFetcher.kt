@@ -37,7 +37,12 @@ class BusDataFetcher(
             input.keys.associate { key ->
                 (key.route to key.order) to key.dates
             }
+        val weekdaysMap =
+            input.keys.associate {
+                (it.route to it.order) to it.weekdays
+            }
         dfe.graphQlContext.put("datesMap", datesMap)
+        dfe.graphQlContext.put("weekdaysMap", weekdaysMap)
         return routeService.fetchRouteStops(input.keys).map {
             BusRouteStop(
                 route =
@@ -118,9 +123,10 @@ class BusDataFetcher(
     @DgsData(parentType = "BusRouteStop")
     fun timetable(dfe: DataFetchingEnvironment): List<BusTimetable> {
         val routeStop = dfe.getSource<BusRouteStop>()
-        val weekdays = dfe.getArgument<List<String>>("weekdays")
+        val weekdaysFilter = dfe.getArgument<Map<Pair<Int, Int>, List<String>>>("weekdays")
         val routeID = routeStop!!.route.seq
         val startStopID = routeStop.startStop.seq
+        val weekdays = weekdaysFilter?.get(routeID to routeStop.order)
         return timetableService
             .getBusTimetableList(
                 routeID = routeID,

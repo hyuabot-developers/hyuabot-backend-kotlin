@@ -1428,11 +1428,7 @@ class BusControllerTest {
                 routeID = null,
                 startStopID = null,
                 weekdays =
-                    listOf(
-                        "weekdays",
-                        "saturdays",
-                        "sundays",
-                    ),
+                null,
             ),
         ).thenReturn(
             listOf(
@@ -1478,11 +1474,7 @@ class BusControllerTest {
                 routeID = TEST_ROUTE_1.id,
                 startStopID = null,
                 weekdays =
-                    listOf(
-                        "weekdays",
-                        "saturdays",
-                        "sundays",
-                    ),
+                null,
             ),
         ).thenReturn(
             listOf(
@@ -1516,11 +1508,7 @@ class BusControllerTest {
                 routeID = null,
                 startStopID = TEST_STOP_1.id,
                 weekdays =
-                    listOf(
-                        "weekdays",
-                        "saturdays",
-                        "sundays",
-                    ),
+                null,
             ),
         ).thenReturn(
             listOf(
@@ -1554,11 +1542,7 @@ class BusControllerTest {
                 routeID = TEST_ROUTE_1.id,
                 startStopID = TEST_STOP_1.id,
                 weekdays =
-                    listOf(
-                        "weekdays",
-                        "saturdays",
-                        "sundays",
-                    ),
+                null,
             ),
         ).thenReturn(
             listOf(
