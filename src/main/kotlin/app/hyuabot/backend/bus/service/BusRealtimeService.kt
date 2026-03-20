@@ -19,8 +19,10 @@ class BusRealtimeService(
         if (keys.isEmpty()) return emptyMap()
         val routeIDs = keys.map { it.first }.distinct()
         val stopIDs = keys.map { it.second }.distinct()
-        val grouped = realtimeRepository.findByRouteIDInAndStopIDIn(routeIDs, stopIDs)
-            .groupBy { it.routeID to it.stopID }
+        val grouped =
+            realtimeRepository
+                .findByRouteIDInAndStopIDIn(routeIDs, stopIDs)
+                .groupBy { it.routeID to it.stopID }
         return keys.associateWith { key -> grouped[key] ?: emptyList() }
     }
 }

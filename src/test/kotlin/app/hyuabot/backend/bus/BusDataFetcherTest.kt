@@ -1,7 +1,7 @@
 package app.hyuabot.backend.bus
 
-import app.hyuabot.backend.bus.controller.BusDepartureLogDataLoader
 import app.hyuabot.backend.bus.controller.BusDataFetcher
+import app.hyuabot.backend.bus.controller.BusDepartureLogDataLoader
 import app.hyuabot.backend.bus.controller.BusRealtimeDataLoader
 import app.hyuabot.backend.bus.controller.BusTimetableDataLoader
 import app.hyuabot.backend.bus.domain.BusDepartureLogKey
@@ -36,7 +36,13 @@ import kotlin.test.Test
 
 @EnableDgsTest
 @SpringJUnitConfig
-@Import(BusDataFetcher::class, BusRealtimeDataLoader::class, BusTimetableDataLoader::class, BusDepartureLogDataLoader::class, ScalarRegistration::class)
+@Import(
+    BusDataFetcher::class,
+    BusRealtimeDataLoader::class,
+    BusTimetableDataLoader::class,
+    BusDepartureLogDataLoader::class,
+    ScalarRegistration::class,
+)
 class BusDataFetcherTest {
     @Autowired lateinit var dgsQueryExecutor: DgsQueryExecutor
 
