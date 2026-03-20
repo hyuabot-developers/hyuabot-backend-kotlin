@@ -101,7 +101,7 @@ class BusDataFetcher(
     @DgsData(parentType = "BusRouteStop")
     fun realtime(dfe: DataFetchingEnvironment): List<BusRealtime> {
         val routeStop = dfe.getSource<BusRouteStop>()
-        val routeID = routeStop?.route?.seq ?: return emptyList()
+        val routeID = routeStop!!.route.seq
         val stopID = routeStop.stop.seq
         return realtimeService.getBusRealtimeListByBusStop(routeID = routeID, stopID = stopID).map {
             BusRealtime(
@@ -119,8 +119,8 @@ class BusDataFetcher(
     fun timetable(dfe: DataFetchingEnvironment): List<BusTimetable> {
         val routeStop = dfe.getSource<BusRouteStop>()
         val weekdays = dfe.getArgument<String>("weekdays")
-        val routeID = routeStop?.route?.seq
-        val startStopID = routeStop?.startStop?.seq
+        val routeID = routeStop!!.route.seq
+        val startStopID = routeStop.startStop.seq
         return timetableService
             .getBusTimetableList(
                 routeID = routeID,
@@ -139,7 +139,7 @@ class BusDataFetcher(
     fun log(dfe: DataFetchingEnvironment): List<BusDepartureLog> {
         val routeStop = dfe.getSource<BusRouteStop>()
         val datesMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, List<LocalDate>>>("datesMap")
-        val routeID = routeStop?.route?.seq ?: return emptyList()
+        val routeID = routeStop!!.route.seq
         val stopID = routeStop.stop.seq
         val dates = datesMap[routeID to routeStop.order] ?: return emptyList()
         return routeService
