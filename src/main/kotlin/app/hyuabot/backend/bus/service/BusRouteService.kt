@@ -1,5 +1,6 @@
 package app.hyuabot.backend.bus.service
 
+import app.hyuabot.backend.bus.domain.BusDepartureLogKey
 import app.hyuabot.backend.bus.domain.BusRouteStopRequest
 import app.hyuabot.backend.bus.domain.CreateBusRouteRequest
 import app.hyuabot.backend.bus.domain.UpdateBusRouteRequest
@@ -205,4 +206,19 @@ class BusRouteService(
             stopID,
             dates,
         )
+
+    fun getBusDepartureLogBatch(keys: Set<BusDepartureLogKey>): Map<BusDepartureLogKey, List<BusDepartureLog>> {
+        if (keys.isEmpty()) return emptyMap()
+        val routeIDs = keys.map { it.routeID }.distinct()
+        val stopIDs = keys.map { it.stopID }.distinct()
+        val allDates = keys.flatMap { it.dates }.distinct()
+        if (allDates.isEmpty()) return keys.associateWith { emptyList() }
+        val grouped =
+            departureLogRepository
+                .findByRouteIDInAndStopIDInAndDepartureDateIn(routeIDs, stopIDs, allDates)
+                .groupBy { Triple(it.routeID, it.stopID, it.departureDate) }
+        return keys.associateWith { key ->
+            key.dates.flatMap { date -> grouped[Triple(key.routeID, key.stopID, date)] ?: emptyList() }
+        }
+    }
 }

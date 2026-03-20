@@ -14,4 +14,13 @@ class BusRealtimeService(
         routeID: Int,
         stopID: Int,
     ): List<BusRealtime> = realtimeRepository.findByRouteIDAndStopID(routeID, stopID)
+
+    fun getBusRealtimeBatch(keys: Set<Pair<Int, Int>>): Map<Pair<Int, Int>, List<BusRealtime>> {
+        if (keys.isEmpty()) return emptyMap()
+        val routeIDs = keys.map { it.first }.distinct()
+        val stopIDs = keys.map { it.second }.distinct()
+        val grouped = realtimeRepository.findByRouteIDInAndStopIDIn(routeIDs, stopIDs)
+            .groupBy { it.routeID to it.stopID }
+        return keys.associateWith { key -> grouped[key] ?: emptyList() }
+    }
 }

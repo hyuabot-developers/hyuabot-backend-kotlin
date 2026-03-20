@@ -1,5 +1,6 @@
 package app.hyuabot.backend.bus.service
 
+import app.hyuabot.backend.bus.domain.BusTimetableKey
 import app.hyuabot.backend.bus.domain.BusTimetableRequest
 import app.hyuabot.backend.bus.exception.BusRouteNotFoundException
 import app.hyuabot.backend.bus.exception.BusStartStopNotFoundException
@@ -139,6 +140,26 @@ class BusTimetableService(
     fun deleteBusTimetableById(id: Int) {
         timetableRepository.findById(id).orElseThrow { BusTimetableNotFoundException() }.let { timetable ->
             timetableRepository.delete(timetable)
+        }
+    }
+
+    fun getBusTimetableBatch(keys: Set<BusTimetableKey>): Map<BusTimetableKey, List<BusTimetable>> {
+        if (keys.isEmpty()) return emptyMap()
+        val routeIDs = keys.map { it.routeID }.distinct()
+        val startStopIDs = keys.map { it.startStopID }.distinct()
+        val sort =
+            Sort.by(
+                Sort.Order.asc("routeID"),
+                Sort.Order.asc("startStopID"),
+                Sort.Order.asc("departureTime"),
+            )
+        val grouped =
+            timetableRepository
+                .findByRouteIDInAndStartStopIDIn(routeIDs, startStopIDs, sort)
+                .groupBy { it.routeID to it.startStopID }
+        return keys.associateWith { key ->
+            val timetables = grouped[key.routeID to key.startStopID] ?: emptyList()
+            if (key.weekdays.isNullOrEmpty()) timetables else timetables.filter { it.weekday in key.weekdays!! }
         }
     }
 }
