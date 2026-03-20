@@ -1144,7 +1144,8 @@ class BusServiceTest {
         assertEquals(
             true,
             result.all {
-                it.routeID == 216000068 && it.stopID == 216000138 &&
+                it.routeID == 216000068 &&
+                    it.stopID == 216000138 &&
                     it.departureDate == LocalDate.parse("2021-03-15")
             },
         )
