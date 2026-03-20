@@ -24,7 +24,7 @@ class BusTimetableService(
     fun getBusTimetableList(
         routeID: Int?,
         startStopID: Int?,
-        weekdays: String?,
+        weekdays: List<String>? = null,
     ): List<BusTimetable> {
         val sort =
             Sort.by(
@@ -33,8 +33,8 @@ class BusTimetableService(
                 Sort.Order.asc("departureTime"),
             )
         return when {
-            routeID != null && startStopID != null && weekdays != null -> {
-                timetableRepository.findByRouteIDAndStartStopIDAndWeekday(
+            routeID != null && startStopID != null && !weekdays.isNullOrEmpty() -> {
+                timetableRepository.findByRouteIDAndStartStopIDAndWeekdayIsIn(
                     routeID,
                     startStopID,
                     weekdays,
@@ -50,12 +50,12 @@ class BusTimetableService(
                 )
             }
 
-            routeID != null && weekdays != null -> {
-                timetableRepository.findByRouteIDAndWeekday(routeID, weekdays, sort)
+            routeID != null && !weekdays.isNullOrEmpty() -> {
+                timetableRepository.findByRouteIDAndWeekdayIsIn(routeID, weekdays, sort)
             }
 
-            startStopID != null && weekdays != null -> {
-                timetableRepository.findByStartStopIDAndWeekday(
+            startStopID != null && !weekdays.isNullOrEmpty() -> {
+                timetableRepository.findByStartStopIDAndWeekdayIsIn(
                     startStopID,
                     weekdays,
                     sort,
@@ -70,8 +70,8 @@ class BusTimetableService(
                 timetableRepository.findByStartStopID(startStopID, sort)
             }
 
-            weekdays != null -> {
-                timetableRepository.findByWeekday(weekdays, sort)
+            !weekdays.isNullOrEmpty() -> {
+                timetableRepository.findByWeekdayIsIn(weekdays, sort)
             }
 
             else -> {

@@ -13,10 +13,10 @@ interface BusTimetableRepository : JpaRepository<BusTimetable, Int> {
         departureTime: LocalTime,
     ): BusTimetable?
 
-    fun findByRouteIDAndStartStopIDAndWeekday(
+    fun findByRouteIDAndStartStopIDAndWeekdayIsIn(
         routeID: Int,
         startStopID: Int,
-        weekday: String,
+        weekday: List<String>,
         sort: Sort,
     ): List<BusTimetable>
 
@@ -26,15 +26,15 @@ interface BusTimetableRepository : JpaRepository<BusTimetable, Int> {
         sort: Sort,
     ): List<BusTimetable>
 
-    fun findByRouteIDAndWeekday(
+    fun findByRouteIDAndWeekdayIsIn(
         routeID: Int,
-        weekday: String,
+        weekday: List<String>,
         sort: Sort,
     ): List<BusTimetable>
 
-    fun findByStartStopIDAndWeekday(
+    fun findByStartStopIDAndWeekdayIsIn(
         startStopID: Int,
-        weekday: String,
+        weekday: List<String>,
         sort: Sort,
     ): List<BusTimetable>
 
@@ -48,8 +48,8 @@ interface BusTimetableRepository : JpaRepository<BusTimetable, Int> {
         sort: Sort,
     ): List<BusTimetable>
 
-    fun findByWeekday(
-        weekday: String,
+    fun findByWeekdayIsIn(
+        weekday: List<String>,
         sort: Sort,
     ): List<BusTimetable>
 }

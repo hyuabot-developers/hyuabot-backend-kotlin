@@ -1427,7 +1427,12 @@ class BusControllerTest {
             timetableService.getBusTimetableList(
                 routeID = null,
                 startStopID = null,
-                weekdays = null,
+                weekdays =
+                    listOf(
+                        "weekdays",
+                        "saturdays",
+                        "sundays",
+                    ),
             ),
         ).thenReturn(
             listOf(
@@ -1472,7 +1477,12 @@ class BusControllerTest {
             timetableService.getBusTimetableList(
                 routeID = TEST_ROUTE_1.id,
                 startStopID = null,
-                weekdays = null,
+                weekdays =
+                    listOf(
+                        "weekdays",
+                        "saturdays",
+                        "sundays",
+                    ),
             ),
         ).thenReturn(
             listOf(
@@ -1505,7 +1515,12 @@ class BusControllerTest {
             timetableService.getBusTimetableList(
                 routeID = null,
                 startStopID = TEST_STOP_1.id,
-                weekdays = null,
+                weekdays =
+                    listOf(
+                        "weekdays",
+                        "saturdays",
+                        "sundays",
+                    ),
             ),
         ).thenReturn(
             listOf(
@@ -1538,7 +1553,12 @@ class BusControllerTest {
             timetableService.getBusTimetableList(
                 routeID = TEST_ROUTE_1.id,
                 startStopID = TEST_STOP_1.id,
-                weekdays = null,
+                weekdays =
+                    listOf(
+                        "weekdays",
+                        "saturdays",
+                        "sundays",
+                    ),
             ),
         ).thenReturn(
             listOf(

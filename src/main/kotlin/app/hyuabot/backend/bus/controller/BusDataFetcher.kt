@@ -32,7 +32,7 @@ class BusDataFetcher(
         @InputArgument input: BusInput,
         dfe: DataFetchingEnvironment,
     ): List<BusRouteStop> {
-        if (input.keys == null) return emptyList()
+        if (input.keys.isNullOrEmpty()) return emptyList()
         val datesMap =
             input.keys.associate { key ->
                 (key.route to key.order) to key.dates
@@ -118,7 +118,7 @@ class BusDataFetcher(
     @DgsData(parentType = "BusRouteStop")
     fun timetable(dfe: DataFetchingEnvironment): List<BusTimetable> {
         val routeStop = dfe.getSource<BusRouteStop>()
-        val weekdays = dfe.getArgument<String>("weekdays")
+        val weekdays = dfe.getArgument<List<String>>("weekdays")
         val routeID = routeStop!!.route.seq
         val startStopID = routeStop.startStop.seq
         return timetableService

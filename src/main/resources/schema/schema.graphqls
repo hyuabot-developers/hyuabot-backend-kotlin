@@ -192,6 +192,7 @@ input BusRouteStopInput {
     route: Int!
     order: Int!
     dates: [Date!]!
+    weekdays: [String!]
 }
 
 type BusRouteStop {

@@ -23,7 +23,6 @@ import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 import java.time.LocalTime
-import kotlin.collections.map
 
 @Service
 class BusRouteService(
@@ -120,6 +119,7 @@ class BusRouteService(
             .sortedBy { it.order }
 
     fun fetchRouteStops(keys: List<BusRouteStopInput>): List<BusRouteStop> {
+        if (keys.isEmpty()) return emptyList()
         val routes = keys.map { it.route }.distinct()
         val orders = keys.map { it.order }.distinct()
         val keySet = keys.map { it.route to it.order }.toSet()

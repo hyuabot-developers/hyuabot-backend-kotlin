@@ -141,7 +141,7 @@ class BusDataFetcherTest {
         routeID: Int = 1,
         stopID: Int = 1,
         order: Int = 1,
-        reminingStop: Int = 1,
+        remainingStop: Int = 1,
         remainingTime: Int = 1,
         remainingSeat: Int = 1,
         lowFloor: Boolean = false,
@@ -149,7 +149,7 @@ class BusDataFetcherTest {
         routeID = routeID,
         stopID = stopID,
         order = order,
-        remainingStop = reminingStop,
+        remainingStop = remainingStop,
         remainingTime = Duration.ofMinutes(remainingTime.toLong()),
         remainingSeat = remainingSeat,
         isLowFloor = lowFloor,
@@ -195,6 +195,25 @@ class BusDataFetcherTest {
                 """
                 query {
                     bus(input: { keys: null }) {
+                        order
+                        minutes
+                    }
+                }
+                """.trimIndent(),
+                "data.bus",
+            )
+        assertNotNull(result)
+        assertEquals(0, result.size)
+    }
+
+    @Test
+    @DisplayName("버스 노선 정류장 조회 - 빈 배열 입력")
+    fun testBusWithEmptyKeys() {
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                query {
+                    bus(input: { keys: [] }) {
                         order
                         minutes
                     }
