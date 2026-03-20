@@ -254,7 +254,16 @@ class BusRepositoryTest {
     @DisplayName("평일/주말 버스 시점 출발 시간표 조회")
     fun testBusTimetableFindByRouteIDAndStartStopIDAndWeekday() {
         val foundTimetables =
-            busTimetableRepository.findByRouteIDAndStartStopIDAndWeekday(1, stops[0].id, "weekdays")
+            busTimetableRepository.findByRouteIDAndStartStopIDAndWeekdayIsIn(
+                1,
+                stops[0].id,
+                listOf("weekdays"),
+                Sort.by(
+                    Sort.Order.asc("routeID"),
+                    Sort.Order.asc("startStopID"),
+                    Sort.Order.asc("departureTime"),
+                ),
+            )
         assert(foundTimetables.isNotEmpty())
         assert(foundTimetables.size == 10)
         foundTimetables.forEachIndexed { index, timetable ->

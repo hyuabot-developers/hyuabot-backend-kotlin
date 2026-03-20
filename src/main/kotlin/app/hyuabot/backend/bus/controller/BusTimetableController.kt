@@ -53,15 +53,20 @@ class BusTimetableController {
         @RequestParam(required = false) startStopID: Int?,
     ): BusRouteTimetableListResponse =
         BusRouteTimetableListResponse(
-            service.getBusTimetableList(routeID, startStopID).map {
-                BusTimetableResponse(
-                    seq = it.seq!!,
-                    routeID = it.routeID,
-                    startStopID = it.startStopID,
-                    dayType = it.weekday,
-                    departureTime = LocalDateTimeBuilder.convertLocalTimeToString(it.departureTime),
-                )
-            },
+            service
+                .getBusTimetableList(
+                    routeID,
+                    startStopID,
+                    null,
+                ).map {
+                    BusTimetableResponse(
+                        seq = it.seq!!,
+                        routeID = it.routeID,
+                        startStopID = it.startStopID,
+                        dayType = it.weekday,
+                        departureTime = LocalDateTimeBuilder.convertLocalTimeToString(it.departureTime),
+                    )
+                },
         )
 
     @PostMapping("")

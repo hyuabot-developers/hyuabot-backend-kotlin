@@ -10,6 +10,7 @@ type Query {
     commute: [CommuteShuttleRoute!]!
     building(input: BuildingInput): [Building!]!
     cafeteria(input: CafeteriaInput!): [Cafeteria!]!
+    bus(input: BusInput!): [BusRouteStop!]!
 }
 
 # 공지사항 카테고리와 공지사항을 반환하는 쿼리입니다.
@@ -180,4 +181,88 @@ type Menu {
     type: String!
     food: String!
     price: String!
+}
+
+# 노선 버스 정보를 반환하는 쿼리입니다.
+input BusInput {
+    keys: [BusRouteStopInput!]
+}
+
+input BusRouteStopInput {
+    route: Int!
+    order: Int!
+    dates: [Date!]!
+    weekdays: [String!]
+}
+
+type BusRouteStop {
+    route: BusRoute!
+    stop: BusStop!
+    order: Int!
+    startStop: BusStop!
+    minutes: Int!
+    realtime: [BusRealtime!]!
+    timetable: [BusTimetable!]!
+    log: [BusDepartureLog!]!
+}
+
+type BusRoute {
+    seq: Int!
+    name: String!
+    type: BusRouteType!
+    company: BusCompany!
+    runningTime: BusRunningTime!
+}
+
+type BusRouteType {
+    code: String!
+    name: String!
+}
+
+type BusCompany {
+    seq: Int!
+    name: String!
+    telephone: String!
+}
+
+type BusRunningTime {
+    up: BusRunningTimeEntry!
+    down: BusRunningTimeEntry!
+}
+
+type BusRunningTimeEntry {
+    first: LocalTime!
+    last: LocalTime!
+}
+
+type BusStop {
+    seq: Int!
+    name: String!
+    districtCode: Int!
+    region: String!
+    mobileNumber: String!
+    latitude: Float!
+    longitude: Float!
+}
+
+type BusRealtime {
+    order: Int!
+    stops: Int!
+    seats: Int!
+    minutes: Int!
+    lowFloor: Boolean!
+    updatedAt: DateTime!
+}
+
+type BusTimetable {
+    seq: Int!
+    time: LocalTime!
+    weekday: String!
+}
+
+type BusDepartureLog {
+    seq: Int!
+    date: Date!
+    time: LocalTime!
+    vehicle: String!
 }
