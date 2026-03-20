@@ -9,4 +9,9 @@ interface BusRealtimeRepository : JpaRepository<BusRealtime, BusRealtimeID> {
         routeID: Int,
         stopID: Int,
     ): List<BusRealtime>
+
+    fun findByRouteIDInAndStopIDIn(
+        routeIDs: List<Int>,
+        stopIDs: List<Int>,
+    ): List<BusRealtime>
 }

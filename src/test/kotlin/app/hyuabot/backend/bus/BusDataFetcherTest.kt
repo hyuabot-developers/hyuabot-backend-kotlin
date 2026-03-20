@@ -1,6 +1,11 @@
 package app.hyuabot.backend.bus
 
+import app.hyuabot.backend.bus.controller.BusDepartureLogDataLoader
 import app.hyuabot.backend.bus.controller.BusDataFetcher
+import app.hyuabot.backend.bus.controller.BusRealtimeDataLoader
+import app.hyuabot.backend.bus.controller.BusTimetableDataLoader
+import app.hyuabot.backend.bus.domain.BusDepartureLogKey
+import app.hyuabot.backend.bus.domain.BusTimetableKey
 import app.hyuabot.backend.bus.service.BusRealtimeService
 import app.hyuabot.backend.bus.service.BusRouteService
 import app.hyuabot.backend.bus.service.BusStopService
@@ -18,7 +23,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.assertNotNull
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Import
@@ -32,7 +36,7 @@ import kotlin.test.Test
 
 @EnableDgsTest
 @SpringJUnitConfig
-@Import(BusDataFetcher::class, ScalarRegistration::class)
+@Import(BusDataFetcher::class, BusRealtimeDataLoader::class, BusTimetableDataLoader::class, BusDepartureLogDataLoader::class, ScalarRegistration::class)
 class BusDataFetcherTest {
     @Autowired lateinit var dgsQueryExecutor: DgsQueryExecutor
 
@@ -286,8 +290,8 @@ class BusDataFetcherTest {
     fun testBusRealtime() {
         whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
         whenever(
-            realtimeService.getBusRealtimeListByBusStop(routeID = any(), stopID = any()),
-        ).thenReturn(listOf(createBusRealtime()))
+            realtimeService.getBusRealtimeBatch(any()),
+        ).thenReturn(mapOf((route.id to stop.id) to listOf(createBusRealtime())))
 
         val result =
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
@@ -322,8 +326,8 @@ class BusDataFetcherTest {
     fun testBusRealtimeEmpty() {
         whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
         whenever(
-            realtimeService.getBusRealtimeListByBusStop(routeID = any(), stopID = any()),
-        ).thenReturn(emptyList())
+            realtimeService.getBusRealtimeBatch(any()),
+        ).thenReturn(mapOf((route.id to stop.id) to emptyList()))
 
         val result =
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
@@ -350,12 +354,13 @@ class BusDataFetcherTest {
     fun testBusTimetable() {
         whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
         whenever(
-            timetableService.getBusTimetableList(
-                routeID = anyOrNull(),
-                startStopID = anyOrNull(),
-                weekdays = anyOrNull(),
+            timetableService.getBusTimetableBatch(any()),
+        ).thenReturn(
+            mapOf(
+                BusTimetableKey(routeID = route.id, startStopID = startStop.id, weekdays = null) to
+                    listOf(createBusTimetable()),
             ),
-        ).thenReturn(listOf(createBusTimetable()))
+        )
 
         val result =
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
@@ -386,12 +391,13 @@ class BusDataFetcherTest {
     fun testBusTimetableEmpty() {
         whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
         whenever(
-            timetableService.getBusTimetableList(
-                routeID = anyOrNull(),
-                startStopID = anyOrNull(),
-                weekdays = anyOrNull(),
+            timetableService.getBusTimetableBatch(any()),
+        ).thenReturn(
+            mapOf(
+                BusTimetableKey(routeID = route.id, startStopID = startStop.id, weekdays = null) to
+                    emptyList(),
             ),
-        ).thenReturn(emptyList())
+        )
 
         val result =
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
@@ -418,12 +424,16 @@ class BusDataFetcherTest {
     fun testBusDepartureLog() {
         whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
         whenever(
-            routeService.getBusDepartureLogByRouteStopAndDate(
-                routeID = any(),
-                stopID = any(),
-                dates = any(),
+            routeService.getBusDepartureLogBatch(any()),
+        ).thenReturn(
+            mapOf(
+                BusDepartureLogKey(
+                    routeID = route.id,
+                    stopID = stop.id,
+                    dates = listOf(LocalDate.parse("2025-03-01")),
+                ) to listOf(createBusDepartureLog()),
             ),
-        ).thenReturn(listOf(createBusDepartureLog()))
+        )
 
         val result =
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
@@ -490,12 +500,16 @@ class BusDataFetcherTest {
     fun testBusDepartureLogEmpty() {
         whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
         whenever(
-            routeService.getBusDepartureLogByRouteStopAndDate(
-                routeID = any(),
-                stopID = any(),
-                dates = any(),
+            routeService.getBusDepartureLogBatch(any()),
+        ).thenReturn(
+            mapOf(
+                BusDepartureLogKey(
+                    routeID = route.id,
+                    stopID = stop.id,
+                    dates = listOf(LocalDate.parse("2025-03-01")),
+                ) to emptyList(),
             ),
-        ).thenReturn(emptyList())
+        )
 
         val result =
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
