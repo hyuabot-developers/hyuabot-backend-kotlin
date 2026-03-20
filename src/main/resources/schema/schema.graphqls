@@ -11,6 +11,7 @@ type Query {
     building(input: BuildingInput): [Building!]!
     cafeteria(input: CafeteriaInput!): [Cafeteria!]!
     bus(input: BusInput!): [BusRouteStop!]!
+    subway(input: SubwayInput!): [SubwayStation!]!
 }
 
 # 공지사항 카테고리와 공지사항을 반환하는 쿼리입니다.
@@ -265,4 +266,53 @@ type BusDepartureLog {
     date: Date!
     time: LocalTime!
     vehicle: String!
+}
+
+# 전철 정보를 반환하는 쿼리입니다.
+input SubwayInput {
+    keys: [SubwayStationInput!]!
+}
+
+input SubwayStationInput {
+    stationID: String!
+    direction: [String!]!
+    weekdays: [String!]!
+}
+
+type SubwayStation {
+    stationID: String!
+    name: String!
+    order: Int!
+    minutes: Int!
+    route: SubwayRoute!
+    realtime: [SubwayRealtime!]!
+    timetable: [SubwayTimetable!]!
+}
+
+type SubwayRoute {
+    seq: Int!
+    name: String!
+}
+
+type SubwayRealtime {
+    order: Int!
+    location: String!
+    stops: Int!
+    minutes: Int!
+    direction: String!
+    terminal: SubwayStation!
+    trainNumber: String!
+    isExpress: Boolean!
+    isLast: Boolean!
+    status: Int!
+    updatedAt: DateTime!
+}
+
+type SubwayTimetable {
+    seq: Int!
+    time: LocalTime!
+    weekday: String!
+    direction: String!
+    origin: SubwayStation!
+    terminal: SubwayStation!
 }

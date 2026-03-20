@@ -1,5 +1,6 @@
 package app.hyuabot.backend.subway.service
 
+import app.hyuabot.backend.database.entity.SubwayRealtime
 import app.hyuabot.backend.database.entity.SubwayRoute
 import app.hyuabot.backend.database.entity.SubwayRouteStation
 import app.hyuabot.backend.database.entity.SubwayStation
@@ -13,6 +14,7 @@ import app.hyuabot.backend.database.repository.SubwayStationRepository
 import app.hyuabot.backend.database.repository.SubwayTimetableRepository
 import app.hyuabot.backend.subway.domain.CreateSubwayRouteRequest
 import app.hyuabot.backend.subway.domain.CreateSubwayStationRequest
+import app.hyuabot.backend.subway.domain.SubwayTimetableKey
 import app.hyuabot.backend.subway.domain.SubwayTimetableRequest
 import app.hyuabot.backend.subway.domain.UpdateSubwayRouteRequest
 import app.hyuabot.backend.subway.domain.UpdateSubwayStationRequest
@@ -74,6 +76,11 @@ class SubwayService(
     }
 
     fun getAllStations() = stationRepository.findAll()
+
+    fun getStations(stationIDList: List<String>): List<SubwayRouteStation> {
+        if (stationIDList.isEmpty()) return emptyList()
+        return stationRepository.findByIdIn(stationIDList)
+    }
 
     fun createStation(payload: CreateSubwayStationRequest): SubwayRouteStation {
         if (!LocalDateTimeBuilder.checkLocalTimeFormat(payload.cumulativeTime)) {
@@ -169,6 +176,34 @@ class SubwayService(
             it
         }
 
+    fun getTimetable(keys: Set<SubwayTimetableKey>): Map<SubwayTimetableKey, List<SubwayTimetable>> {
+        if (keys.isEmpty()) return emptyMap()
+        val stationIDList = keys.map { it.stationID }.distinct()
+        val directions = keys.flatMap { it.directions }.distinct()
+        val weekdays = keys.flatMap { it.weekdays }.distinct()
+        if (directions.isEmpty() || weekdays.isEmpty()) return emptyMap()
+        val grouped =
+            timetableRepository
+                .findByStationIdInAndHeadingInAndWeekdayIn(
+                    stationIDList,
+                    directions,
+                    weekdays,
+                ).groupBy {
+                    Triple(
+                        it.stationID,
+                        it.heading,
+                        it.weekday,
+                    )
+                }
+        return keys.associateWith { key ->
+            key.directions.flatMap { direction ->
+                key.weekdays.flatMap { weekday ->
+                    grouped[Triple(key.stationID, direction, weekday)] ?: emptyList()
+                }
+            }
+        }
+    }
+
     fun createTimetable(
         stationID: String,
         payload: SubwayTimetableRequest,
@@ -239,4 +274,12 @@ class SubwayService(
     }
 
     fun getRealtimeList() = realtimeRepository.findAll()
+
+    fun getRealtimeList(
+        stationID: String,
+        directions: List<String>,
+    ): List<SubwayRealtime> {
+        if (directions.isEmpty()) return emptyList()
+        return realtimeRepository.findByStationIDAndHeadingIn(stationID, directions)
+    }
 }
