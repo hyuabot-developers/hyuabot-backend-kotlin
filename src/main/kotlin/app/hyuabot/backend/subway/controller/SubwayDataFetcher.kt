@@ -1,10 +1,12 @@
 package app.hyuabot.backend.subway.controller
 
+import app.hyuabot.backend.codegen.types.SubwayArrivalGroup
 import app.hyuabot.backend.codegen.types.SubwayInput
 import app.hyuabot.backend.codegen.types.SubwayRealtime
 import app.hyuabot.backend.codegen.types.SubwayRoute
 import app.hyuabot.backend.codegen.types.SubwayStation
 import app.hyuabot.backend.codegen.types.SubwayTimetable
+import app.hyuabot.backend.database.entity.SubwayRouteStation
 import app.hyuabot.backend.subway.domain.SubwayTimetableKey
 import app.hyuabot.backend.subway.service.SubwayService
 import com.netflix.graphql.dgs.DgsComponent
@@ -30,6 +32,7 @@ class SubwayDataFetcher(
                 it.stationID to (it.direction to it.weekdays)
             }
         dfe.graphQlContext.put("filterMap", filterMap)
+        dfe.graphQlContext.put("limit", input.limit)
         return subwayService.getStations(input.keys.map { it.stationID }).map { station ->
             SubwayStation(
                 stationID = station.id,
@@ -43,6 +46,7 @@ class SubwayDataFetcher(
                     ),
                 realtime = emptyList(),
                 timetable = emptyList(),
+                arrival = emptyList(),
             )
         }
     }
@@ -60,24 +64,7 @@ class SubwayDataFetcher(
                 stops = it.remainingStop,
                 minutes = it.remainingTime.toMinutes().toInt(),
                 direction = it.heading,
-                terminal =
-                    SubwayStation(
-                        stationID = it.terminalStation!!.id,
-                        name = it.terminalStation!!.name,
-                        order = it.terminalStation!!.order,
-                        minutes =
-                            it.terminalStation!!
-                                .cumulativeTime
-                                .toMinutes()
-                                .toInt(),
-                        route =
-                            SubwayRoute(
-                                seq = it.terminalStation!!.route!!.id,
-                                name = it.terminalStation!!.name,
-                            ),
-                        realtime = emptyList(),
-                        timetable = emptyList(),
-                    ),
+                terminal = it.terminalStation!!.toSubwayStation(),
                 trainNumber = it.trainNumber,
                 isExpress = it.isExpress,
                 isLast = it.isLast,
@@ -103,50 +90,48 @@ class SubwayDataFetcher(
                 "SubwayTimetableDataLoader",
             ) ?: return CompletableFuture.completedFuture(emptyList())
         return dataLoader.load(key).thenApply { timetables ->
-            timetables.map {
-                SubwayTimetable(
-                    seq = it.seq!!,
-                    time = it.departureTime,
-                    weekday = it.weekday,
-                    direction = it.heading,
-                    origin =
-                        SubwayStation(
-                            stationID = it.startStation!!.id,
-                            name = it.startStation!!.name,
-                            order = it.startStation!!.order,
-                            minutes =
-                                it.startStation!!
-                                    .cumulativeTime
-                                    .toMinutes()
-                                    .toInt(),
-                            route =
-                                SubwayRoute(
-                                    seq = it.startStation!!.route!!.id,
-                                    name = it.startStation!!.name,
-                                ),
-                            realtime = emptyList(),
-                            timetable = emptyList(),
-                        ),
-                    terminal =
-                        SubwayStation(
-                            stationID = it.terminalStation!!.id,
-                            name = it.terminalStation!!.name,
-                            order = it.terminalStation!!.order,
-                            minutes =
-                                it.terminalStation!!
-                                    .cumulativeTime
-                                    .toMinutes()
-                                    .toInt(),
-                            route =
-                                SubwayRoute(
-                                    seq = it.terminalStation!!.route!!.id,
-                                    name = it.terminalStation!!.name,
-                                ),
-                            realtime = emptyList(),
-                            timetable = emptyList(),
-                        ),
-                )
-            }
+            timetables.map { it.toSubwayTimetable() }
         }
     }
+
+    @DgsData(parentType = "SubwayStation")
+    fun arrival(dfe: DgsDataFetchingEnvironment): List<SubwayArrivalGroup> {
+        val station = dfe.getSource<SubwayStation>() ?: return emptyList()
+        val filterMap = dfe.graphQlContext.get<Map<String, Pair<List<String>, List<String>>>>("filterMap")
+        val (directions, weekdays) = filterMap[station.stationID] ?: return emptyList()
+        val weekday = weekdays.firstOrNull() ?: return emptyList()
+        return subwayService
+            .getArrival(
+                stationID = station.stationID,
+                directions = directions,
+                weekday = weekday,
+                limit = dfe.graphQlContext.get<Int>("limit"),
+            )
+    }
+
+    private fun SubwayRouteStation.toSubwayStation() =
+        SubwayStation(
+            stationID = id,
+            name = name,
+            order = order,
+            minutes = cumulativeTime.toMinutes().toInt(),
+            route =
+                SubwayRoute(
+                    seq = route!!.id,
+                    name = route!!.name,
+                ),
+            realtime = emptyList(),
+            timetable = emptyList(),
+            arrival = emptyList(),
+        )
+
+    private fun app.hyuabot.backend.database.entity.SubwayTimetable.toSubwayTimetable() =
+        SubwayTimetable(
+            seq = seq!!,
+            time = departureTime,
+            weekday = weekday,
+            direction = heading,
+            origin = startStation!!.toSubwayStation(),
+            terminal = terminalStation!!.toSubwayStation(),
+        )
 }

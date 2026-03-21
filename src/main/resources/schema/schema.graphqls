@@ -271,6 +271,7 @@ type BusDepartureLog {
 # 전철 정보를 반환하는 쿼리입니다.
 input SubwayInput {
     keys: [SubwayStationInput!]!
+    limit: Int
 }
 
 input SubwayStationInput {
@@ -287,6 +288,7 @@ type SubwayStation {
     route: SubwayRoute!
     realtime: [SubwayRealtime!]!
     timetable: [SubwayTimetable!]!
+    arrival: [SubwayArrivalGroup!]!
 }
 
 type SubwayRoute {
@@ -315,4 +317,20 @@ type SubwayTimetable {
     direction: String!
     origin: SubwayStation!
     terminal: SubwayStation!
+}
+
+type SubwayArrivalGroup {
+    direction: String!
+    entries: [SubwayArrival!]!
+}
+
+type SubwayArrival {
+    minutes: Int!
+    terminal: SubwayStation!
+    isRealtime: Boolean!
+    location: String
+    stops: Int
+    trainNumber: String
+    isExpress: Boolean
+    isLast: Boolean
 }

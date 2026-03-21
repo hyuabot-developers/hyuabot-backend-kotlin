@@ -1,5 +1,7 @@
 package app.hyuabot.backend.subway.service
 
+import app.hyuabot.backend.codegen.types.SubwayArrival
+import app.hyuabot.backend.codegen.types.SubwayArrivalGroup
 import app.hyuabot.backend.database.entity.SubwayRealtime
 import app.hyuabot.backend.database.entity.SubwayRoute
 import app.hyuabot.backend.database.entity.SubwayRouteStation
@@ -28,7 +30,9 @@ import app.hyuabot.backend.subway.exception.SubwayTerminalStationNotFoundExcepti
 import app.hyuabot.backend.subway.exception.SubwayTimetableNotFoundException
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.stereotype.Service
+import java.time.Duration
 import java.time.LocalTime
+import java.time.ZoneId
 import kotlin.collections.emptyList
 
 @Service
@@ -282,4 +286,86 @@ class SubwayService(
         if (directions.isEmpty()) return emptyList()
         return realtimeRepository.findByStationIDAndHeadingIn(stationID, directions)
     }
+
+    fun getArrival(
+        stationID: String,
+        directions: List<String>,
+        weekday: String,
+        limit: Int? = null,
+        currentTime: LocalTime = LocalTime.now(ZoneId.of("Asia/Seoul")),
+    ): List<SubwayArrivalGroup> {
+        if (directions.isEmpty()) return emptyList()
+        val realtimeGroups =
+            realtimeRepository
+                .findByStationIDAndHeadingIn(stationID, directions)
+                .sortedBy { it.remainingTime }
+                .groupBy { it.heading }
+        val timetableStartTimeMap =
+            directions.associateWith { direction ->
+                val lastMinutes = realtimeGroups[direction]?.maxOfOrNull { it.remainingTime.toMinutes() }
+                lastMinutes?.let { minutes -> currentTime.plusMinutes(minutes + 5) } ?: currentTime
+            }
+        val earliestStartTime = timetableStartTimeMap.values.minOrNull() ?: currentTime
+        val timetableGroups =
+            timetableRepository
+                .findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeAfter(
+                    stationID = stationID,
+                    heading = directions,
+                    weekday = weekday,
+                    departureTime = earliestStartTime,
+                ).groupBy { it.heading }
+        return directions.map { direction ->
+            val realtimeArrivals =
+                realtimeGroups[direction].orEmpty().map { realtime ->
+                    SubwayArrival(
+                        minutes = realtime.remainingTime.toMinutes().toInt(),
+                        terminal = realtime.terminalStation!!.toSubwayStation(),
+                        isRealtime = true,
+                        location = realtime.location,
+                        stops = realtime.remainingStop,
+                        trainNumber = realtime.trainNumber,
+                        isExpress = realtime.isExpress,
+                        isLast = realtime.isLast,
+                    )
+                }
+            val timetableArrivals =
+                timetableGroups[direction]
+                    .orEmpty()
+                    .filter {
+                        it.departureTime > timetableStartTimeMap[direction]!!
+                    }.map { timetable ->
+                        SubwayArrival(
+                            minutes = Duration.between(currentTime, timetable.departureTime).toMinutes().toInt(),
+                            terminal = timetable.terminalStation!!.toSubwayStation(),
+                            isRealtime = false,
+                            location = null,
+                            stops = null,
+                            trainNumber = null,
+                            isExpress = null,
+                            isLast = null,
+                        )
+                    }
+            val allArrivals = (realtimeArrivals + timetableArrivals).sortedBy { it.minutes }
+            SubwayArrivalGroup(
+                direction = direction,
+                entries = limit?.let { allArrivals.take(it) } ?: allArrivals,
+            )
+        }
+    }
+
+    private fun SubwayRouteStation.toSubwayStation() =
+        app.hyuabot.backend.codegen.types.SubwayStation(
+            stationID = id,
+            name = name,
+            order = order,
+            minutes = cumulativeTime.toMinutes().toInt(),
+            route =
+                app.hyuabot.backend.codegen.types.SubwayRoute(
+                    seq = route!!.id,
+                    name = route!!.name,
+                ),
+            realtime = emptyList(),
+            timetable = emptyList(),
+            arrival = emptyList(),
+        )
 }
