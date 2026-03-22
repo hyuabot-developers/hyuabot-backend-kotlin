@@ -42,14 +42,23 @@ class ScalarRegistration {
                         locale: Locale,
                     ): String? =
                         when (dataFetcherResult) {
-                            is ZonedDateTime -> dataFetcherResult.withZoneSameInstant(zone).format(formatter)
-                            is String ->
+                            is ZonedDateTime -> {
+                                dataFetcherResult.withZoneSameInstant(zone).format(formatter)
+                            }
+
+                            is String -> {
                                 try {
                                     ZonedDateTime.parse(dataFetcherResult, formatter).withZoneSameInstant(zone).format(formatter)
                                 } catch (e: java.time.format.DateTimeParseException) {
-                                    throw CoercingSerializeException("Unable to serialize '$dataFetcherResult' as ZonedDateTime: ${e.message}")
+                                    throw CoercingSerializeException(
+                                        "Unable to serialize '$dataFetcherResult' as ZonedDateTime: ${e.message}",
+                                    )
                                 }
-                            else -> throw CoercingSerializeException("Unable to serialize $dataFetcherResult as ZonedDateTime")
+                            }
+
+                            else -> {
+                                throw CoercingSerializeException("Unable to serialize $dataFetcherResult as ZonedDateTime")
+                            }
                         }
 
                     override fun parseValue(
