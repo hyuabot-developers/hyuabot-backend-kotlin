@@ -159,7 +159,7 @@ class BusTimetableService(
                 .groupBy { it.routeID to it.startStopID }
         return keys.associateWith { key ->
             val timetables = grouped[key.routeID to key.startStopID] ?: emptyList()
-            if (key.weekdays.isNullOrEmpty()) timetables else timetables.filter { it.weekday in key.weekdays!! }
+            if (key.weekdays.isNullOrEmpty()) timetables else timetables.filter { it.weekday in key.weekdays }
         }
     }
 }

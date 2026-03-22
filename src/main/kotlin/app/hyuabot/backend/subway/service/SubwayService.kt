@@ -2,6 +2,7 @@ package app.hyuabot.backend.subway.service
 
 import app.hyuabot.backend.codegen.types.SubwayArrival
 import app.hyuabot.backend.codegen.types.SubwayArrivalGroup
+import app.hyuabot.backend.codegen.types.SubwayOriginTerminal
 import app.hyuabot.backend.database.entity.SubwayRealtime
 import app.hyuabot.backend.database.entity.SubwayRoute
 import app.hyuabot.backend.database.entity.SubwayRouteStation
@@ -355,18 +356,8 @@ class SubwayService(
     }
 
     private fun SubwayRouteStation.toSubwayStation() =
-        app.hyuabot.backend.codegen.types.SubwayStation(
+        SubwayOriginTerminal(
             stationID = id,
             name = name,
-            order = order,
-            minutes = cumulativeTime.toMinutes().toInt(),
-            route =
-                app.hyuabot.backend.codegen.types.SubwayRoute(
-                    seq = route!!.id,
-                    name = route!!.name,
-                ),
-            realtime = emptyList(),
-            timetable = emptyList(),
-            arrival = emptyList(),
         )
 }

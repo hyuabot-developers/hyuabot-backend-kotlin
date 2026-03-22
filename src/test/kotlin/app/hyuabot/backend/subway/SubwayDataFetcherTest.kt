@@ -2,7 +2,7 @@ package app.hyuabot.backend.subway
 
 import app.hyuabot.backend.codegen.types.SubwayArrival
 import app.hyuabot.backend.codegen.types.SubwayArrivalGroup
-import app.hyuabot.backend.codegen.types.SubwayStation
+import app.hyuabot.backend.codegen.types.SubwayOriginTerminal
 import app.hyuabot.backend.database.entity.SubwayRealtime
 import app.hyuabot.backend.database.entity.SubwayRoute
 import app.hyuabot.backend.database.entity.SubwayRouteStation
@@ -235,19 +235,9 @@ class SubwayDataFetcherTest {
                             SubwayArrival(
                                 minutes = 2,
                                 terminal =
-                                    SubwayStation(
+                                    SubwayOriginTerminal(
                                         stationID = terminalStation.id,
                                         name = terminalStation.name,
-                                        order = terminalStation.order,
-                                        minutes = 160,
-                                        route =
-                                            app.hyuabot.backend.codegen.types.SubwayRoute(
-                                                seq = route.id,
-                                                name = route.name,
-                                            ),
-                                        realtime = emptyList(),
-                                        timetable = emptyList(),
-                                        arrival = emptyList(),
                                     ),
                                 isRealtime = true,
                                 location = "중앙",
@@ -259,19 +249,9 @@ class SubwayDataFetcherTest {
                             SubwayArrival(
                                 minutes = 25,
                                 terminal =
-                                    SubwayStation(
+                                    SubwayOriginTerminal(
                                         stationID = terminalStation.id,
                                         name = terminalStation.name,
-                                        order = terminalStation.order,
-                                        minutes = 160,
-                                        route =
-                                            app.hyuabot.backend.codegen.types.SubwayRoute(
-                                                seq = route.id,
-                                                name = route.name,
-                                            ),
-                                        realtime = emptyList(),
-                                        timetable = emptyList(),
-                                        arrival = emptyList(),
                                     ),
                                 isRealtime = false,
                             ),

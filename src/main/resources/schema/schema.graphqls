@@ -291,6 +291,11 @@ type SubwayStation {
     arrival: [SubwayArrivalGroup!]!
 }
 
+type SubwayOriginTerminal {
+    stationID: String!
+    name: String!
+}
+
 type SubwayRoute {
     seq: Int!
     name: String!
@@ -302,7 +307,7 @@ type SubwayRealtime {
     stops: Int!
     minutes: Int!
     direction: String!
-    terminal: SubwayStation!
+    terminal: SubwayOriginTerminal!
     trainNumber: String!
     isExpress: Boolean!
     isLast: Boolean!
@@ -315,8 +320,8 @@ type SubwayTimetable {
     time: LocalTime!
     weekday: String!
     direction: String!
-    origin: SubwayStation!
-    terminal: SubwayStation!
+    origin: SubwayOriginTerminal!
+    terminal: SubwayOriginTerminal!
 }
 
 type SubwayArrivalGroup {
@@ -326,7 +331,7 @@ type SubwayArrivalGroup {
 
 type SubwayArrival {
     minutes: Int!
-    terminal: SubwayStation!
+    terminal: SubwayOriginTerminal!
     isRealtime: Boolean!
     location: String
     stops: Int
