@@ -44,6 +44,14 @@ class ScalarRegistrationTest {
         val input = "2023-10-31T12:34:56+09:00"
         val result = coercing.serialize(input, context, locale)
         assertNotNull(result)
+        assertEquals("2023-10-31T12:34:56+09:00", result)
+    }
+
+    @Test
+    @DisplayName("잘못된 형식의 String 직렬화 실패")
+    fun testSerializeInvalidString() {
+        val input = "not-a-datetime"
+        assertThrows<CoercingSerializeException> { coercing.serialize(input, context, locale) }
     }
 
     @Test
