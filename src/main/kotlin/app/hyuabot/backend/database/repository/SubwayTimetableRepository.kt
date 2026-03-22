@@ -2,6 +2,7 @@ package app.hyuabot.backend.database.repository
 
 import app.hyuabot.backend.database.entity.SubwayTimetable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
 import java.time.LocalTime
 
 interface SubwayTimetableRepository : JpaRepository<SubwayTimetable, Int> {
@@ -40,9 +41,35 @@ interface SubwayTimetableRepository : JpaRepository<SubwayTimetable, Int> {
         weekday: String,
     ): List<SubwayTimetable>
 
+    @Query(
+        """
+            SELECT t from subway_timetable t
+            JOIN FETCH t.startStation ss
+            JOIN fetch ss.route
+            JOIN FETCH t.terminalStation ts
+            JOIN FETCH ts.route
+            WHERE t.stationID IN :stationIDList
+            AND t.heading IN :directions
+            AND t.weekday IN :weekdayList
+            ORDER BY t.stationID, t.heading, t.weekday, t.departureTime
+        """,
+    )
+    fun findByStationIdInAndHeadingInAndWeekdayIn(
+        stationIDList: List<String>,
+        directions: List<String>,
+        weekdayList: List<String>,
+    ): List<SubwayTimetable>
+
     fun findByStationIDAndHeadingAndWeekdayAndDepartureTimeAfter(
         stationID: String,
         heading: String,
+        weekday: String,
+        departureTime: LocalTime,
+    ): List<SubwayTimetable>
+
+    fun findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeAfter(
+        stationID: String,
+        heading: List<String>,
         weekday: String,
         departureTime: LocalTime,
     ): List<SubwayTimetable>
