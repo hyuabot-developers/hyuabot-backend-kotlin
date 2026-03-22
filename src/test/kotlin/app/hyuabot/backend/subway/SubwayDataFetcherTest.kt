@@ -405,4 +405,41 @@ class SubwayDataFetcherTest {
         val arrival = station["arrival"] as List<*>
         assertEquals(0, arrival.size)
     }
+
+    @Test
+    @DisplayName("전철 도착 정보 조회 (여러 요일 필터링)")
+    fun testSubwayMultipleWeekdayFilter() {
+        whenever(subwayService.getStations(listOf(station.id))).thenReturn(listOf(station))
+
+        val result =
+            dgsQueryExecutor.execute(
+                """
+                {
+                    subway(input: {
+                        keys: [{
+                            stationID: "K449",
+                            direction: ["up"],
+                            weekdays: ["weekdays", "weekends"]
+                        }],
+                        limit: 10
+                    }) {
+                        stationID
+                        name
+                        order
+                        arrival {
+                            direction
+                            entries {
+                                minutes                            
+                                location
+                                terminal {
+                                    name
+                                }
+                            }
+                        }
+                    }
+                }
+                """.trimIndent(),
+            )
+        assert(result.errors.isNotEmpty())
+    }
 }

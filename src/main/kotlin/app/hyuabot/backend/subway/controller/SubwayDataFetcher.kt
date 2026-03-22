@@ -10,12 +10,12 @@ import app.hyuabot.backend.codegen.types.SubwayTimetable
 import app.hyuabot.backend.database.entity.SubwayRouteStation
 import app.hyuabot.backend.subway.domain.SubwayTimetableKey
 import app.hyuabot.backend.subway.service.SubwayService
+import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsData
 import com.netflix.graphql.dgs.DgsDataFetchingEnvironment
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
-import java.time.ZoneId
 import java.util.concurrent.CompletableFuture
 
 @DgsComponent
@@ -62,7 +62,6 @@ class SubwayDataFetcher(
         val station = dfe.getSource<SubwayStation>()!!
         val filterMap = dfe.graphQlContext.get<Map<String, Pair<List<String>, List<String>>>>("filterMap")
         val (directions, _) = filterMap[station.stationID]!!
-        val zoneId = ZoneId.of("Asia/Seoul")
         return subwayService.getRealtimeList(station.stationID, directions = directions).map {
             SubwayRealtime(
                 order = it.order,
@@ -75,7 +74,7 @@ class SubwayDataFetcher(
                 isExpress = it.isExpress,
                 isLast = it.isLast,
                 status = it.status,
-                updatedAt = it.updatedAt.withZoneSameInstant(zoneId),
+                updatedAt = it.updatedAt.withZoneSameInstant(LocalDateTimeBuilder.serviceTimezone),
             )
         }
     }
@@ -93,7 +92,7 @@ class SubwayDataFetcher(
             )
         val dataLoader =
             dfe.getDataLoader<SubwayTimetableKey, List<app.hyuabot.backend.database.entity.SubwayTimetable>>(
-                "SubwayTimetableDataLoader",
+                "subwayTimetableDataLoader",
             )!!
         return dataLoader.load(key).thenApply { timetables ->
             timetables.map { it.toSubwayTimetable() }
@@ -105,7 +104,14 @@ class SubwayDataFetcher(
         val station = dfe.getSource<SubwayStation>()!!
         val filterMap = dfe.graphQlContext.get<Map<String, Pair<List<String>, List<String>>>>("filterMap")
         val (directions, weekdays) = filterMap[station.stationID]!!
-        val weekday = weekdays.firstOrNull() ?: return emptyList()
+        if (weekdays.isEmpty()) {
+            return emptyList()
+        } else if (weekdays.size > 1) {
+            throw IllegalArgumentException(
+                "arrival query expects exactly one weekday, but got: $weekdays for station ${station.stationID}",
+            )
+        }
+        val weekday = weekdays.first()
         return subwayService
             .getArrival(
                 stationID = station.stationID,

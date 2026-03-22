@@ -7,7 +7,7 @@ import com.netflix.graphql.dgs.DgsDataLoader
 import org.dataloader.MappedBatchLoader
 import java.util.concurrent.CompletableFuture
 
-@DgsDataLoader(name = "SubwayTimetableDataLoader")
+@DgsDataLoader(name = "subwayTimetableDataLoader")
 class SubwayTimetableDataLoader(
     private val subwayService: SubwayService,
 ) : MappedBatchLoader<SubwayTimetableKey, List<SubwayTimetable>> {
