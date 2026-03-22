@@ -84,7 +84,10 @@ class SubwayService(
 
     fun getStations(stationIDList: List<String>): List<SubwayRouteStation> {
         if (stationIDList.isEmpty()) return emptyList()
-        return stationRepository.findByIdIn(stationIDList)
+        val stations = stationRepository.findByIdIn(stationIDList)
+        if (stations.isEmpty()) return emptyList()
+        val stationsById: Map<String, SubwayRouteStation> = stations.associateBy { it.id }
+        return stationIDList.distinct().mapNotNull { stationsById[it] }
     }
 
     fun createStation(payload: CreateSubwayStationRequest): SubwayRouteStation {
@@ -201,8 +204,8 @@ class SubwayService(
                     )
                 }
         return keys.associateWith { key ->
-            key.directions.flatMap { direction ->
-                key.weekdays.flatMap { weekday ->
+            key.directions.distinct().flatMap { direction ->
+                key.weekdays.distinct().flatMap { weekday ->
                     grouped[Triple(key.stationID, direction, weekday)] ?: emptyList()
                 }
             }

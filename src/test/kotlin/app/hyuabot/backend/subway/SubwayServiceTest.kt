@@ -312,6 +312,21 @@ class SubwayServiceTest {
     }
 
     @Test
+    @DisplayName("지하철 역 목록 조회 - 역 ID 필터링 (결과 없음)")
+    fun testGetStationsByIdsNoResults() {
+        whenever(
+            stationRepository.findByIdIn(
+                listOf(
+                    "K450",
+                    "K251",
+                ),
+            ),
+        ).thenReturn(emptyList())
+        val stations = service.getStations(listOf("K450", "K251"))
+        assertEquals(0, stations.size)
+    }
+
+    @Test
     @DisplayName("지하철 역 목록 조회 - 역 ID 없이 필터링")
     fun testGetStationsByIdsEmpty() {
         val stations = service.getStations(emptyList())

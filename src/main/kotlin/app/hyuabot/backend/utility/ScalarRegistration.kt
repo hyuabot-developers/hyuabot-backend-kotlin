@@ -7,6 +7,8 @@ import graphql.execution.CoercedVariables
 import graphql.language.Value
 import graphql.scalars.ExtendedScalars
 import graphql.schema.Coercing
+import graphql.schema.CoercingParseLiteralException
+import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
 import graphql.schema.GraphQLScalarType
 import graphql.schema.idl.RuntimeWiring
@@ -52,7 +54,7 @@ class ScalarRegistration {
                     ): ZonedDateTime? =
                         when (input) {
                             is String -> ZonedDateTime.parse(input, formatter).withZoneSameInstant(zone)
-                            else -> throw CoercingSerializeException("Unable to parse $input as ZonedDateTime")
+                            else -> throw CoercingParseValueException("Unable to parse $input as ZonedDateTime")
                         }
 
                     override fun parseLiteral(
@@ -71,7 +73,7 @@ class ScalarRegistration {
                             }
 
                             else -> {
-                                throw CoercingSerializeException("Unable to parse literal $input as ZonedDateTime")
+                                throw CoercingParseLiteralException("Unable to parse literal $input as ZonedDateTime")
                             }
                         }
                 },

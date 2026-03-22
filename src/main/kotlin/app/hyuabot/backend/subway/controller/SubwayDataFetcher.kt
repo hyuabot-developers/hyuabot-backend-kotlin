@@ -29,9 +29,14 @@ class SubwayDataFetcher(
     ): List<SubwayStation> {
         if (input.keys.isEmpty()) return emptyList()
         val filterMap =
-            input.keys.associate {
-                it.stationID to (it.direction to it.weekdays)
-            }
+            input.keys
+                .groupBy {
+                    it.stationID
+                }.mapValues { (_, keys) ->
+                    val directions = keys.flatMap { it.direction }.distinct()
+                    val weekdays = keys.flatMap { it.weekdays }.distinct()
+                    directions to weekdays
+                }
         dfe.graphQlContext.put("filterMap", filterMap)
         dfe.graphQlContext.put("limit", input.limit)
         return subwayService.getStations(input.keys.map { it.stationID }).map { station ->

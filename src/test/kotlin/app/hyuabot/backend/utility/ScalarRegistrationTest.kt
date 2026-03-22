@@ -4,6 +4,8 @@ import graphql.GraphQLContext
 import graphql.execution.CoercedVariables
 import graphql.language.IntValue
 import graphql.language.StringValue
+import graphql.schema.CoercingParseLiteralException
+import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
 import graphql.schema.idl.RuntimeWiring
 import org.junit.jupiter.api.DisplayName
@@ -36,6 +38,10 @@ class ScalarRegistrationTest {
         val result = coercing.serialize(input, context, locale)
         assertNotNull(result)
         assertEquals("2023-10-31T12:34:56+09:00", result)
+        val input2 = ZonedDateTime.parse("2023-10-31T03:34:56Z")
+        val result2 = coercing.serialize(input2, context, locale)
+        assertNotNull(result2)
+        assertEquals("2023-10-31T12:34:56+09:00", result2)
     }
 
     @Test
@@ -65,7 +71,7 @@ class ScalarRegistrationTest {
     @DisplayName("파싱 실패")
     fun testParseValueInvalid() {
         val input = 123
-        assertThrows<CoercingSerializeException> { coercing.parseValue(input, context, locale) }
+        assertThrows<CoercingParseValueException> { coercing.parseValue(input, context, locale) }
     }
 
     @Test
@@ -80,6 +86,6 @@ class ScalarRegistrationTest {
     @DisplayName("리터럴 파싱 실패")
     fun testParseLiteralInvalid() {
         val input = IntValue.of(123)
-        assertThrows<CoercingSerializeException> { coercing.parseLiteral(input, CoercedVariables.emptyVariables(), context, locale) }
+        assertThrows<CoercingParseLiteralException> { coercing.parseLiteral(input, CoercedVariables.emptyVariables(), context, locale) }
     }
 }
