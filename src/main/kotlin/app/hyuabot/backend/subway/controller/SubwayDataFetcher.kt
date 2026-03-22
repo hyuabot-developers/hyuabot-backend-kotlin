@@ -53,11 +53,11 @@ class SubwayDataFetcher(
 
     @DgsData(parentType = "SubwayStation")
     fun realtime(dfe: DgsDataFetchingEnvironment): List<SubwayRealtime> {
-        val station = dfe.getSource<SubwayStation>() ?: return emptyList()
+        val station = dfe.getSource<SubwayStation>()!!
         val filterMap = dfe.graphQlContext.get<Map<String, Pair<List<String>, List<String>>>>("filterMap")
-        val (direction, _) = filterMap[station.stationID] ?: return emptyList()
+        val (directions, _) = filterMap[station.stationID]!!
         val zoneId = ZoneId.of("Asia/Seoul")
-        return subwayService.getRealtimeList(station.stationID, directions = direction).map {
+        return subwayService.getRealtimeList(station.stationID, directions = directions).map {
             SubwayRealtime(
                 order = it.order,
                 location = it.location,
@@ -76,19 +76,19 @@ class SubwayDataFetcher(
 
     @DgsData(parentType = "SubwayStation")
     fun timetable(dfe: DgsDataFetchingEnvironment): CompletableFuture<List<SubwayTimetable>> {
-        val station = dfe.getSource<SubwayStation>() ?: return CompletableFuture.completedFuture(emptyList())
+        val station = dfe.getSource<SubwayStation>()!!
         val filterMap = dfe.graphQlContext.get<Map<String, Pair<List<String>, List<String>>>>("filterMap")
-        val (direction, weekdays) = filterMap[station.stationID] ?: return CompletableFuture.completedFuture(emptyList())
+        val (directions, weekdays) = filterMap[station.stationID]!!
         val key =
             SubwayTimetableKey(
                 stationID = station.stationID,
-                directions = direction,
+                directions = directions,
                 weekdays = weekdays,
             )
         val dataLoader =
             dfe.getDataLoader<SubwayTimetableKey, List<app.hyuabot.backend.database.entity.SubwayTimetable>>(
                 "SubwayTimetableDataLoader",
-            ) ?: return CompletableFuture.completedFuture(emptyList())
+            )!!
         return dataLoader.load(key).thenApply { timetables ->
             timetables.map { it.toSubwayTimetable() }
         }
@@ -96,9 +96,9 @@ class SubwayDataFetcher(
 
     @DgsData(parentType = "SubwayStation")
     fun arrival(dfe: DgsDataFetchingEnvironment): List<SubwayArrivalGroup> {
-        val station = dfe.getSource<SubwayStation>() ?: return emptyList()
+        val station = dfe.getSource<SubwayStation>()!!
         val filterMap = dfe.graphQlContext.get<Map<String, Pair<List<String>, List<String>>>>("filterMap")
-        val (directions, weekdays) = filterMap[station.stationID] ?: return emptyList()
+        val (directions, weekdays) = filterMap[station.stationID]!!
         val weekday = weekdays.firstOrNull() ?: return emptyList()
         return subwayService
             .getArrival(

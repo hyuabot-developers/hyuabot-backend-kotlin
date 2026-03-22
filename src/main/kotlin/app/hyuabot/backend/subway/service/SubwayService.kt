@@ -302,10 +302,11 @@ class SubwayService(
                 .groupBy { it.heading }
         val timetableStartTimeMap =
             directions.associateWith { direction ->
-                val lastMinutes = realtimeGroups[direction]?.maxOfOrNull { it.remainingTime.toMinutes() }
-                lastMinutes?.let { minutes -> currentTime.plusMinutes(minutes + 5) } ?: currentTime
+                val realtimeList = realtimeGroups[direction].orEmpty()
+                val lastMinutes = realtimeList.maxOfOrNull { it.remainingTime.toMinutes() }
+                if (lastMinutes != null) currentTime.plusMinutes(lastMinutes + 5) else currentTime
             }
-        val earliestStartTime = timetableStartTimeMap.values.minOrNull() ?: currentTime
+        val earliestStartTime = timetableStartTimeMap.values.min()
         val timetableGroups =
             timetableRepository
                 .findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeAfter(
@@ -348,7 +349,7 @@ class SubwayService(
             val allArrivals = (realtimeArrivals + timetableArrivals).sortedBy { it.minutes }
             SubwayArrivalGroup(
                 direction = direction,
-                entries = limit?.let { allArrivals.take(it) } ?: allArrivals,
+                entries = if (limit != null) allArrivals.take(limit) else allArrivals,
             )
         }
     }
