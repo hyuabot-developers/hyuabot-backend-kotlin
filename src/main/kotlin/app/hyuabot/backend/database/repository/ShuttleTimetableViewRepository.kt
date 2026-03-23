@@ -44,4 +44,10 @@ interface ShuttleTimetableViewRepository : JpaRepository<ShuttleTimetableView, S
         stopName: String,
         isWeekdays: Boolean,
     ): List<ShuttleTimetableView>
+
+    fun findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
+        periods: List<String>,
+        stops: List<String>,
+        weekdays: List<Boolean>,
+    ): List<ShuttleTimetableView>
 }

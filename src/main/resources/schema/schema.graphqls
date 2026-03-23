@@ -12,6 +12,7 @@ type Query {
     cafeteria(input: CafeteriaInput!): [Cafeteria!]!
     bus(input: BusInput!): [BusRouteStop!]!
     subway(input: SubwayInput!): [SubwayStation!]!
+    shuttle(input: ShuttleInput!): Shuttle!
 }
 
 # 공지사항 카테고리와 공지사항을 반환하는 쿼리입니다.
@@ -338,4 +339,70 @@ type SubwayArrival {
     trainNumber: String
     isExpress: Boolean
     isLast: Boolean
+}
+
+# 셔틀버스 노선 및 시간표를 반환하는 쿼리입니다.
+input ShuttleInput {
+    stops: [String!]
+    periods: [String!]
+    weekdays: [Boolean!]
+    date: Date
+    after: LocalTime
+    limit: Int
+}
+
+type Shuttle {
+    period: ShuttlePeriod
+    holiday: ShuttleHoliday
+    stops: [ShuttleStop!]!
+}
+
+type ShuttlePeriod {
+    seq: Int!
+    type: String!
+    start: DateTime!
+    end: DateTime!
+}
+
+type ShuttleHoliday {
+    seq: Int!
+    date: Date!
+    type: String!
+    calendar: String!
+}
+
+type ShuttleStop {
+    name: String!
+    latitude: Float!
+    longitude: Float!
+    timetable: ShuttleTimetable!
+}
+
+type ShuttleTimetable {
+    order: [ShuttleTimetableEntry!]!
+    destination: [ShuttleTimetableGroup!]!
+}
+
+type ShuttleTimetableGroup {
+    destination: String!
+    entries:  [ShuttleTimetableEntry!]!
+}
+
+type ShuttleTimetableEntry {
+    seq: Int!
+    route: ShuttleRoute!
+    period: String!
+    weekday: Boolean!
+    time: LocalTime!
+    stops: [ShuttleArrival]!
+}
+
+type ShuttleRoute {
+    name: String!
+    tag: String!
+}
+
+type ShuttleArrival {
+    stop: String!
+    time: LocalTime!
 }

@@ -6,5 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 interface ShuttleStopRepository : JpaRepository<ShuttleStop, String> {
     fun findByNameContaining(name: String): List<ShuttleStop>
 
+    fun findByNameIsIn(names: Collection<String>): List<ShuttleStop>
+
     fun findByName(name: String): ShuttleStop?
 }

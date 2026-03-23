@@ -27,6 +27,7 @@ java {
 
 repositories {
     mavenCentral()
+    maven { url = uri("https://jitpack.io") }
 }
 
 extra["netflixDgsVersion"] = "11.1.0"
@@ -68,6 +69,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
+    // Calendar
+    implementation("com.github.usingsky:KoreanLunarCalendar:0.3.1")
 }
 
 dependencyManagement {

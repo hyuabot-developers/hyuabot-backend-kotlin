@@ -19,6 +19,8 @@ class ShuttleStopService(
             shuttleStopRepository.findAll()
         }.sortedBy { it.name }
 
+    fun getStopsByNames(names: List<String>): List<ShuttleStop> = shuttleStopRepository.findByNameIsIn(names)
+
     fun getStopByName(name: String): ShuttleStop =
         shuttleStopRepository
             .findById(name)

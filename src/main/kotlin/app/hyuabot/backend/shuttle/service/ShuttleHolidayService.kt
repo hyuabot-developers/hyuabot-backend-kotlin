@@ -7,8 +7,10 @@ import app.hyuabot.backend.shuttle.domain.ShuttleHolidayRequest
 import app.hyuabot.backend.shuttle.exception.DuplicateShuttleHolidayException
 import app.hyuabot.backend.shuttle.exception.ShuttleHolidayNotFoundException
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
+import com.github.usingsky.calendar.KoreanLunarCalendar
 import org.springframework.stereotype.Service
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @Service
 class ShuttleHolidayService(
@@ -67,5 +69,15 @@ class ShuttleHolidayService(
     fun deleteShuttleHoliday(seq: Int) {
         val existingHoliday = shuttleHolidayRepository.findById(seq).orElseThrow { throw ShuttleHolidayNotFoundException() }
         shuttleHolidayRepository.delete(existingHoliday)
+    }
+
+    fun findShuttleHoliday(date: LocalDate): ShuttleHoliday? {
+        val lunarDate = KoreanLunarCalendar.getInstance()
+        val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        lunarDate.setSolarDate(date.year, date.monthValue, date.dayOfMonth)
+        return shuttleHolidayRepository.findBySolarDateOrLunarDate(
+            date,
+            LocalDate.parse(lunarDate.lunarIsoFormat, dateFormatter),
+        )
     }
 }

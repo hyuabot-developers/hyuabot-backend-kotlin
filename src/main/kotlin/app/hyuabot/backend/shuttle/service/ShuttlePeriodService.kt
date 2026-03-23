@@ -7,7 +7,9 @@ import app.hyuabot.backend.shuttle.domain.ShuttlePeriodRequest
 import app.hyuabot.backend.shuttle.exception.ShuttlePeriodNotFoundException
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
@@ -100,4 +102,10 @@ class ShuttlePeriodService(
                 shuttlePeriodRepository.delete(it)
             }
     }
+
+    fun findShuttlePeriod(dateTime: LocalDate): ShuttlePeriod? =
+        shuttlePeriodRepository.findByStartBeforeAndEndAfter(
+            ZonedDateTime.of(dateTime, LocalTime.MIN, LocalDateTimeBuilder.serviceTimezone),
+            ZonedDateTime.of(dateTime, LocalTime.MIN, LocalDateTimeBuilder.serviceTimezone),
+        )
 }
