@@ -4,6 +4,7 @@ import app.hyuabot.backend.codegen.types.Shuttle
 import app.hyuabot.backend.codegen.types.ShuttleArrival
 import app.hyuabot.backend.codegen.types.ShuttleHoliday
 import app.hyuabot.backend.codegen.types.ShuttleInput
+import app.hyuabot.backend.codegen.types.ShuttleLimitInput
 import app.hyuabot.backend.codegen.types.ShuttlePeriod
 import app.hyuabot.backend.codegen.types.ShuttleRoute
 import app.hyuabot.backend.codegen.types.ShuttleStop
@@ -49,7 +50,6 @@ class ShuttleDataFetcher(
                 weekdays = filterWeekdays,
                 date = input.date,
                 after = input.after,
-                limit = input.limit,
                 isHalt = isHalt,
             ),
         )
@@ -91,7 +91,7 @@ class ShuttleDataFetcher(
     fun stops(dfe: DgsDataFetchingEnvironment): List<ShuttleStop> {
         val filter = dfe.graphQlContext.get<ShuttleFilterContext>("filter")
         return filter.stops?.let {
-            stopService.getStopsByNames(filter.stops).map {
+            stopService.getStopsByNames(filter.stops.map { it.name }).map {
                 ShuttleStop(
                     name = it.name,
                     latitude = it.latitude,
@@ -127,7 +127,7 @@ class ShuttleDataFetcher(
                 periods = filter.periods.toSet(),
                 weekdays = filter.weekdays.toSet(),
                 after = filter.after,
-                limit = filter.limit,
+                limit = filter.stops?.first { it.name == stop.name }?.limit ?: ShuttleLimitInput(order = null, destination = null),
             )
         if (filter.isHalt) {
             return CompletableFuture.completedFuture(
