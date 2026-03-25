@@ -16,6 +16,8 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZonedDateTime
 import java.util.Optional
 import kotlin.test.assertEquals
@@ -275,5 +277,30 @@ class ShuttlePeriodServiceTest {
         whenever(shuttlePeriodRepository.findById(seq)).thenReturn(Optional.empty())
 
         assertThrows<ShuttlePeriodNotFoundException> { shuttlePeriodService.deleteShuttlePeriod(seq) }
+    }
+
+    @Test
+    @DisplayName("셔틀버스 운행 기간 검색 테스트")
+    fun findShuttlePeriodTest() {
+        val date = LocalDate.parse("2025-09-01")
+        whenever(
+            shuttlePeriodRepository.findByStartBeforeAndEndAfter(
+                ZonedDateTime.of(date, LocalTime.MIN, LocalDateTimeBuilder.serviceTimezone),
+                ZonedDateTime.of(date, LocalTime.MIN, LocalDateTimeBuilder.serviceTimezone),
+            ),
+        ).thenReturn(
+            ShuttlePeriod(
+                seq = 1,
+                start = ZonedDateTime.parse("2025-09-01T00:00:00.000+09:00"),
+                end = ZonedDateTime.parse("2025-12-23T23:59:59.999+09:00"),
+                type = "semester",
+                periodType = null,
+            ),
+        )
+        val result = shuttlePeriodService.findShuttlePeriod(date)
+        assertEquals(1, result?.seq)
+        assertEquals("semester", result?.type)
+        assertEquals(ZonedDateTime.parse("2025-09-01T00:00:00.000+09:00"), result?.start)
+        assertEquals(ZonedDateTime.parse("2025-12-23T23:59:59.999+09:00"), result?.end)
     }
 }
