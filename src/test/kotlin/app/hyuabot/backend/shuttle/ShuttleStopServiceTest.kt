@@ -57,6 +57,37 @@ class ShuttleStopServiceTest {
     }
 
     @Test
+    @DisplayName("셔틀버스 정류장 목록 조회 (ID 필터링)")
+    fun getGetStopsWithIDList() {
+        whenever(
+            shuttleStopRepository.findByNameIsIn(
+                listOf("Stop1", "Stop2"),
+            ),
+        ).thenReturn(
+            listOf(
+                ShuttleStop(
+                    name = "Stop1",
+                    latitude = 37.5665,
+                    longitude = 126.978,
+                    route = emptyList(),
+                    routeToStart = emptyList(),
+                    routeToEnd = emptyList(),
+                ),
+                ShuttleStop(
+                    name = "Stop2",
+                    latitude = 37.5670,
+                    longitude = 126.979,
+                    route = emptyList(),
+                    routeToStart = emptyList(),
+                    routeToEnd = emptyList(),
+                ),
+            ),
+        )
+        val result = shuttleStopService.getStopsByNames(listOf("Stop1", "Stop2"))
+        assertEquals(2, result.size)
+    }
+
+    @Test
     @DisplayName("셔틀버스 정류장 목록 조회 (이름 필터링)")
     fun getStopsByName() {
         val nameFilter = "Stop1"

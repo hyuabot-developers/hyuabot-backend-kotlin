@@ -4,7 +4,6 @@ import java.time.LocalTime
 
 data class ShuttleTimetableViewItem(
     val seq: Int,
-    val stopName: String,
     val routeName: String,
     val routeTag: String,
     val period: String,

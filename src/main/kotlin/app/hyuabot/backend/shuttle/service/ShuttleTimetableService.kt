@@ -50,13 +50,12 @@ class ShuttleTimetableService(
             }
             val entries =
                 relevantKeys
-                    .mapNotNull { seqKey ->
+                    .map { seqKey ->
                         val stops = groupedBySeqAndGroup[seqKey].orEmpty().sortedBy { it.departureTime }
                         val viaStops = groupedBySeq[seqKey.first].orEmpty().sortedBy { it.departureTime }
-                        val main = stops.firstOrNull { it.stopName == key.stop } ?: return@mapNotNull null
+                        val main = stops.first { it.stopName == key.stop }
                         ShuttleTimetableViewItem(
                             seq = seqKey.first,
-                            stopName = key.stop,
                             routeName = main.routeName,
                             routeTag = main.routeTag,
                             period = main.periodType,
@@ -75,7 +74,6 @@ class ShuttleTimetableService(
             val order = if (key.limit != null) entries.take(key.limit) else entries
             val destination =
                 entries
-                    .filter { !it.group.isNullOrEmpty() }
                     .groupBy { it.group!! }
                     .mapValues { (_, v) ->
                         if (key.limit != null) v.take(key.limit) else v

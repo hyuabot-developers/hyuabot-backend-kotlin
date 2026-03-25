@@ -124,11 +124,19 @@ class ShuttleDataFetcher(
         val key =
             ShuttleTimetableKey(
                 stop = stop.name,
-                periods = filter.periods,
-                weekdays = filter.weekdays,
+                periods = filter.periods.toSet(),
+                weekdays = filter.weekdays.toSet(),
                 after = filter.after,
                 limit = filter.limit,
             )
+        if (filter.isHalt) {
+            return CompletableFuture.completedFuture(
+                ShuttleTimetable(
+                    order = emptyList(),
+                    destination = emptyList(),
+                ),
+            )
+        }
         val dataLoader = dfe.getDataLoader<ShuttleTimetableKey, ShuttleTimetableResult>("shuttleTimetableDataLoader")!!
         return dataLoader.load(key).thenApply { result ->
             ShuttleTimetable(
@@ -152,16 +160,15 @@ class ShuttleDataFetcher(
         val isHoliday = holidayService.findShuttleHoliday(date)
         val periods = periodService.findShuttlePeriod(date) ?: return Triple(emptyList(), emptyList(), false)
         if (isHoliday != null) {
-            if (isHoliday.type == "weekends") {
-                return Triple(listOf(periods.type), listOf(false), false)
-            } else if (isHoliday.type == "halt") {
-                return Triple(listOf(periods.type), listOf(false), true)
+            return if (isHoliday.type == "weekends") {
+                Triple(listOf(periods.type), listOf(false), false)
+            } else {
+                Triple(listOf(periods.type), listOf(false), true)
             }
         } else {
             val isWeekends = date.dayOfWeek.value == 6 || date.dayOfWeek.value == 7
             return Triple(listOf(periods.type), listOf(!isWeekends), false)
         }
-        return Triple(emptyList(), emptyList(), false)
     }
 
     private fun ShuttleTimetableViewItem.toTimetableEntry() =

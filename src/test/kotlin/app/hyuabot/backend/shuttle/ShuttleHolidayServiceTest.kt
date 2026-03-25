@@ -7,6 +7,7 @@ import app.hyuabot.backend.shuttle.domain.ShuttleHolidayRequest
 import app.hyuabot.backend.shuttle.exception.DuplicateShuttleHolidayException
 import app.hyuabot.backend.shuttle.exception.ShuttleHolidayNotFoundException
 import app.hyuabot.backend.shuttle.service.ShuttleHolidayService
+import com.github.usingsky.calendar.KoreanLunarCalendar
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -16,6 +17,7 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.whenever
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Optional
 import kotlin.test.assertEquals
 
@@ -290,5 +292,32 @@ class ShuttleHolidayServiceTest {
         assertThrows<ShuttleHolidayNotFoundException> {
             service.deleteShuttleHoliday(999)
         }
+    }
+
+    @Test
+    @DisplayName("셔틀 공휴일 항목 검색 - 날짜")
+    fun testFindShuttleHoliday() {
+        val lunarDate = KoreanLunarCalendar.getInstance()
+        val solarDate = LocalDate.of(2024, 1, 1)
+        val dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        lunarDate.setSolarDate(2024, 1, 1)
+        whenever(
+            repository.findBySolarDateOrLunarDate(
+                solarDate,
+                LocalDate.parse(lunarDate.lunarIsoFormat, dateFormat),
+            ),
+        ).thenReturn(
+            ShuttleHoliday(
+                seq = 1,
+                date = solarDate,
+                calendarType = "solar",
+                type = "New Year's Day",
+            ),
+        )
+        val result = service.findShuttleHoliday(solarDate)
+        assertEquals(1, result?.seq)
+        assertEquals("2024-01-01", result?.date.toString())
+        assertEquals("solar", result?.calendarType)
+        assertEquals("New Year's Day", result?.type)
     }
 }
