@@ -394,7 +394,7 @@ type ShuttleTimetableEntry {
     period: String!
     weekday: Boolean!
     time: LocalTime!
-    stops: [ShuttleArrival]!
+    stops: [ShuttleArrival!]!
 }
 
 type ShuttleRoute {
