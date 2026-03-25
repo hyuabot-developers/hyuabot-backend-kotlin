@@ -117,9 +117,15 @@ Coverage reports are generated at `build/reports/jacoco/test/html/index.html`.
 # Build image
 docker build -t hyuabot-backend-kotlin .
 
-# Run container
+# Run container (example with required configuration)
 docker run -p 8080:8080 \
-  -e JASYPT_ENCRYPTOR_PASSWORD=<password> \
+  -e JASYPT_ENCRYPTOR_PASSWORD=<jasypt_password> \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://<db-host>:5432/<db-name> \
+  -e SPRING_DATASOURCE_USERNAME=<db-username> \
+  -e SPRING_DATASOURCE_PASSWORD=<db-password> \
+  -e SPRING_DATA_REDIS_HOST=<redis-host> \
+  -e SPRING_DATA_REDIS_PORT=<redis-port> \
+  -e JWT_SECRET=<jwt-secret> \
   hyuabot-backend-kotlin
 ```
 
