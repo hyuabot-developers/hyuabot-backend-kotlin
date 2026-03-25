@@ -57,8 +57,8 @@ class ShuttleStopServiceTest {
     }
 
     @Test
-    @DisplayName("셔틀버스 정류장 목록 조회 (ID 필터링)")
-    fun getGetStopsWithIDList() {
+    @DisplayName("셔틀버스 정류장 목록 조회 (이름 필터링)")
+    fun getStopsByNamesWithNameList() {
         whenever(
             shuttleStopRepository.findByNameIsIn(
                 listOf("Stop1", "Stop2"),
