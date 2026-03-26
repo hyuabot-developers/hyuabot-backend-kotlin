@@ -1,5 +1,6 @@
 package app.hyuabot.backend.shuttle
 
+import app.hyuabot.backend.codegen.types.ShuttleLimitInput
 import app.hyuabot.backend.database.entity.ShuttleTimetableView
 import app.hyuabot.backend.database.repository.ShuttleTimetableViewRepository
 import app.hyuabot.backend.shuttle.domain.ShuttleTimetableKey
@@ -76,7 +77,7 @@ class ShuttleTimetableServiceTest {
                 periods = emptySet(),
                 weekdays = setOf(true),
                 after = null,
-                limit = null,
+                limit = ShuttleLimitInput(order = null, destination = null),
             )
 
         val result = shuttleTimetableService.getShuttleTimetableBatch(setOf(key))
@@ -94,7 +95,7 @@ class ShuttleTimetableServiceTest {
                 periods = setOf("semester"),
                 weekdays = emptySet(),
                 after = null,
-                limit = null,
+                limit = ShuttleLimitInput(order = null, destination = null),
             )
 
         val result = shuttleTimetableService.getShuttleTimetableBatch(setOf(key))
@@ -112,7 +113,7 @@ class ShuttleTimetableServiceTest {
                 periods = setOf("semester"),
                 weekdays = setOf(true),
                 after = null,
-                limit = null,
+                limit = ShuttleLimitInput(order = null, destination = null),
             )
         whenever(
             shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
@@ -161,7 +162,7 @@ class ShuttleTimetableServiceTest {
                 periods = setOf("semester"),
                 weekdays = setOf(true),
                 after = null,
-                limit = null,
+                limit = ShuttleLimitInput(order = null, destination = null),
             )
         whenever(
             shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
@@ -251,7 +252,7 @@ class ShuttleTimetableServiceTest {
                 periods = setOf("semester"),
                 weekdays = setOf(true),
                 after = LocalTime.parse("09:10"),
-                limit = null,
+                limit = ShuttleLimitInput(order = null, destination = null),
             )
         whenever(
             shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
@@ -339,7 +340,7 @@ class ShuttleTimetableServiceTest {
                 periods = setOf("semester"),
                 weekdays = setOf(true),
                 after = null,
-                limit = 1,
+                limit = ShuttleLimitInput(order = 1, destination = null),
             )
         whenever(
             shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
@@ -427,7 +428,7 @@ class ShuttleTimetableServiceTest {
                 periods = setOf("semester"),
                 weekdays = setOf(true),
                 after = null,
-                limit = null,
+                limit = ShuttleLimitInput(order = null, destination = null),
             )
         whenever(
             shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
@@ -453,7 +454,7 @@ class ShuttleTimetableServiceTest {
                 periods = setOf("semester"),
                 weekdays = setOf(true),
                 after = null,
-                limit = null,
+                limit = ShuttleLimitInput(order = null, destination = null),
             )
         val key2 =
             ShuttleTimetableKey(
@@ -461,7 +462,7 @@ class ShuttleTimetableServiceTest {
                 periods = setOf("semester"),
                 weekdays = setOf(true),
                 after = null,
-                limit = null,
+                limit = ShuttleLimitInput(order = 1, destination = 1),
             )
         whenever(
             shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(

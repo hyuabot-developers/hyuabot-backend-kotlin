@@ -121,13 +121,19 @@ class ShuttleDataFetcher(
     fun timetable(dfe: DgsDataFetchingEnvironment): CompletableFuture<ShuttleTimetable> {
         val stop = dfe.getSource<ShuttleStop>()!!
         val filter = dfe.graphQlContext.get<ShuttleFilterContext>("filter")
+        val limit =
+            if (filter.stops == null) {
+                ShuttleLimitInput(order = null, destination = null)
+            } else {
+                filter.stops.first { it.name == stop.name }.limit
+            }
         val key =
             ShuttleTimetableKey(
                 stop = stop.name,
                 periods = filter.periods.toSet(),
                 weekdays = filter.weekdays.toSet(),
                 after = filter.after,
-                limit = filter.stops?.first { it.name == stop.name }?.limit ?: ShuttleLimitInput(order = null, destination = null),
+                limit = limit,
             )
         if (filter.isHalt) {
             return CompletableFuture.completedFuture(
