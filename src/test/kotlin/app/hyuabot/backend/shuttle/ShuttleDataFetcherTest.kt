@@ -1,5 +1,6 @@
 package app.hyuabot.backend.shuttle
 
+import app.hyuabot.backend.codegen.types.ShuttleLimitInput
 import app.hyuabot.backend.database.entity.ShuttleHoliday
 import app.hyuabot.backend.database.entity.ShuttlePeriod
 import app.hyuabot.backend.database.entity.ShuttleStop
@@ -65,7 +66,7 @@ class ShuttleDataFetcherTest {
 
     private fun createHoliday(
         seq: Int = 1,
-        date: LocalDate = LocalDate.now(),
+        date: LocalDate = LocalDate.parse("2026-03-25"),
         type: String = "weekends",
         calendarType: String = "solar",
     ) = ShuttleHoliday(
@@ -116,7 +117,7 @@ class ShuttleDataFetcherTest {
     private fun createTimetableResult(items: List<ShuttleTimetableViewItem> = listOf(createTimetableView())) =
         ShuttleTimetableResult(
             order = items,
-            destination = items.groupBy { it.group!! }.filterKeys { it.isNotEmpty() },
+            destination = items.groupBy { it.group }.filterKeys { it.isNotEmpty() },
         )
 
     @Test
@@ -369,7 +370,10 @@ class ShuttleDataFetcherTest {
                 {
                     shuttle(
                         input: {
-                            stops: ["Stop1", "Stop2"],
+                            stops: [
+                                { name: "Stop1", limit: { order: null, destination: null } },
+                                { name: "Stop2", limit: { order: 1, destination: 1 } }
+                            ],
                             date: "${dateFormatter.format(today)}"
                         }
                     ){
@@ -391,7 +395,19 @@ class ShuttleDataFetcherTest {
     @Test
     @DisplayName("셔틀버스 시간표 조회 - period / weekdays 지정")
     fun testShuttleTimetableWithPeriodAndWeekdays() {
-        whenever(stopService.getAllStops()).thenReturn(listOf(createStop()))
+        whenever(
+            stopService.getStopsByNames(
+                listOf(
+                    "dormitory_o",
+                    "shuttlecock_o",
+                ),
+            ),
+        ).thenReturn(
+            listOf(
+                createStop(name = "dormitory_o"),
+                createStop(name = "shuttlecock_o"),
+            ),
+        )
         whenever(timetableService.getShuttleTimetableBatch(any())).thenReturn(
             mapOf(
                 ShuttleTimetableKey(
@@ -399,7 +415,14 @@ class ShuttleDataFetcherTest {
                     periods = setOf("semester"),
                     weekdays = setOf(true),
                     after = null,
-                    limit = null,
+                    limit = ShuttleLimitInput(order = null, destination = null),
+                ) to createTimetableResult(),
+                ShuttleTimetableKey(
+                    stop = "shuttlecock_o",
+                    periods = setOf("semester"),
+                    weekdays = setOf(true),
+                    after = null,
+                    limit = ShuttleLimitInput(order = 1, destination = 1),
                 ) to createTimetableResult(),
             ),
         )
@@ -409,6 +432,10 @@ class ShuttleDataFetcherTest {
                 {
                     shuttle(
                         input: {
+                            stops: [
+                                { name: "dormitory_o", limit: { order: null, destination: null } },
+                                { name: "shuttlecock_o", limit: { order: 1, destination: 1 } }
+                            ],
                             periods: ["semester"],
                             weekdays: [true]
                         }
@@ -424,6 +451,17 @@ class ShuttleDataFetcherTest {
                                     time
                                     stops { stop, time }
                                 }
+                                destination {
+                                    destination                                
+                                    entries {
+                                        seq
+                                        route { name, tag }
+                                        period
+                                        weekday
+                                        time
+                                        stops { stop, time }
+                                    }
+                                }
                             }
                         }
                     }
@@ -431,7 +469,7 @@ class ShuttleDataFetcherTest {
                 """.trimIndent(),
                 "data.shuttle.stops",
             )
-        assertEquals(1, result!!.size)
+        assertEquals(2, result!!.size)
         val timetable = result[0]["timetable"] as Map<*, *>
         assertNotNull(timetable)
         val timetableByOrder = timetable["order"] as List<*>
@@ -477,7 +515,7 @@ class ShuttleDataFetcherTest {
                     periods = setOf("semester"),
                     weekdays = setOf(true),
                     after = null,
-                    limit = null,
+                    limit = ShuttleLimitInput(order = null, destination = null),
                 ) to createTimetableResult(),
             ),
         )

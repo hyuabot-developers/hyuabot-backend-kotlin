@@ -71,12 +71,12 @@ class ShuttleTimetableService(
                                 },
                         )
                     }.sortedBy { it.time }
-            val order = if (key.limit != null) entries.take(key.limit) else entries
+            val order = if (key.limit.order != null) entries.take(key.limit.order) else entries
             val destination =
                 entries
-                    .groupBy { it.group!! }
+                    .groupBy { it.group }
                     .mapValues { (_, v) ->
-                        if (key.limit != null) v.take(key.limit) else v
+                        if (key.limit.destination != null) v.take(key.limit.destination) else v
                     }
             ShuttleTimetableResult(
                 order = order,

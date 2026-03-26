@@ -4,6 +4,7 @@ import app.hyuabot.backend.codegen.types.Shuttle
 import app.hyuabot.backend.codegen.types.ShuttleArrival
 import app.hyuabot.backend.codegen.types.ShuttleHoliday
 import app.hyuabot.backend.codegen.types.ShuttleInput
+import app.hyuabot.backend.codegen.types.ShuttleLimitInput
 import app.hyuabot.backend.codegen.types.ShuttlePeriod
 import app.hyuabot.backend.codegen.types.ShuttleRoute
 import app.hyuabot.backend.codegen.types.ShuttleStop
@@ -49,7 +50,6 @@ class ShuttleDataFetcher(
                 weekdays = filterWeekdays,
                 date = input.date,
                 after = input.after,
-                limit = input.limit,
                 isHalt = isHalt,
             ),
         )
@@ -91,7 +91,7 @@ class ShuttleDataFetcher(
     fun stops(dfe: DgsDataFetchingEnvironment): List<ShuttleStop> {
         val filter = dfe.graphQlContext.get<ShuttleFilterContext>("filter")
         return filter.stops?.let {
-            stopService.getStopsByNames(filter.stops).map {
+            stopService.getStopsByNames(filter.stops.map { it.name }).map {
                 ShuttleStop(
                     name = it.name,
                     latitude = it.latitude,
@@ -121,13 +121,19 @@ class ShuttleDataFetcher(
     fun timetable(dfe: DgsDataFetchingEnvironment): CompletableFuture<ShuttleTimetable> {
         val stop = dfe.getSource<ShuttleStop>()!!
         val filter = dfe.graphQlContext.get<ShuttleFilterContext>("filter")
+        val limit =
+            if (filter.stops == null) {
+                ShuttleLimitInput(order = null, destination = null)
+            } else {
+                filter.stops.first { it.name == stop.name }.limit
+            }
         val key =
             ShuttleTimetableKey(
                 stop = stop.name,
                 periods = filter.periods.toSet(),
                 weekdays = filter.weekdays.toSet(),
                 after = filter.after,
-                limit = filter.limit,
+                limit = limit,
             )
         if (filter.isHalt) {
             return CompletableFuture.completedFuture(

@@ -343,12 +343,21 @@ type SubwayArrival {
 
 # 셔틀버스 노선 및 시간표를 반환하는 쿼리입니다.
 input ShuttleInput {
-    stops: [String!]
+    stops: [ShuttleStopInput!]
     periods: [String!]
     weekdays: [Boolean!]
     date: Date
     after: LocalTime
-    limit: Int
+}
+
+input ShuttleStopInput {
+    name: String!
+    limit: ShuttleLimitInput!
+}
+
+input ShuttleLimitInput {
+    order: Int
+    destination: Int
 }
 
 type Shuttle {
