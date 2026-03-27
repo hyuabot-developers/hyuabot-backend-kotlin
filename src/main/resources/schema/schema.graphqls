@@ -10,7 +10,7 @@ type Query {
     commute: [CommuteShuttleRoute!]!
     building(input: BuildingInput): [Building!]!
     cafeteria(input: CafeteriaInput!): [Cafeteria!]!
-    bus(input: BusInput!): [BusRouteStop!]!
+    bus(input: [BusRouteStopInput!]!): [BusRouteStop!]!
     subway(input: SubwayInput!): [SubwayStation!]!
     shuttle(input: ShuttleInput!): Shuttle!
 }
@@ -186,9 +186,6 @@ type Menu {
 }
 
 # 노선 버스 정보를 반환하는 쿼리입니다.
-input BusInput {
-    keys: [BusRouteStopInput!]
-}
 
 input BusRouteStopInput {
     route: Int!
