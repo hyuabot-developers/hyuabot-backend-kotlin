@@ -4,6 +4,7 @@ import app.hyuabot.backend.codegen.types.Notice
 import app.hyuabot.backend.codegen.types.NoticeCategory
 import app.hyuabot.backend.codegen.types.NoticeInput
 import app.hyuabot.backend.notice.NoticeService
+import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
@@ -34,7 +35,7 @@ class NoticeDataFetcher(
                                 title = notice.title,
                                 url = notice.url,
                                 language = notice.language,
-                                expiredAt = notice.expiredAt,
+                                expiredAt = notice.expiredAt.withZoneSameInstant(LocalDateTimeBuilder.serviceTimezone),
                                 userID = notice.userID,
                             )
                         },

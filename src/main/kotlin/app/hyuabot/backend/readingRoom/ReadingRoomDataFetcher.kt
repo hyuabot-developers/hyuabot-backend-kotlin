@@ -2,6 +2,7 @@ package app.hyuabot.backend.readingRoom
 
 import app.hyuabot.backend.codegen.types.ReadingRoom
 import app.hyuabot.backend.codegen.types.ReadingRoomSeat
+import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsQuery
 
@@ -28,7 +29,7 @@ class ReadingRoomDataFetcher(
                             active = readingRoom.active,
                             occupied = readingRoom.occupied,
                         ),
-                    updatedAt = readingRoom.updatedAt,
+                    updatedAt = readingRoom.updatedAt.withZoneSameInstant(LocalDateTimeBuilder.serviceTimezone),
                 )
             }
 }
