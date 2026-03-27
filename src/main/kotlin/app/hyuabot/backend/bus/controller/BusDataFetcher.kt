@@ -14,6 +14,7 @@ import app.hyuabot.backend.codegen.types.BusRunningTime
 import app.hyuabot.backend.codegen.types.BusRunningTimeEntry
 import app.hyuabot.backend.codegen.types.BusStop
 import app.hyuabot.backend.codegen.types.BusTimetable
+import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsData
 import com.netflix.graphql.dgs.DgsQuery
@@ -118,7 +119,7 @@ class BusDataFetcher(
                     seats = it.remainingSeat,
                     minutes = it.remainingTime.toMinutes().toInt(),
                     lowFloor = it.isLowFloor,
-                    updatedAt = it.updatedAt,
+                    updatedAt = it.updatedAt.withZoneSameInstant(LocalDateTimeBuilder.serviceTimezone),
                 )
             }
         }
