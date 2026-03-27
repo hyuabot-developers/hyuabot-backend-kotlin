@@ -5,10 +5,10 @@ import app.hyuabot.backend.bus.domain.BusTimetableKey
 import app.hyuabot.backend.bus.service.BusRouteService
 import app.hyuabot.backend.codegen.types.BusCompany
 import app.hyuabot.backend.codegen.types.BusDepartureLog
-import app.hyuabot.backend.codegen.types.BusInput
 import app.hyuabot.backend.codegen.types.BusRealtime
 import app.hyuabot.backend.codegen.types.BusRoute
 import app.hyuabot.backend.codegen.types.BusRouteStop
+import app.hyuabot.backend.codegen.types.BusRouteStopInput
 import app.hyuabot.backend.codegen.types.BusRouteType
 import app.hyuabot.backend.codegen.types.BusRunningTime
 import app.hyuabot.backend.codegen.types.BusRunningTimeEntry
@@ -32,21 +32,21 @@ class BusDataFetcher(
 ) {
     @DgsQuery
     fun bus(
-        @InputArgument input: BusInput,
+        @InputArgument input: List<BusRouteStopInput>,
         dfe: DataFetchingEnvironment,
     ): List<BusRouteStop> {
-        if (input.keys.isNullOrEmpty()) return emptyList()
+        if (input.isEmpty()) return emptyList()
         val datesMap =
-            input.keys.associate { key ->
+            input.associate { key ->
                 (key.route to key.order) to key.dates
             }
         val weekdaysMap =
-            input.keys.associate {
+            input.associate {
                 (it.route to it.order) to it.weekdays
             }
         dfe.graphQlContext.put("datesMap", datesMap)
         dfe.graphQlContext.put("weekdaysMap", weekdaysMap)
-        return routeService.fetchRouteStops(input.keys).map {
+        return routeService.fetchRouteStops(input).map {
             BusRouteStop(
                 route =
                     BusRoute(
