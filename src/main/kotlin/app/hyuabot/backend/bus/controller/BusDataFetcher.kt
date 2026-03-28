@@ -143,10 +143,10 @@ class BusDataFetcher(
     fun timetable(dfe: DataFetchingEnvironment): CompletableFuture<List<BusTimetable>> {
         val routeStop = dfe.getSource<BusRouteStop>()!!
         val weekdaysMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, List<String>?>>("weekdaysMap")
-        val afterMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, LocalTime>>("afterMap")
+        val afterMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, LocalTime?>>("afterMap")
         val routeID = routeStop.route.seq
         val startStopID = routeStop.startStop.seq
-        val weekdays = weekdaysMap[routeID to startStopID]
+        val weekdays = weekdaysMap[routeID to routeStop.order]
         val after = afterMap[routeID to routeStop.order]
         val key = BusTimetableKey(routeID = routeID, startStopID = startStopID, weekdays = weekdays, after = after)
         val dataLoader = dfe.getDataLoader<BusTimetableKey, List<BusTimetableEntity>>("busTimetableDataLoader")!!
