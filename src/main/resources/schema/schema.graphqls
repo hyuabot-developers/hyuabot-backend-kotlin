@@ -190,7 +190,9 @@ type Menu {
 input BusRouteStopInput {
     route: Int!
     order: Int!
-    dates: [Date!]!
+    after: LocalTime
+    limit: Int
+    dates: [Date!]
     weekdays: [String!]
 }
 
@@ -202,6 +204,7 @@ type BusRouteStop {
     minutes: Int!
     realtime: [BusRealtime!]!
     timetable: [BusTimetable!]!
+    arrival: [BusArrival!]!
     log: [BusDepartureLog!]!
 }
 
@@ -264,6 +267,15 @@ type BusDepartureLog {
     date: Date!
     time: LocalTime!
     vehicle: String!
+}
+
+type BusArrival {
+    stops: Int
+    seats: Int
+    minutes: Int
+    lowFloor: Boolean
+    isRealtime: Boolean!
+    time: LocalTime
 }
 
 # 전철 정보를 반환하는 쿼리입니다.
