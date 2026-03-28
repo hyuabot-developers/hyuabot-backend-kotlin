@@ -3,6 +3,7 @@ package app.hyuabot.backend.building
 import app.hyuabot.backend.codegen.types.Building
 import app.hyuabot.backend.codegen.types.BuildingInput
 import app.hyuabot.backend.codegen.types.Room
+import app.hyuabot.backend.codegen.types.RoomInput
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
@@ -13,9 +14,10 @@ class BuildingDataFetcher(
 ) {
     @DgsQuery
     fun building(
-        @InputArgument input: BuildingInput?,
+        @InputArgument buildingInput: BuildingInput?,
+        @InputArgument roomInput: RoomInput?,
     ): List<Building> =
-        buildingService.fetchBuildings(input).map {
+        buildingService.fetchBuildings(buildingInput).map {
             Building(
                 seq = it.id,
                 name = it.name,
@@ -26,6 +28,12 @@ class BuildingDataFetcher(
                     it.room
                         .sortedBy { room ->
                             room.number
+                        }.filter { room ->
+                            if (roomInput?.name?.isNotEmpty() == true) {
+                                room.name.contains(roomInput.name)
+                            } else {
+                                true
+                            }
                         }.map { room ->
                             Room(
                                 seq = room.seq!!,

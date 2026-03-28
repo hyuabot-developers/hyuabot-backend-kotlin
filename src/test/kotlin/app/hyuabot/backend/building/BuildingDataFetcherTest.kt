@@ -83,7 +83,7 @@ class BuildingDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    building {
+                    building(buildingInput: null, roomInput: null) {
                         name
                         rooms {
                             number
@@ -97,5 +97,69 @@ class BuildingDataFetcherTest {
         assertEquals(2, result.size)
         assertEquals("Building A", result[0]["name"])
         assertEquals("Building B", result[1]["name"])
+    }
+
+    @Test
+    @DisplayName("방 이름으로 검색이 올바르게 작동하는지 테스트")
+    fun testFetchBuildingWithRoomInput() {
+        whenever(buildingService.fetchBuildings(null)).thenReturn(
+            listOf(
+                createBuilding(
+                    name = "Building A",
+                    rooms =
+                        listOf(
+                            createRoom(
+                                seq = 1,
+                                buildingName = "Building A",
+                                number = "103",
+                                name = "Room 103",
+                            ),
+                            createRoom(
+                                seq = 2,
+                                buildingName = "Building A",
+                                number = "102",
+                                name = "Room 102",
+                            ),
+                        ),
+                ),
+                createBuilding(name = "Building B"),
+            ),
+        )
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    building(buildingInput: null, roomInput: { name: "102" }) {
+                        name
+                        rooms {
+                            number
+                            name
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.building",
+            )
+        assertEquals(2, result.size)
+        assertEquals("Building A", result[0]["name"])
+        assertEquals(1, (result[0]["rooms"] as List<*>).size)
+        val result2 =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    building(buildingInput: null, roomInput: { name: "" }) {
+                        name
+                        rooms {
+                            number
+                            name
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.building",
+            )
+        assertEquals(2, result.size)
+        assertEquals("Building A", result[0]["name"])
+        assertEquals(2, (result2[0]["rooms"] as List<*>).size)
     }
 }
