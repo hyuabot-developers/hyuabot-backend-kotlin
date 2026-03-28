@@ -1,8 +1,10 @@
 package app.hyuabot.backend.bus.controller
 
+import app.hyuabot.backend.bus.domain.BusArrivalKey
 import app.hyuabot.backend.bus.domain.BusDepartureLogKey
 import app.hyuabot.backend.bus.domain.BusTimetableKey
 import app.hyuabot.backend.bus.service.BusRouteService
+import app.hyuabot.backend.codegen.types.BusArrival
 import app.hyuabot.backend.codegen.types.BusCompany
 import app.hyuabot.backend.codegen.types.BusDepartureLog
 import app.hyuabot.backend.codegen.types.BusRealtime
@@ -21,6 +23,7 @@ import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
 import graphql.schema.DataFetchingEnvironment
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.concurrent.CompletableFuture
 import app.hyuabot.backend.database.entity.BusDepartureLog as BusDepartureLogEntity
 import app.hyuabot.backend.database.entity.BusRealtime as BusRealtimeEntity
@@ -44,8 +47,18 @@ class BusDataFetcher(
             input.associate {
                 (it.route to it.order) to it.weekdays
             }
+        val limitMap =
+            input.associate { key ->
+                (key.route to key.order) to key.limit
+            }
+        val afterMap =
+            input.associate { key ->
+                (key.route to key.order) to key.after
+            }
         dfe.graphQlContext.put("datesMap", datesMap)
         dfe.graphQlContext.put("weekdaysMap", weekdaysMap)
+        dfe.graphQlContext.put("limitMap", limitMap)
+        dfe.graphQlContext.put("afterMap", afterMap)
         return routeService.fetchRouteStops(input).map {
             BusRouteStop(
                 route =
@@ -102,6 +115,7 @@ class BusDataFetcher(
                 realtime = emptyList(),
                 timetable = emptyList(),
                 log = emptyList(),
+                arrival = emptyList(),
             )
         }
     }
@@ -129,10 +143,12 @@ class BusDataFetcher(
     fun timetable(dfe: DataFetchingEnvironment): CompletableFuture<List<BusTimetable>> {
         val routeStop = dfe.getSource<BusRouteStop>()!!
         val weekdaysMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, List<String>?>>("weekdaysMap")
+        val afterMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, LocalTime?>>("afterMap")
         val routeID = routeStop.route.seq
         val startStopID = routeStop.startStop.seq
-        val weekdays = weekdaysMap[routeID to startStopID]
-        val key = BusTimetableKey(routeID = routeID, startStopID = startStopID, weekdays = weekdays)
+        val weekdays = weekdaysMap[routeID to routeStop.order]
+        val after = afterMap[routeID to routeStop.order]
+        val key = BusTimetableKey(routeID = routeID, startStopID = startStopID, weekdays = weekdays, after = after)
         val dataLoader = dfe.getDataLoader<BusTimetableKey, List<BusTimetableEntity>>("busTimetableDataLoader")!!
         return dataLoader.load(key).thenApply { timetableList ->
             timetableList.map {
@@ -166,5 +182,20 @@ class BusDataFetcher(
                 )
             }
         }
+    }
+
+    @DgsData(parentType = "BusRouteStop")
+    fun arrival(dfe: DataFetchingEnvironment): CompletableFuture<List<BusArrival>> {
+        val routeStop = dfe.getSource<BusRouteStop>()!!
+        val limitMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, Int>>("limitMap")
+        val key =
+            BusArrivalKey(
+                routeID = routeStop.route.seq,
+                stopID = routeStop.stop.seq,
+                startStopID = routeStop.startStop.seq,
+                limit = limitMap[routeStop.route.seq to routeStop.order],
+            )
+        val dataLoader = dfe.getDataLoader<BusArrivalKey, List<BusArrival>>("busArrivalDataLoader")!!
+        return dataLoader.load(key)
     }
 }

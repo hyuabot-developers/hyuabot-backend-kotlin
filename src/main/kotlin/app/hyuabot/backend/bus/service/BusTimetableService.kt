@@ -15,6 +15,7 @@ import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.time.LocalTime
+import java.util.Collections.min
 
 @Service
 class BusTimetableService(
@@ -147,19 +148,40 @@ class BusTimetableService(
         if (keys.isEmpty()) return emptyMap()
         val routeIDs = keys.map { it.routeID }.distinct()
         val startStopIDs = keys.map { it.startStopID }.distinct()
+        val afterValues = keys.map { it.after }.distinct()
         val sort =
             Sort.by(
                 Sort.Order.asc("routeID"),
                 Sort.Order.asc("startStopID"),
                 Sort.Order.asc("departureTime"),
             )
+        val after =
+            if (afterValues.any { it == null }) {
+                LocalTime.MIN
+            } else {
+                min(afterValues.filterNotNull())
+            }
         val grouped =
             timetableRepository
-                .findByRouteIDInAndStartStopIDIn(routeIDs, startStopIDs, sort)
-                .groupBy { it.routeID to it.startStopID }
+                .findByRouteIDInAndStartStopIDInAndDepartureTimeAfter(
+                    routeIDs,
+                    startStopIDs,
+                    after,
+                    sort,
+                ).groupBy { it.routeID to it.startStopID }
         return keys.associateWith { key ->
             val timetables = grouped[key.routeID to key.startStopID] ?: emptyList()
-            if (key.weekdays.isNullOrEmpty()) timetables else timetables.filter { it.weekday in key.weekdays }
+            if (key.weekdays.isNullOrEmpty()) {
+                if (key.after != null) {
+                    timetables.filter { it.departureTime.isAfter(key.after) }
+                } else {
+                    timetables
+                }
+            } else if (key.after != null) {
+                timetables.filter { it.weekday in key.weekdays && it.departureTime.isAfter(key.after) }
+            } else {
+                timetables.filter { it.weekday in key.weekdays }
+            }
         }
     }
 }

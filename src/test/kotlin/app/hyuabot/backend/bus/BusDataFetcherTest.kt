@@ -1,15 +1,18 @@
 package app.hyuabot.backend.bus
 
+import app.hyuabot.backend.bus.controller.BusArrivalDataLoader
 import app.hyuabot.backend.bus.controller.BusDataFetcher
 import app.hyuabot.backend.bus.controller.BusDepartureLogDataLoader
 import app.hyuabot.backend.bus.controller.BusRealtimeDataLoader
 import app.hyuabot.backend.bus.controller.BusTimetableDataLoader
+import app.hyuabot.backend.bus.domain.BusArrivalKey
 import app.hyuabot.backend.bus.domain.BusDepartureLogKey
 import app.hyuabot.backend.bus.domain.BusTimetableKey
 import app.hyuabot.backend.bus.service.BusRealtimeService
 import app.hyuabot.backend.bus.service.BusRouteService
 import app.hyuabot.backend.bus.service.BusStopService
 import app.hyuabot.backend.bus.service.BusTimetableService
+import app.hyuabot.backend.codegen.types.BusArrival
 import app.hyuabot.backend.database.entity.BusDepartureLog
 import app.hyuabot.backend.database.entity.BusRealtime
 import app.hyuabot.backend.database.entity.BusRoute
@@ -41,6 +44,7 @@ import kotlin.test.Test
     BusRealtimeDataLoader::class,
     BusTimetableDataLoader::class,
     BusDepartureLogDataLoader::class,
+    BusArrivalDataLoader::class,
     ScalarRegistration::class,
 )
 class BusDataFetcherTest {
@@ -344,7 +348,7 @@ class BusDataFetcherTest {
             timetableService.getBusTimetableBatch(any()),
         ).thenReturn(
             mapOf(
-                BusTimetableKey(routeID = route.id, startStopID = startStop.id, weekdays = null) to
+                BusTimetableKey(routeID = route.id, startStopID = startStop.id, weekdays = null, after = null) to
                     listOf(createBusTimetable()),
             ),
         )
@@ -381,7 +385,7 @@ class BusDataFetcherTest {
             timetableService.getBusTimetableBatch(any()),
         ).thenReturn(
             mapOf(
-                BusTimetableKey(routeID = route.id, startStopID = startStop.id, weekdays = null) to
+                BusTimetableKey(routeID = route.id, startStopID = startStop.id, weekdays = null, after = null) to
                     emptyList(),
             ),
         )
@@ -518,5 +522,137 @@ class BusDataFetcherTest {
         assertNotNull(result)
         val log = result[0]["log"] as List<*>
         assertEquals(0, log.size)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 조회 - 정상")
+    fun testBusArrival() {
+        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
+        whenever(realtimeService.getArrivalBatch(any())).thenReturn(
+            mapOf(
+                BusArrivalKey(
+                    routeID = route.id,
+                    stopID = stop.id,
+                    startStopID = startStop.id,
+                    limit = null,
+                ) to
+                    listOf(
+                        BusArrival(stops = 1, seats = 41, minutes = 2, lowFloor = false, isRealtime = true),
+                        BusArrival(stops = 11, seats = 41, minutes = 25, lowFloor = false, isRealtime = true),
+                        BusArrival(stops = 21, seats = 41, minutes = 45, lowFloor = false, isRealtime = true),
+                        BusArrival(time = LocalTime.parse("10:00"), isRealtime = false),
+                    ),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    bus(input: [{ route: 1, order: 1 }]) {
+                        arrival {
+                            stops
+                            seats
+                            minutes
+                            lowFloor
+                            isRealtime
+                            time
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.bus",
+            )
+
+        assertNotNull(result)
+        val arrivals = result[0]["arrival"] as List<*>
+        assertEquals(4, arrivals.size)
+        arrivals.forEach {
+            val arrivalMap = it as Map<*, *>
+            if (arrivalMap["isRealtime"] == true) {
+                assertNotNull(arrivalMap["stops"])
+                assertNotNull(arrivalMap["minutes"])
+                assertNotNull(arrivalMap["lowFloor"])
+                assertNotNull(arrivalMap["seats"])
+            } else {
+                assertNotNull(arrivalMap["time"])
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 조회 - limit 적용")
+    fun testBusArrivalWithLimit() {
+        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
+        whenever(realtimeService.getArrivalBatch(any())).thenReturn(
+            mapOf(
+                BusArrivalKey(
+                    routeID = route.id,
+                    stopID = stop.id,
+                    startStopID = startStop.id,
+                    limit = 2,
+                ) to
+                    listOf(
+                        BusArrival(stops = 1, seats = 41, minutes = 2, lowFloor = false, isRealtime = true),
+                        BusArrival(stops = 11, seats = 41, minutes = 25, lowFloor = false, isRealtime = true),
+                    ),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    bus(input: [{ route: 1, order: 1, limit: 2 }]) {
+                        arrival {
+                            stops
+                            minutes
+                            isRealtime
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.bus",
+            )
+
+        assertNotNull(result)
+        val arrivals = result[0]["arrival"] as List<*>
+        assertEquals(2, arrivals.size)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 조회 - 결과 없음")
+    fun testBusArrivalEmpty() {
+        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
+        whenever(realtimeService.getArrivalBatch(any())).thenReturn(
+            mapOf(
+                BusArrivalKey(
+                    routeID = route.id,
+                    stopID = stop.id,
+                    startStopID = startStop.id,
+                    limit = null,
+                ) to emptyList(),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    bus(input: [{ route: 1, order: 1 }]) {
+                        arrival {
+                            stops
+                            minutes
+                            isRealtime
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.bus",
+            )
+
+        assertNotNull(result)
+        val arrivals = result[0]["arrival"] as List<*>
+        assertEquals(0, arrivals.size)
     }
 }
