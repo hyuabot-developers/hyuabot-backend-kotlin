@@ -53,9 +53,10 @@ interface BusTimetableRepository : JpaRepository<BusTimetable, Int> {
         sort: Sort,
     ): List<BusTimetable>
 
-    fun findByRouteIDInAndStartStopIDIn(
+    fun findByRouteIDInAndStartStopIDInAndDepartureTimeAfter(
         routeIDs: List<Int>,
         startStopIDs: List<Int>,
+        after: LocalTime,
         sort: Sort,
     ): List<BusTimetable>
 }

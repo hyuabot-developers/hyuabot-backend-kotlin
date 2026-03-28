@@ -344,7 +344,7 @@ class BusDataFetcherTest {
             timetableService.getBusTimetableBatch(any()),
         ).thenReturn(
             mapOf(
-                BusTimetableKey(routeID = route.id, startStopID = startStop.id, weekdays = null) to
+                BusTimetableKey(routeID = route.id, startStopID = startStop.id, weekdays = null, after = null) to
                     listOf(createBusTimetable()),
             ),
         )
@@ -381,7 +381,7 @@ class BusDataFetcherTest {
             timetableService.getBusTimetableBatch(any()),
         ).thenReturn(
             mapOf(
-                BusTimetableKey(routeID = route.id, startStopID = startStop.id, weekdays = null) to
+                BusTimetableKey(routeID = route.id, startStopID = startStop.id, weekdays = null, after = null) to
                     emptyList(),
             ),
         )
