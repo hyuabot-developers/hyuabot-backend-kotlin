@@ -10,6 +10,7 @@ import app.hyuabot.backend.bus.service.BusRealtimeService
 import app.hyuabot.backend.bus.service.BusRouteService
 import app.hyuabot.backend.bus.service.BusStopService
 import app.hyuabot.backend.bus.service.BusTimetableService
+import app.hyuabot.backend.codegen.types.BusArrival
 import app.hyuabot.backend.database.entity.BusDepartureLog
 import app.hyuabot.backend.database.entity.BusRealtime
 import app.hyuabot.backend.database.entity.BusRoute
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.assertNotNull
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Import
@@ -518,5 +520,81 @@ class BusDataFetcherTest {
         assertNotNull(result)
         val log = result[0]["log"] as List<*>
         assertEquals(0, log.size)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 조회 - 정상")
+    fun testBusArrival() {
+        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
+        whenever(
+            realtimeService.getArrival(
+                routeID = any(),
+                stopID = any(),
+                startStopID = any(),
+                limit = anyOrNull(),
+            ),
+        ).thenReturn(
+            listOf(
+                BusArrival(
+                    stops = 1,
+                    seats = 41,
+                    minutes = 2,
+                    lowFloor = false,
+                    isRealtime = true,
+                ),
+                BusArrival(
+                    stops = 11,
+                    seats = 41,
+                    minutes = 25,
+                    lowFloor = false,
+                    isRealtime = true,
+                ),
+                BusArrival(
+                    stops = 21,
+                    seats = 41,
+                    minutes = 45,
+                    lowFloor = false,
+                    isRealtime = true,
+                ),
+                BusArrival(
+                    time = LocalTime.parse("10:00"),
+                    isRealtime = false,
+                ),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    bus(input: [{ route: 1, order: 1, dates: ["2025-03-01"] }]) {
+                        arrival {
+                            stops                        
+                            seats
+                            minutes
+                            lowFloor
+                            isRealtime
+                            time
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.bus",
+            )
+
+        assertNotNull(result)
+        val arrivals = result[0]["arrival"] as List<*>
+        assertEquals(4, arrivals.size)
+        arrivals.forEach {
+            val arrivalMap = it as Map<*, *>
+            if (arrivalMap["isRealtime"] == true) {
+                assertNotNull(arrivalMap["stops"])
+                assertNotNull(arrivalMap["minutes"])
+                assertNotNull(arrivalMap["lowFloor"])
+                assertNotNull(arrivalMap["seats"])
+            } else {
+                assertNotNull(arrivalMap["time"])
+            }
+        }
     }
 }

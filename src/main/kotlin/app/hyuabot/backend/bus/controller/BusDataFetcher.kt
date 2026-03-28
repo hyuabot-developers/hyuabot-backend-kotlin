@@ -2,7 +2,9 @@ package app.hyuabot.backend.bus.controller
 
 import app.hyuabot.backend.bus.domain.BusDepartureLogKey
 import app.hyuabot.backend.bus.domain.BusTimetableKey
+import app.hyuabot.backend.bus.service.BusRealtimeService
 import app.hyuabot.backend.bus.service.BusRouteService
+import app.hyuabot.backend.codegen.types.BusArrival
 import app.hyuabot.backend.codegen.types.BusCompany
 import app.hyuabot.backend.codegen.types.BusDepartureLog
 import app.hyuabot.backend.codegen.types.BusRealtime
@@ -20,6 +22,7 @@ import com.netflix.graphql.dgs.DgsData
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
 import graphql.schema.DataFetchingEnvironment
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.concurrent.CompletableFuture
@@ -30,6 +33,7 @@ import app.hyuabot.backend.database.entity.BusTimetable as BusTimetableEntity
 @DgsComponent
 class BusDataFetcher(
     private val routeService: BusRouteService,
+    private val realtimeService: BusRealtimeService,
 ) {
     @DgsQuery
     fun bus(
@@ -180,5 +184,17 @@ class BusDataFetcher(
                 )
             }
         }
+    }
+
+    @DgsData(parentType = "BusRouteStop")
+    fun arrival(dfe: DataFetchingEnvironment): List<BusArrival> {
+        val routeStop = dfe.getSource<BusRouteStop>()!!
+        val limitMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, Int>>("limitMap")
+        return realtimeService.getArrival(
+            routeID = routeStop.route.seq,
+            stopID = routeStop.stop.seq,
+            startStopID = routeStop.startStop.seq,
+            limit = limitMap[routeStop.route.seq to routeStop.order],
+        )
     }
 }

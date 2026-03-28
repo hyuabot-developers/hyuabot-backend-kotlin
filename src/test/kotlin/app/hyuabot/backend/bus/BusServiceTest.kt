@@ -43,6 +43,8 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.Sort
@@ -2726,5 +2728,112 @@ class BusServiceTest {
 
         assertEquals(1, result.size)
         assertEquals(0, result[216000068 to 216000999]?.size)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 조회 - 실시간 + 시간표")
+    fun testGetArrival() {
+        whenever(
+            realtimeRepository.findByRouteIDAndStopID(
+                216000068,
+                216000138,
+            ),
+        ).thenReturn(
+            listOf(
+                BusRealtime(
+                    routeID = 216000068,
+                    stopID = 216000138,
+                    order = 1,
+                    remainingTime = Duration.ofMinutes(5),
+                    remainingStop = 2,
+                    remainingSeat = 40,
+                    isLowFloor = true,
+                    updatedAt = ZonedDateTime.now(),
+                    routeStop = null,
+                ),
+                BusRealtime(
+                    routeID = 216000068,
+                    stopID = 216000138,
+                    order = 2,
+                    remainingTime = Duration.ofMinutes(15),
+                    remainingStop = 5,
+                    remainingSeat = 20,
+                    isLowFloor = false,
+                    updatedAt = ZonedDateTime.now(),
+                    routeStop = null,
+                ),
+            ),
+        )
+        whenever(
+            timetableRepository.findByRouteIDAndStartStopIDAndWeekdayAndDepartureTimeAfter(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("05:30:00"),
+                ),
+                BusTimetable(
+                    seq = 2,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("06:00:00"),
+                ),
+                BusTimetable(
+                    seq = 3,
+                    routeID = 216000068,
+                    startStopID = 216000138,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("07:00:00"),
+                ),
+            ),
+        )
+        val result =
+            realtimeService.getArrival(
+                routeID = 216000068,
+                stopID = 216000138,
+                startStopID = 216000358,
+            )
+        assertEquals(5, result.size)
+        assertEquals(true, result[0].isRealtime)
+        val result2 =
+            realtimeService.getArrival(
+                routeID = 216000068,
+                stopID = 216000138,
+                startStopID = 216000358,
+                limit = 3,
+            )
+        assertEquals(3, result2.size)
+        assertEquals(true, result2[0].isRealtime)
+    }
+
+    @Test
+    @DisplayName("weekday 결정 - 평일")
+    fun testResolveWeekday() {
+        val monday = LocalDate.of(2025, 3, 3)
+        assertEquals("weekdays", realtimeService.resolveWeekday(monday))
+    }
+
+    @Test
+    @DisplayName("weekday 결정 - 토요일")
+    fun testResolveWeekdaySaturday() {
+        val saturday = LocalDate.of(2025, 3, 1)
+        assertEquals("saturday", realtimeService.resolveWeekday(saturday))
+    }
+
+    @Test
+    @DisplayName("weekday 결정 - 일요일")
+    fun testResolveWeekdaySunday() {
+        val sunday = LocalDate.of(2025, 3, 2)
+        assertEquals("sunday", realtimeService.resolveWeekday(sunday))
     }
 }
