@@ -8,7 +8,7 @@ type Query {
     phonebook(input: PhonebookInput): Phonebook!
     readingRoom: [ReadingRoom!]!
     commute: [CommuteShuttleRoute!]!
-    building(input: BuildingInput): [Building!]!
+    building(buildingInput: BuildingInput, roomInput: RoomInput): [Building!]!
     cafeteria(input: CafeteriaInput!): [Cafeteria!]!
     bus(input: [BusRouteStopInput!]!): [BusRouteStop!]!
     subway(input: SubwayInput!): [SubwayStation!]!
@@ -139,6 +139,10 @@ input BuildingInput {
     south: Float
     east: Float
     west: Float
+}
+
+input RoomInput {
+    name: String
 }
 
 type Building {
