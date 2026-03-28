@@ -1,5 +1,6 @@
 package app.hyuabot.backend.bus.service
 
+import app.hyuabot.backend.bus.domain.BusArrivalKey
 import app.hyuabot.backend.codegen.types.BusArrival
 import app.hyuabot.backend.database.entity.BusRealtime
 import app.hyuabot.backend.database.repository.BusRealtimeRepository
@@ -41,44 +42,44 @@ class BusRealtimeService(
         return keys.associateWith { key -> grouped[key] ?: emptyList() }
     }
 
-    fun getArrival(
-        routeID: Int,
-        stopID: Int,
-        startStopID: Int,
-        limit: Int? = null,
-    ): List<BusArrival> {
+    fun getArrivalBatch(keys: Set<BusArrivalKey>): Map<BusArrivalKey, List<BusArrival>> {
+        if (keys.isEmpty()) return emptyMap()
         val now = LocalDateTime.now(ZoneId.of("Asia/Seoul"))
-        val realtimeList = realtimeRepository.findByRouteIDAndStopID(routeID, stopID)
-        val timetableList =
+        val weekday = resolveWeekday(now.toLocalDate())
+        val sort = Sort.by(Sort.Order.asc("departureTime"))
+        val routeIDs = keys.map { it.routeID }.distinct()
+        val stopIDs = keys.map { it.stopID }.distinct()
+        val startStopIDs = keys.map { it.startStopID }.distinct()
+        val realtimeGrouped =
+            realtimeRepository
+                .findByRouteIDInAndStopIDIn(routeIDs, stopIDs)
+                .groupBy { it.routeID to it.stopID }
+        val timetableGrouped =
             timetableRepository
-                .findByRouteIDAndStartStopIDAndWeekdayAndDepartureTimeAfter(
-                    routeID,
-                    startStopID,
-                    resolveWeekday(now.toLocalDate()),
+                .findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
+                    routeIDs,
+                    startStopIDs,
+                    weekday,
                     now.toLocalTime(),
-                    Sort.by(
-                        Sort.Order.asc("departureTime"),
-                    ),
-                )
-        val realtimeArrivals =
-            realtimeList
-                .map {
-                    BusArrival(
-                        stops = it.remainingStop,
-                        seats = it.remainingSeat,
-                        minutes = it.remainingTime.toMinutes().toInt(),
-                        lowFloor = it.isLowFloor,
-                        isRealtime = true,
-                    )
-                }.sortedBy { it.minutes }
-        val timetableArrivals =
-            timetableList
-                .map {
-                    BusArrival(
-                        isRealtime = false,
-                        time = it.departureTime,
-                    )
-                }.sortedBy { it.time }
-        return (realtimeArrivals + timetableArrivals).take(limit ?: Int.MAX_VALUE)
+                    sort,
+                ).groupBy { it.routeID to it.startStopID }
+        return keys.associateWith { key ->
+            val realtimeArrivals =
+                (realtimeGrouped[key.routeID to key.stopID] ?: emptyList())
+                    .map {
+                        BusArrival(
+                            stops = it.remainingStop,
+                            seats = it.remainingSeat,
+                            minutes = it.remainingTime.toMinutes().toInt(),
+                            lowFloor = it.isLowFloor,
+                            isRealtime = true,
+                        )
+                    }.sortedBy { it.minutes }
+            val timetableArrivals =
+                (timetableGrouped[key.routeID to key.startStopID] ?: emptyList())
+                    .map { BusArrival(isRealtime = false, time = it.departureTime) }
+                    .sortedBy { it.time }
+            (realtimeArrivals + timetableArrivals).take(key.limit ?: Int.MAX_VALUE)
+        }
     }
 }

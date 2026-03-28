@@ -1,5 +1,6 @@
 package app.hyuabot.backend.bus
 
+import app.hyuabot.backend.bus.domain.BusArrivalKey
 import app.hyuabot.backend.bus.domain.BusDepartureLogKey
 import app.hyuabot.backend.bus.domain.BusRouteStopRequest
 import app.hyuabot.backend.bus.domain.BusTimetableKey
@@ -44,7 +45,6 @@ import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.Sort
@@ -2731,12 +2731,26 @@ class BusServiceTest {
     }
 
     @Test
-    @DisplayName("버스 도착 정보 조회 - 실시간 + 시간표")
-    fun testGetArrival() {
+    @DisplayName("버스 도착 정보 배치 조회 - 빈 키")
+    fun testGetArrivalBatchEmptyKeys() {
+        val result = realtimeService.getArrivalBatch(emptySet())
+        assertEquals(0, result.size)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 실시간 + 시간표")
+    fun testGetArrivalBatch() {
+        val key =
+            BusArrivalKey(
+                routeID = 216000068,
+                stopID = 216000138,
+                startStopID = 216000358,
+                limit = null,
+            )
         whenever(
-            realtimeRepository.findByRouteIDAndStopID(
-                216000068,
-                216000138,
+            realtimeRepository.findByRouteIDInAndStopIDIn(
+                listOf(216000068),
+                listOf(216000138),
             ),
         ).thenReturn(
             listOf(
@@ -2765,7 +2779,7 @@ class BusServiceTest {
             ),
         )
         whenever(
-            timetableRepository.findByRouteIDAndStartStopIDAndWeekdayAndDepartureTimeAfter(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
                 any(),
                 any(),
                 any(),
@@ -2791,29 +2805,189 @@ class BusServiceTest {
                 BusTimetable(
                     seq = 3,
                     routeID = 216000068,
-                    startStopID = 216000138,
+                    startStopID = 216000358,
                     weekday = "weekdays",
                     departureTime = LocalTime.parse("07:00:00"),
                 ),
             ),
         )
-        val result =
-            realtimeService.getArrival(
+
+        val result = realtimeService.getArrivalBatch(setOf(key))
+
+        assertEquals(1, result.size)
+        val arrivals = result[key]!!
+        assertEquals(5, arrivals.size)
+        assertEquals(true, arrivals[0].isRealtime)
+        assertEquals(true, arrivals[1].isRealtime)
+        assertEquals(false, arrivals[2].isRealtime)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - limit 적용")
+    fun testGetArrivalBatchWithLimit() {
+        val key =
+            BusArrivalKey(
                 routeID = 216000068,
                 stopID = 216000138,
                 startStopID = 216000358,
+                limit = 2,
             )
-        assertEquals(5, result.size)
-        assertEquals(true, result[0].isRealtime)
-        val result2 =
-            realtimeService.getArrival(
+        whenever(
+            realtimeRepository.findByRouteIDInAndStopIDIn(
+                listOf(216000068),
+                listOf(216000138),
+            ),
+        ).thenReturn(
+            listOf(
+                BusRealtime(
+                    routeID = 216000068,
+                    stopID = 216000138,
+                    order = 1,
+                    remainingTime = Duration.ofMinutes(5),
+                    remainingStop = 2,
+                    remainingSeat = 40,
+                    isLowFloor = true,
+                    updatedAt = ZonedDateTime.now(),
+                    routeStop = null,
+                ),
+                BusRealtime(
+                    routeID = 216000068,
+                    stopID = 216000138,
+                    order = 2,
+                    remainingTime = Duration.ofMinutes(15),
+                    remainingStop = 5,
+                    remainingSeat = 20,
+                    isLowFloor = false,
+                    updatedAt = ZonedDateTime.now(),
+                    routeStop = null,
+                ),
+            ),
+        )
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("05:30:00"),
+                ),
+            ),
+        )
+
+        val result = realtimeService.getArrivalBatch(setOf(key))
+
+        val arrivals = result[key]!!
+        assertEquals(2, arrivals.size)
+        assertEquals(true, arrivals[0].isRealtime)
+        assertEquals(true, arrivals[1].isRealtime)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 결과 없음")
+    fun testGetArrivalBatchNoResult() {
+        val key =
+            BusArrivalKey(
+                routeID = 216000068,
+                stopID = 216000999,
+                startStopID = 216000358,
+                limit = null,
+            )
+        whenever(
+            realtimeRepository.findByRouteIDInAndStopIDIn(
+                listOf(216000068),
+                listOf(216000999),
+            ),
+        ).thenReturn(emptyList())
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(emptyList())
+
+        val result = realtimeService.getArrivalBatch(setOf(key))
+
+        assertEquals(1, result.size)
+        assertEquals(0, result[key]!!.size)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 다중 키")
+    fun testGetArrivalBatchMultipleKeys() {
+        val key1 =
+            BusArrivalKey(
                 routeID = 216000068,
                 stopID = 216000138,
                 startStopID = 216000358,
-                limit = 3,
+                limit = null,
             )
-        assertEquals(3, result2.size)
-        assertEquals(true, result2[0].isRealtime)
+        val key2 =
+            BusArrivalKey(
+                routeID = 216000069,
+                stopID = 216000358,
+                startStopID = 216000138,
+                limit = null,
+            )
+        whenever(
+            realtimeRepository.findByRouteIDInAndStopIDIn(
+                listOf(216000068, 216000069),
+                listOf(216000138, 216000358),
+            ),
+        ).thenReturn(
+            listOf(
+                BusRealtime(
+                    routeID = 216000068,
+                    stopID = 216000138,
+                    order = 1,
+                    remainingTime = Duration.ofMinutes(5),
+                    remainingStop = 2,
+                    remainingSeat = 40,
+                    isLowFloor = true,
+                    updatedAt = ZonedDateTime.now(),
+                    routeStop = null,
+                ),
+                BusRealtime(
+                    routeID = 216000069,
+                    stopID = 216000358,
+                    order = 1,
+                    remainingTime = Duration.ofMinutes(10),
+                    remainingStop = 3,
+                    remainingSeat = 30,
+                    isLowFloor = false,
+                    updatedAt = ZonedDateTime.now(),
+                    routeStop = null,
+                ),
+            ),
+        )
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(emptyList())
+
+        val result = realtimeService.getArrivalBatch(setOf(key1, key2))
+
+        assertEquals(2, result.size)
+        assertEquals(1, result[key1]!!.size)
+        assertEquals(true, result[key1]!![0].isRealtime)
+        assertEquals(1, result[key2]!!.size)
+        assertEquals(true, result[key2]!![0].isRealtime)
     }
 
     @Test

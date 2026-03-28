@@ -1,9 +1,11 @@
 package app.hyuabot.backend.bus
 
+import app.hyuabot.backend.bus.controller.BusArrivalDataLoader
 import app.hyuabot.backend.bus.controller.BusDataFetcher
 import app.hyuabot.backend.bus.controller.BusDepartureLogDataLoader
 import app.hyuabot.backend.bus.controller.BusRealtimeDataLoader
 import app.hyuabot.backend.bus.controller.BusTimetableDataLoader
+import app.hyuabot.backend.bus.domain.BusArrivalKey
 import app.hyuabot.backend.bus.domain.BusDepartureLogKey
 import app.hyuabot.backend.bus.domain.BusTimetableKey
 import app.hyuabot.backend.bus.service.BusRealtimeService
@@ -24,7 +26,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.assertNotNull
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Import
@@ -43,6 +44,7 @@ import kotlin.test.Test
     BusRealtimeDataLoader::class,
     BusTimetableDataLoader::class,
     BusDepartureLogDataLoader::class,
+    BusArrivalDataLoader::class,
     ScalarRegistration::class,
 )
 class BusDataFetcherTest {
@@ -526,40 +528,20 @@ class BusDataFetcherTest {
     @DisplayName("버스 도착 정보 조회 - 정상")
     fun testBusArrival() {
         whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
-        whenever(
-            realtimeService.getArrival(
-                routeID = any(),
-                stopID = any(),
-                startStopID = any(),
-                limit = anyOrNull(),
-            ),
-        ).thenReturn(
-            listOf(
-                BusArrival(
-                    stops = 1,
-                    seats = 41,
-                    minutes = 2,
-                    lowFloor = false,
-                    isRealtime = true,
-                ),
-                BusArrival(
-                    stops = 11,
-                    seats = 41,
-                    minutes = 25,
-                    lowFloor = false,
-                    isRealtime = true,
-                ),
-                BusArrival(
-                    stops = 21,
-                    seats = 41,
-                    minutes = 45,
-                    lowFloor = false,
-                    isRealtime = true,
-                ),
-                BusArrival(
-                    time = LocalTime.parse("10:00"),
-                    isRealtime = false,
-                ),
+        whenever(realtimeService.getArrivalBatch(any())).thenReturn(
+            mapOf(
+                BusArrivalKey(
+                    routeID = route.id,
+                    stopID = stop.id,
+                    startStopID = startStop.id,
+                    limit = null,
+                ) to
+                    listOf(
+                        BusArrival(stops = 1, seats = 41, minutes = 2, lowFloor = false, isRealtime = true),
+                        BusArrival(stops = 11, seats = 41, minutes = 25, lowFloor = false, isRealtime = true),
+                        BusArrival(stops = 21, seats = 41, minutes = 45, lowFloor = false, isRealtime = true),
+                        BusArrival(time = LocalTime.parse("10:00"), isRealtime = false),
+                    ),
             ),
         )
 
@@ -567,9 +549,9 @@ class BusDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    bus(input: [{ route: 1, order: 1, dates: ["2025-03-01"] }]) {
+                    bus(input: [{ route: 1, order: 1 }]) {
                         arrival {
-                            stops                        
+                            stops
                             seats
                             minutes
                             lowFloor
@@ -596,5 +578,81 @@ class BusDataFetcherTest {
                 assertNotNull(arrivalMap["time"])
             }
         }
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 조회 - limit 적용")
+    fun testBusArrivalWithLimit() {
+        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
+        whenever(realtimeService.getArrivalBatch(any())).thenReturn(
+            mapOf(
+                BusArrivalKey(
+                    routeID = route.id,
+                    stopID = stop.id,
+                    startStopID = startStop.id,
+                    limit = 2,
+                ) to
+                    listOf(
+                        BusArrival(stops = 1, seats = 41, minutes = 2, lowFloor = false, isRealtime = true),
+                        BusArrival(stops = 11, seats = 41, minutes = 25, lowFloor = false, isRealtime = true),
+                    ),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    bus(input: [{ route: 1, order: 1, limit: 2 }]) {
+                        arrival {
+                            stops
+                            minutes
+                            isRealtime
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.bus",
+            )
+
+        assertNotNull(result)
+        val arrivals = result[0]["arrival"] as List<*>
+        assertEquals(2, arrivals.size)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 조회 - 결과 없음")
+    fun testBusArrivalEmpty() {
+        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
+        whenever(realtimeService.getArrivalBatch(any())).thenReturn(
+            mapOf(
+                BusArrivalKey(
+                    routeID = route.id,
+                    stopID = stop.id,
+                    startStopID = startStop.id,
+                    limit = null,
+                ) to emptyList(),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    bus(input: [{ route: 1, order: 1 }]) {
+                        arrival {
+                            stops
+                            minutes
+                            isRealtime
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.bus",
+            )
+
+        assertNotNull(result)
+        val arrivals = result[0]["arrival"] as List<*>
+        assertEquals(0, arrivals.size)
     }
 }
