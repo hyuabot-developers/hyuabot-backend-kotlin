@@ -709,19 +709,19 @@ class BusServiceTest {
             listOf(
                 BusRouteStopInput(
                     route = TEST_ROUTE_1.id,
-                    order = TEST_ROUTE_STOP_1.order,
+                    stop = TEST_ROUTE_STOP_1.stopID,
                     dates = listOf(),
                 ),
                 BusRouteStopInput(
                     route = TEST_ROUTE_1.id,
-                    order = TEST_ROUTE_STOP_2.order,
+                    stop = TEST_ROUTE_STOP_2.stopID,
                     dates = listOf(),
                 ),
             )
         whenever(
             routeStopRepository.fetchBusRouteStops(
                 listOf(TEST_ROUTE_1.id),
-                listOf(TEST_ROUTE_STOP_1.order, TEST_ROUTE_STOP_2.order),
+                listOf(TEST_ROUTE_STOP_1.stopID, TEST_ROUTE_STOP_2.stopID),
             ),
         ).thenReturn(
             listOf(TEST_ROUTE_STOP_1, TEST_ROUTE_STOP_2),
@@ -733,7 +733,7 @@ class BusServiceTest {
             result.all {
                 BusRouteStopInput(
                     route = it.routeID,
-                    order = it.order,
+                    stop = it.stopID,
                     dates = listOf(),
                 ) in input
             },

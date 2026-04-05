@@ -41,19 +41,19 @@ class BusDataFetcher(
         if (input.isEmpty()) return emptyList()
         val datesMap =
             input.associate { key ->
-                (key.route to key.order) to key.dates
+                (key.route to key.stop) to key.dates
             }
         val weekdaysMap =
             input.associate {
-                (it.route to it.order) to it.weekdays
+                (it.route to it.stop) to it.weekdays
             }
         val limitMap =
             input.associate { key ->
-                (key.route to key.order) to key.limit
+                (key.route to key.stop) to key.limit
             }
         val afterMap =
             input.associate { key ->
-                (key.route to key.order) to key.after
+                (key.route to key.stop) to key.after
             }
         dfe.graphQlContext.put("datesMap", datesMap)
         dfe.graphQlContext.put("weekdaysMap", weekdaysMap)

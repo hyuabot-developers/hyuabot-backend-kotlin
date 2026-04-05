@@ -193,7 +193,7 @@ type Menu {
 
 input BusRouteStopInput {
     route: Int!
-    order: Int!
+    stop: Int!
     after: LocalTime
     limit: Int
     dates: [Date!]

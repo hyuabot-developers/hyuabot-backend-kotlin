@@ -122,10 +122,10 @@ class BusRouteService(
     fun fetchRouteStops(keys: List<BusRouteStopInput>): List<BusRouteStop> {
         if (keys.isEmpty()) return emptyList()
         val routes = keys.map { it.route }.distinct()
-        val orders = keys.map { it.order }.distinct()
-        val keySet = keys.map { it.route to it.order }.toSet()
-        return routeStopRepository.fetchBusRouteStops(routes, orders).filter { rs ->
-            (rs.routeID to rs.order) in keySet
+        val stops = keys.map { it.stop }.distinct()
+        val keySet = keys.map { it.route to it.stop }.toSet()
+        return routeStopRepository.fetchBusRouteStops(routes, stops).filter { rs ->
+            (rs.routeID to rs.stopID) in keySet
         }
     }
 

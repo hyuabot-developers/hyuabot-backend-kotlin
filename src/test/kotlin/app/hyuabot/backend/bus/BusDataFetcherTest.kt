@@ -229,7 +229,7 @@ class BusDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    bus(input: [{ route: 1, order: 1, dates: ["2025-03-01"] }]) {
+                    bus(input: [{ route: 1, stop: 1, dates: ["2025-03-01"] }]) {
                         order
                         minutes
                         route {
@@ -288,7 +288,7 @@ class BusDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    bus(input: [{ route: 1, order: 1, dates: ["2025-03-01"] }]) {
+                    bus(input: [{ route: 1, stop: 1, dates: ["2025-03-01"] }]) {
                         realtime {
                             order
                             stops
@@ -324,7 +324,7 @@ class BusDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    bus(input: [{ route: 1, order: 1, dates: ["2025-03-01"] }]) {
+                    bus(input: [{ route: 1, stop: 1, dates: ["2025-03-01"] }]) {
                         realtime {
                             order
                             stops
@@ -357,7 +357,7 @@ class BusDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    bus(input: [{ route: 1, order: 1, dates: ["2025-03-01"] }]) {
+                    bus(input: [{ route: 1, stop: 1, dates: ["2025-03-01"] }]) {
                         timetable {
                             seq
                             weekday
@@ -394,7 +394,7 @@ class BusDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    bus(input: [{ route: 1, order: 1, dates: ["2025-03-01"] }]) {
+                    bus(input: [{ route: 1, stop: 1, dates: ["2025-03-01"] }]) {
                         timetable {
                             seq
                             weekday
@@ -430,7 +430,7 @@ class BusDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    bus(input: [{ route: 1, order: 1, dates: ["2025-03-01"] }]) {
+                    bus(input: [{ route: 1, stop: 1, dates: ["2025-03-01"] }]) {
                         log {
                             seq
                             date
@@ -468,7 +468,7 @@ class BusDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    bus(input: [{ route: 2, order: 1, dates: ["2025-03-01"] }]) {
+                    bus(input: [{ route: 2, stop: 1, dates: ["2025-03-01"] }]) {
                         log {
                             seq
                             date
@@ -506,7 +506,7 @@ class BusDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    bus(input: [{ route: 1, order: 1, dates: ["2025-03-01"] }]) {
+                    bus(input: [{ route: 1, stop: 1, dates: ["2025-03-01"] }]) {
                         log {
                             seq
                             date
@@ -549,7 +549,7 @@ class BusDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    bus(input: [{ route: 1, order: 1 }]) {
+                    bus(input: [{ route: 1, stop: 1 }]) {
                         arrival {
                             stops
                             seats
@@ -603,7 +603,7 @@ class BusDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    bus(input: [{ route: 1, order: 1, limit: 2 }]) {
+                    bus(input: [{ route: 1, stop: 1, limit: 2 }]) {
                         arrival {
                             stops
                             minutes
@@ -639,7 +639,7 @@ class BusDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    bus(input: [{ route: 1, order: 1 }]) {
+                    bus(input: [{ route: 1, stop: 1 }]) {
                         arrival {
                             stops
                             minutes
