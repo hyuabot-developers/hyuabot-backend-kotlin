@@ -32,11 +32,11 @@ interface BusRouteStopRepository : JpaRepository<BusRouteStop, Int> {
         JOIN FETCH rs.route r
         JOIN FETCH rs.stop s
         JOIN FETCH rs.startStop ss
-        WHERE rs.routeID in :routes AND rs.order in :orders
+        WHERE rs.routeID in :routes AND rs.stopID in :stops
         """,
     )
     fun fetchBusRouteStops(
         @Param("routes") routes: List<Int>,
-        @Param("orders") orders: List<Int>,
+        @Param("stops") stops: List<Int>,
     ): List<BusRouteStop>
 }
