@@ -122,7 +122,12 @@ class ShuttleDataFetcher(
         val stop = dfe.getSource<ShuttleStop>()!!
         val filter = dfe.graphQlContext.get<ShuttleFilterContext>("filter")
         val stopFilter = filter.stops?.first { it.name == stop.name }
-
+        val limit =
+            if (filter.stops == null) {
+                ShuttleLimitInput(order = null, destination = null)
+            } else {
+                filter.stops.first { it.name == stop.name }.limit
+            }
         val key =
             ShuttleTimetableKey(
                 stop = stop.name,
@@ -132,7 +137,7 @@ class ShuttleDataFetcher(
                 tags = stopFilter?.tags?.toSet(),
                 destinations = stopFilter?.destinations?.toSet(),
                 after = filter.after,
-                limit = stopFilter?.limit ?: ShuttleLimitInput(order = null, destination = null),
+                limit = limit,
             )
         if (filter.isHalt) {
             return CompletableFuture.completedFuture(

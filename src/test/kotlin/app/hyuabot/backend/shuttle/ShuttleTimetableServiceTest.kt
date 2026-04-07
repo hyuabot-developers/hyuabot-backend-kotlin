@@ -78,6 +78,9 @@ class ShuttleTimetableServiceTest {
                 weekdays = setOf(true),
                 after = null,
                 limit = ShuttleLimitInput(order = null, destination = null),
+                destinations = null,
+                routes = null,
+                tags = null,
             )
 
         val result = shuttleTimetableService.getShuttleTimetableBatch(setOf(key))
@@ -96,6 +99,9 @@ class ShuttleTimetableServiceTest {
                 weekdays = emptySet(),
                 after = null,
                 limit = ShuttleLimitInput(order = null, destination = null),
+                destinations = null,
+                routes = null,
+                tags = null,
             )
 
         val result = shuttleTimetableService.getShuttleTimetableBatch(setOf(key))
@@ -114,6 +120,9 @@ class ShuttleTimetableServiceTest {
                 weekdays = setOf(true),
                 after = null,
                 limit = ShuttleLimitInput(order = null, destination = null),
+                destinations = null,
+                routes = null,
+                tags = null,
             )
         whenever(
             shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
@@ -163,6 +172,9 @@ class ShuttleTimetableServiceTest {
                 weekdays = setOf(true),
                 after = null,
                 limit = ShuttleLimitInput(order = null, destination = null),
+                destinations = null,
+                routes = null,
+                tags = null,
             )
         whenever(
             shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
@@ -253,6 +265,9 @@ class ShuttleTimetableServiceTest {
                 weekdays = setOf(true),
                 after = LocalTime.parse("09:10"),
                 limit = ShuttleLimitInput(order = null, destination = null),
+                destinations = null,
+                routes = null,
+                tags = null,
             )
         whenever(
             shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
@@ -341,6 +356,9 @@ class ShuttleTimetableServiceTest {
                 weekdays = setOf(true),
                 after = null,
                 limit = ShuttleLimitInput(order = 1, destination = null),
+                destinations = null,
+                routes = null,
+                tags = null,
             )
         whenever(
             shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
@@ -429,6 +447,9 @@ class ShuttleTimetableServiceTest {
                 weekdays = setOf(true),
                 after = null,
                 limit = ShuttleLimitInput(order = null, destination = null),
+                destinations = null,
+                routes = null,
+                tags = null,
             )
         whenever(
             shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
@@ -455,6 +476,9 @@ class ShuttleTimetableServiceTest {
                 weekdays = setOf(true),
                 after = null,
                 limit = ShuttleLimitInput(order = null, destination = null),
+                destinations = null,
+                routes = null,
+                tags = null,
             )
         val key2 =
             ShuttleTimetableKey(
@@ -463,6 +487,9 @@ class ShuttleTimetableServiceTest {
                 weekdays = setOf(true),
                 after = null,
                 limit = ShuttleLimitInput(order = 1, destination = 1),
+                destinations = null,
+                routes = null,
+                tags = null,
             )
         whenever(
             shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
@@ -528,5 +555,300 @@ class ShuttleTimetableServiceTest {
                 ?.stops
                 ?.size,
         )
+    }
+
+    @Test
+    @DisplayName("셔틀 시간표 배치 조회 - routes 필터링 (매칭 안됨)")
+    fun testGetShuttleTimetableBatchRoutesNotMatch() {
+        whenever(
+            shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsIn(
+                periods = listOf("semester"),
+                stops = listOf("dormitory_o"),
+                weekdays = listOf(true),
+                routes = listOf("DH"),
+            ),
+        ).thenReturn(
+            listOf(
+                ShuttleTimetableView(
+                    seq = 1,
+                    routeTag = "DH",
+                    routeName = "DHDD",
+                    stopName = "dormitory_o",
+                    departureTime = LocalTime.parse("09:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+            ),
+        )
+
+        val result =
+            shuttleTimetableService.getShuttleTimetableBatch(
+                setOf(
+                    ShuttleTimetableKey(
+                        stop = "dormitory_o",
+                        periods = setOf("semester"),
+                        weekdays = setOf(true),
+                        after = null,
+                        limit = ShuttleLimitInput(order = null, destination = null),
+                        destinations = null,
+                        routes = setOf("DH"),
+                        tags = null,
+                    ),
+                ),
+            )
+
+        assertEquals(
+            0,
+            result.values
+                .first()
+                .order.size,
+        )
+    }
+
+    @Test
+    @DisplayName("셔틀 시간표 배치 조회 - tags 필터링 (매칭 안됨)")
+    fun testGetShuttleTimetableBatchTagsNotMatch() {
+        whenever(
+            shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteTagIsIn(
+                periods = listOf("semester"),
+                stops = listOf("dormitory_o"),
+                weekdays = listOf(true),
+                tags = listOf("DH"),
+            ),
+        ).thenReturn(
+            listOf(
+                ShuttleTimetableView(
+                    seq = 1,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "dormitory_o",
+                    departureTime = LocalTime.parse("09:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+            ),
+        )
+
+        val result =
+            shuttleTimetableService.getShuttleTimetableBatch(
+                setOf(
+                    ShuttleTimetableKey(
+                        stop = "dormitory_o",
+                        periods = setOf("semester"),
+                        weekdays = setOf(true),
+                        after = null,
+                        limit = ShuttleLimitInput(order = null, destination = null),
+                        destinations = null,
+                        routes = null,
+                        tags = setOf("DH"),
+                    ),
+                ),
+            )
+
+        assertEquals(
+            0,
+            result.values
+                .first()
+                .order.size,
+        )
+    }
+
+    @Test
+    @DisplayName("셔틀 시간표 배치 조회 - destinations 필터링 (매칭 안됨)")
+    fun testGetShuttleTimetableBatchDestinationsNotMatch() {
+        whenever(
+            shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndDestinationGroupIsIn(
+                periods = listOf("semester"),
+                stops = listOf("dormitory_o"),
+                weekdays = listOf(true),
+                groups = listOf("TERMINAL"),
+            ),
+        ).thenReturn(
+            listOf(
+                ShuttleTimetableView(
+                    seq = 1,
+                    routeTag = "DH",
+                    routeName = "DH",
+                    stopName = "dormitory_o",
+                    departureTime = LocalTime.parse("09:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+            ),
+        )
+
+        val result =
+            shuttleTimetableService.getShuttleTimetableBatch(
+                setOf(
+                    ShuttleTimetableKey(
+                        stop = "dormitory_o",
+                        periods = setOf("semester"),
+                        weekdays = setOf(true),
+                        after = null,
+                        limit = ShuttleLimitInput(order = null, destination = null),
+                        destinations = setOf("TERMINAL"),
+                        routes = null,
+                        tags = null,
+                    ),
+                ),
+            )
+
+        assertEquals(
+            0,
+            result.values
+                .first()
+                .order.size,
+        )
+    }
+
+    @Test
+    @DisplayName("셔틀 시간표 배치 조회 - 노선명/노선 태그/목적지 필터링")
+    fun testGetShuttleTimetableBatchWithRouteAndDestinationFiltering() {
+        val testRoutes = listOf(listOf("CDD"), null)
+        val testTags = listOf(listOf("C"), null)
+        val testDestinations = listOf(listOf("STATION"), null)
+        val repositoryReturnValue =
+            listOf(
+                ShuttleTimetableView(
+                    seq = 1,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "dormitory_o",
+                    departureTime = LocalTime.parse("09:00:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+                ShuttleTimetableView(
+                    seq = 1,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "shuttlecock_o",
+                    departureTime = LocalTime.parse("09:05:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+                ShuttleTimetableView(
+                    seq = 1,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "station",
+                    departureTime = LocalTime.parse("09:15:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+            )
+        whenever(
+            shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
+                periods = listOf("semester"),
+                stops = listOf("dormitory_o"),
+                weekdays = listOf(true),
+            ),
+        ).thenReturn(repositoryReturnValue)
+        whenever(
+            shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsIn(
+                periods = listOf("semester"),
+                stops = listOf("dormitory_o"),
+                weekdays = listOf(true),
+                routes = listOf("CDD"),
+            ),
+        ).thenReturn(repositoryReturnValue)
+        whenever(
+            shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteTagIsIn(
+                periods = listOf("semester"),
+                stops = listOf("dormitory_o"),
+                weekdays = listOf(true),
+                tags = listOf("C"),
+            ),
+        ).thenReturn(repositoryReturnValue)
+        whenever(
+            shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndDestinationGroupIsIn(
+                periods = listOf("semester"),
+                stops = listOf("dormitory_o"),
+                weekdays = listOf(true),
+                groups = listOf("STATION"),
+            ),
+        ).thenReturn(repositoryReturnValue)
+        whenever(
+            shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndRouteTagIsIn(
+                periods = listOf("semester"),
+                stops = listOf("dormitory_o"),
+                weekdays = listOf(true),
+                routes = listOf("CDD"),
+                tags = listOf("C"),
+            ),
+        ).thenReturn(repositoryReturnValue)
+        whenever(
+            shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndDestinationGroupIsIn(
+                periods = listOf("semester"),
+                stops = listOf("dormitory_o"),
+                weekdays = listOf(true),
+                routes = listOf("CDD"),
+                groups = listOf("STATION"),
+            ),
+        ).thenReturn(repositoryReturnValue)
+        whenever(
+            shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteTagIsInAndDestinationGroupIsIn(
+                periods = listOf("semester"),
+                stops = listOf("dormitory_o"),
+                weekdays = listOf(true),
+                tags = listOf("C"),
+                groups = listOf("STATION"),
+            ),
+        ).thenReturn(repositoryReturnValue)
+        whenever(
+            shuttleTimetableViewRepository
+                .findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndRouteTagIsInAndDestinationGroupIsIn(
+                    periods = listOf("semester"),
+                    stops = listOf("dormitory_o"),
+                    weekdays = listOf(true),
+                    routes = listOf("CDD"),
+                    tags = listOf("C"),
+                    groups = listOf("STATION"),
+                ),
+        ).thenReturn(repositoryReturnValue)
+
+        testRoutes.forEach { testRoute ->
+            testTags.forEach { testTag ->
+                testDestinations.forEach { testDestination ->
+                    val result =
+                        shuttleTimetableService.getShuttleTimetableBatch(
+                            setOf(
+                                ShuttleTimetableKey(
+                                    stop = "dormitory_o",
+                                    periods = setOf("semester"),
+                                    weekdays = setOf(true),
+                                    after = null,
+                                    limit = ShuttleLimitInput(order = null, destination = null),
+                                    destinations = testDestination?.toSet(),
+                                    routes = testRoute?.toSet(),
+                                    tags = testTag?.toSet(),
+                                ),
+                                ShuttleTimetableKey(
+                                    stop = "dormitory_o",
+                                    periods = setOf("semester"),
+                                    weekdays = setOf(true),
+                                    after = null,
+                                    limit = ShuttleLimitInput(order = null, destination = null),
+                                    destinations = testDestination?.toSet(),
+                                    routes = testRoute?.toSet(),
+                                    tags = testTag?.toSet(),
+                                ),
+                            ),
+                        )
+                    assertEquals(1, result.size)
+                    val timetable = result.values.first()
+                    assertEquals(1, timetable.order.size)
+                    assertEquals(LocalTime.parse("09:00"), timetable.order[0].stops[0].time)
+                    assertEquals(LocalTime.parse("09:05"), timetable.order[0].stops[1].time)
+                    assertEquals(LocalTime.parse("09:15"), timetable.order[0].stops[2].time)
+                }
+            }
+        }
     }
 }

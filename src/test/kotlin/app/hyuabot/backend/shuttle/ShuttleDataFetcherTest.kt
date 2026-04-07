@@ -416,6 +416,9 @@ class ShuttleDataFetcherTest {
                     weekdays = setOf(true),
                     after = null,
                     limit = ShuttleLimitInput(order = null, destination = null),
+                    destinations = setOf("TERMINAL"),
+                    routes = setOf("CDD"),
+                    tags = setOf("C"),
                 ) to createTimetableResult(),
                 ShuttleTimetableKey(
                     stop = "shuttlecock_o",
@@ -423,6 +426,9 @@ class ShuttleDataFetcherTest {
                     weekdays = setOf(true),
                     after = null,
                     limit = ShuttleLimitInput(order = 1, destination = 1),
+                    destinations = null,
+                    routes = null,
+                    tags = null,
                 ) to createTimetableResult(),
             ),
         )
@@ -433,7 +439,7 @@ class ShuttleDataFetcherTest {
                     shuttle(
                         input: {
                             stops: [
-                                { name: "dormitory_o", limit: { order: null, destination: null } },
+                                { name: "dormitory_o", limit: { order: null, destination: null }, destinations: ["TERMINAL"], routes: ["CDD"], tags: ["C"] },
                                 { name: "shuttlecock_o", limit: { order: 1, destination: 1 } }
                             ],
                             periods: ["semester"],
@@ -516,6 +522,9 @@ class ShuttleDataFetcherTest {
                     weekdays = setOf(true),
                     after = null,
                     limit = ShuttleLimitInput(order = null, destination = null),
+                    destinations = null,
+                    routes = null,
+                    tags = null,
                 ) to createTimetableResult(),
             ),
         )
@@ -525,7 +534,7 @@ class ShuttleDataFetcherTest {
                 {
                     shuttle(
                         input: {
-                            date: "${dateFormatter.format(today)}"
+                            date: "${dateFormatter.format(today)}",
                         }
                     ){
                         stops {
