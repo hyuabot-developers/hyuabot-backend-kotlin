@@ -367,6 +367,9 @@ input ShuttleInput {
 input ShuttleStopInput {
     name: String!
     limit: ShuttleLimitInput!
+    destinations: [String!]
+    routes: [String!]
+    tags: [String!]
 }
 
 input ShuttleLimitInput {
