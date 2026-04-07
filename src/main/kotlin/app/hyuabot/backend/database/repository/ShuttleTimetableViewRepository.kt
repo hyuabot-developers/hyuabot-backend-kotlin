@@ -50,4 +50,58 @@ interface ShuttleTimetableViewRepository : JpaRepository<ShuttleTimetableView, S
         stops: List<String>,
         weekdays: List<Boolean>,
     ): List<ShuttleTimetableView>
+
+    fun findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsIn(
+        periods: List<String>,
+        stops: List<String>,
+        weekdays: List<Boolean>,
+        routes: List<String>,
+    ): List<ShuttleTimetableView>
+
+    fun findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteTagIsIn(
+        periods: List<String>,
+        stops: List<String>,
+        weekdays: List<Boolean>,
+        tags: List<String>,
+    ): List<ShuttleTimetableView>
+
+    fun findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndDestinationGroupIsIn(
+        periods: List<String>,
+        stops: List<String>,
+        weekdays: List<Boolean>,
+        groups: List<String>,
+    ): List<ShuttleTimetableView>
+
+    fun findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndRouteTagIsIn(
+        periods: List<String>,
+        stops: List<String>,
+        weekdays: List<Boolean>,
+        routes: List<String>,
+        tags: List<String>,
+    ): List<ShuttleTimetableView>
+
+    fun findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndDestinationGroupIsIn(
+        periods: List<String>,
+        stops: List<String>,
+        weekdays: List<Boolean>,
+        routes: List<String>,
+        groups: List<String>,
+    ): List<ShuttleTimetableView>
+
+    fun findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteTagIsInAndDestinationGroupIsIn(
+        periods: List<String>,
+        stops: List<String>,
+        weekdays: List<Boolean>,
+        tags: List<String>,
+        groups: List<String>,
+    ): List<ShuttleTimetableView>
+
+    fun findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndRouteTagIsInAndDestinationGroupIsIn(
+        periods: List<String>,
+        stops: List<String>,
+        weekdays: List<Boolean>,
+        routes: List<String>,
+        tags: List<String>,
+        groups: List<String>,
+    ): List<ShuttleTimetableView>
 }

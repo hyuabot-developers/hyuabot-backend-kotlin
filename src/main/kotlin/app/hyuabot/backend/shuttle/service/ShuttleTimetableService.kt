@@ -19,6 +19,13 @@ class ShuttleTimetableService(
         val stops = keys.map { it.stop }.distinct()
         val periods = keys.flatMap { it.periods }.distinct()
         val weekdays = keys.flatMap { it.weekdays }.distinct()
+        val routes =
+            keys
+                .mapNotNull { it.routes }
+                .flatten()
+                .distinct()
+        val tags = keys.mapNotNull { it.tags }.flatten().distinct()
+        val destinations = keys.mapNotNull { it.destinations }.flatten().distinct()
         if (periods.isEmpty() || weekdays.isEmpty()) {
             return keys.associateWith {
                 ShuttleTimetableResult(
@@ -28,19 +35,80 @@ class ShuttleTimetableService(
             }
         }
         val allRows =
-            shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
-                periods = periods,
-                weekdays = weekdays,
-                stops = stops,
-            )
+            if (routes.isNotEmpty() && tags.isNotEmpty() && destinations.isNotEmpty()) {
+                shuttleTimetableViewRepository
+                    .findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndRouteTagIsInAndDestinationGroupIsIn(
+                        periods,
+                        stops,
+                        weekdays,
+                        routes,
+                        tags,
+                        destinations,
+                    )
+            } else if (routes.isNotEmpty() && tags.isNotEmpty()) {
+                shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndRouteTagIsIn(
+                    periods,
+                    stops,
+                    weekdays,
+                    routes,
+                    tags,
+                )
+            } else if (routes.isNotEmpty() && destinations.isNotEmpty()) {
+                shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndDestinationGroupIsIn(
+                    periods,
+                    stops,
+                    weekdays,
+                    routes,
+                    destinations,
+                )
+            } else if (tags.isNotEmpty() && destinations.isNotEmpty()) {
+                shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteTagIsInAndDestinationGroupIsIn(
+                    periods,
+                    stops,
+                    weekdays,
+                    tags,
+                    destinations,
+                )
+            } else if (routes.isNotEmpty()) {
+                shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsIn(
+                    periods,
+                    stops,
+                    weekdays,
+                    routes,
+                )
+            } else if (tags.isNotEmpty()) {
+                shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteTagIsIn(
+                    periods,
+                    stops,
+                    weekdays,
+                    tags,
+                )
+            } else if (destinations.isNotEmpty()) {
+                shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndDestinationGroupIsIn(
+                    periods,
+                    stops,
+                    weekdays,
+                    destinations,
+                )
+            } else {
+                shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
+                    periods,
+                    stops,
+                    weekdays,
+                )
+            }
         val groupedBySeqAndGroup = allRows.groupBy { it.seq to it.destinationGroup }
         val groupedBySeq = allRows.groupBy { it.seq }
         return keys.associateWith { key ->
             val relevantKeys =
                 allRows
-                    .filter { it.stopName == key.stop }
-                    .filter { key.after == null || it.departureTime > key.after }
-                    .map { it.seq to it.destinationGroup }
+                    .filter {
+                        it.stopName == key.stop &&
+                            (key.after == null || it.departureTime > key.after) &&
+                            (key.routes == null || key.routes.contains(it.routeName)) &&
+                            (key.tags == null || key.tags.contains(it.routeTag)) &&
+                            (key.destinations == null || key.destinations.contains(it.destinationGroup))
+                    }.map { it.seq to it.destinationGroup }
                     .toSet()
             if (relevantKeys.isEmpty()) {
                 return@associateWith ShuttleTimetableResult(
