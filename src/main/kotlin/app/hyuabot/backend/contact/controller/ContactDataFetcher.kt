@@ -49,6 +49,7 @@ class ContactDataFetcher(
                                 seq = contact.id!!,
                                 name = contact.name,
                                 phone = contact.phone,
+                                campus = contact.campusID,
                             )
                         },
                 )

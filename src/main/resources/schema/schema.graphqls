@@ -86,6 +86,7 @@ type PhonebookEntry {
     seq: Int!
     name: String!
     phone: String!
+    campus: Int!
 }
 
 # 열람실 정보와 열람실 좌석 정보를 반환하는 쿼리입니다.
