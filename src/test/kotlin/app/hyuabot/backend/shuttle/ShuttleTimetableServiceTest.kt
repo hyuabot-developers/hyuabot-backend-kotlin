@@ -851,4 +851,81 @@ class ShuttleTimetableServiceTest {
             }
         }
     }
+
+    @Test
+    @DisplayName("셔틀 시간표 배치 조회 - 혼합 필터 조합 (일부 키는 필터 있음, 일부 키는 필터 없음)")
+    fun testGetShuttleTimetableBatchMixedFilterCombinations() {
+        // key1 requests only ROUTE_A; key2 has no route filter (should see all routes)
+        val keyWithRouteFilter =
+            ShuttleTimetableKey(
+                stop = "dormitory_o",
+                periods = setOf("semester"),
+                weekdays = setOf(true),
+                after = null,
+                limit = ShuttleLimitInput(order = null, destination = null),
+                destinations = null,
+                routes = setOf("ROUTE_A"),
+                tags = null,
+            )
+        val keyWithoutFilter =
+            ShuttleTimetableKey(
+                stop = "dormitory_o",
+                periods = setOf("semester"),
+                weekdays = setOf(true),
+                after = null,
+                limit = ShuttleLimitInput(order = null, destination = null),
+                destinations = null,
+                routes = null,
+                tags = null,
+            )
+        val routeARow =
+            ShuttleTimetableView(
+                seq = 1,
+                routeTag = "A",
+                routeName = "ROUTE_A",
+                stopName = "dormitory_o",
+                departureTime = LocalTime.parse("09:00:00"),
+                destinationGroup = "STATION",
+                periodType = "semester",
+                weekday = true,
+            )
+        val routeBRow =
+            ShuttleTimetableView(
+                seq = 2,
+                routeTag = "B",
+                routeName = "ROUTE_B",
+                stopName = "dormitory_o",
+                departureTime = LocalTime.parse("10:00:00"),
+                destinationGroup = "TERMINAL",
+                periodType = "semester",
+                weekday = true,
+            )
+        // The key with route filter gets only ROUTE_A rows from the DB
+        whenever(
+            shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsIn(
+                periods = listOf("semester"),
+                stops = listOf("dormitory_o"),
+                weekdays = listOf(true),
+                routes = listOf("ROUTE_A"),
+            ),
+        ).thenReturn(listOf(routeARow))
+        // The key without filter gets all rows from the DB
+        whenever(
+            shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
+                periods = listOf("semester"),
+                stops = listOf("dormitory_o"),
+                weekdays = listOf(true),
+            ),
+        ).thenReturn(listOf(routeARow, routeBRow))
+
+        val result =
+            shuttleTimetableService.getShuttleTimetableBatch(setOf(keyWithRouteFilter, keyWithoutFilter))
+
+        assertEquals(2, result.size)
+        // key with route filter should see only ROUTE_A
+        assertEquals(1, result[keyWithRouteFilter]!!.order.size)
+        assertEquals("ROUTE_A", result[keyWithRouteFilter]!!.order[0].routeName)
+        // key without filter should see both routes
+        assertEquals(2, result[keyWithoutFilter]!!.order.size)
+    }
 }

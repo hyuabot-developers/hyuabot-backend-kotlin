@@ -16,17 +16,9 @@ class ShuttleTimetableService(
 
     fun getShuttleTimetableBatch(keys: Set<ShuttleTimetableKey>): Map<ShuttleTimetableKey, ShuttleTimetableResult> {
         if (keys.isEmpty()) return emptyMap()
-        val stops = keys.map { it.stop }.distinct()
-        val periods = keys.flatMap { it.periods }.distinct()
-        val weekdays = keys.flatMap { it.weekdays }.distinct()
-        val routes =
-            keys
-                .mapNotNull { it.routes }
-                .flatten()
-                .distinct()
-        val tags = keys.mapNotNull { it.tags }.flatten().distinct()
-        val destinations = keys.mapNotNull { it.destinations }.flatten().distinct()
-        if (periods.isEmpty() || weekdays.isEmpty()) {
+        val allPeriods = keys.flatMap { it.periods }.distinct()
+        val allWeekdays = keys.flatMap { it.weekdays }.distinct()
+        if (allPeriods.isEmpty() || allWeekdays.isEmpty()) {
             return keys.associateWith {
                 ShuttleTimetableResult(
                     order = emptyList(),
@@ -34,69 +26,87 @@ class ShuttleTimetableService(
                 )
             }
         }
-        val allRows =
-            if (routes.isNotEmpty() && tags.isNotEmpty() && destinations.isNotEmpty()) {
-                shuttleTimetableViewRepository
-                    .findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndRouteTagIsInAndDestinationGroupIsIn(
-                        periods,
-                        stops,
-                        weekdays,
-                        routes,
-                        tags,
-                        destinations,
-                    )
-            } else if (routes.isNotEmpty() && tags.isNotEmpty()) {
-                shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndRouteTagIsIn(
-                    periods,
-                    stops,
-                    weekdays,
-                    routes,
-                    tags,
-                )
-            } else if (routes.isNotEmpty() && destinations.isNotEmpty()) {
-                shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndDestinationGroupIsIn(
-                    periods,
-                    stops,
-                    weekdays,
-                    routes,
-                    destinations,
-                )
-            } else if (tags.isNotEmpty() && destinations.isNotEmpty()) {
-                shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteTagIsInAndDestinationGroupIsIn(
-                    periods,
-                    stops,
-                    weekdays,
-                    tags,
-                    destinations,
-                )
-            } else if (routes.isNotEmpty()) {
-                shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsIn(
-                    periods,
-                    stops,
-                    weekdays,
-                    routes,
-                )
-            } else if (tags.isNotEmpty()) {
-                shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteTagIsIn(
-                    periods,
-                    stops,
-                    weekdays,
-                    tags,
-                )
-            } else if (destinations.isNotEmpty()) {
-                shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndDestinationGroupIsIn(
-                    periods,
-                    stops,
-                    weekdays,
-                    destinations,
-                )
-            } else {
-                shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
-                    periods,
-                    stops,
-                    weekdays,
-                )
-            }
+        // Partition keys by their filter combination so that each partition issues its own
+        // DB query. This prevents a filter from one key from excluding rows that another key
+        // (with a different or absent filter) legitimately needs.
+        val allRows: List<ShuttleTimetableView> =
+            keys
+                .groupBy { Triple(it.routes, it.tags, it.destinations) }
+                .flatMap { (combo, keysInGroup) ->
+                    val groupStops = keysInGroup.map { it.stop }.distinct()
+                    val routes = combo.first?.toList()
+                    val tags = combo.second?.toList()
+                    val destinations = combo.third?.toList()
+                    when {
+                        routes != null && tags != null && destinations != null ->
+                            shuttleTimetableViewRepository
+                                .findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndRouteTagIsInAndDestinationGroupIsIn(
+                                    allPeriods,
+                                    groupStops,
+                                    allWeekdays,
+                                    routes,
+                                    tags,
+                                    destinations,
+                                )
+                        routes != null && tags != null ->
+                            shuttleTimetableViewRepository
+                                .findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndRouteTagIsIn(
+                                    allPeriods,
+                                    groupStops,
+                                    allWeekdays,
+                                    routes,
+                                    tags,
+                                )
+                        routes != null && destinations != null ->
+                            shuttleTimetableViewRepository
+                                .findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndDestinationGroupIsIn(
+                                    allPeriods,
+                                    groupStops,
+                                    allWeekdays,
+                                    routes,
+                                    destinations,
+                                )
+                        tags != null && destinations != null ->
+                            shuttleTimetableViewRepository
+                                .findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteTagIsInAndDestinationGroupIsIn(
+                                    allPeriods,
+                                    groupStops,
+                                    allWeekdays,
+                                    tags,
+                                    destinations,
+                                )
+                        routes != null ->
+                            shuttleTimetableViewRepository
+                                .findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsIn(
+                                    allPeriods,
+                                    groupStops,
+                                    allWeekdays,
+                                    routes,
+                                )
+                        tags != null ->
+                            shuttleTimetableViewRepository
+                                .findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteTagIsIn(
+                                    allPeriods,
+                                    groupStops,
+                                    allWeekdays,
+                                    tags,
+                                )
+                        destinations != null ->
+                            shuttleTimetableViewRepository
+                                .findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndDestinationGroupIsIn(
+                                    allPeriods,
+                                    groupStops,
+                                    allWeekdays,
+                                    destinations,
+                                )
+                        else ->
+                            shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
+                                allPeriods,
+                                groupStops,
+                                allWeekdays,
+                            )
+                    }
+                }.distinct()
         val groupedBySeqAndGroup = allRows.groupBy { it.seq to it.destinationGroup }
         val groupedBySeq = allRows.groupBy { it.seq }
         return keys.associateWith { key ->
