@@ -104,4 +104,6 @@ interface ShuttleTimetableViewRepository : JpaRepository<ShuttleTimetableView, S
         tags: List<String>,
         groups: List<String>,
     ): List<ShuttleTimetableView>
+
+    fun findBySeqIn(seq: List<Int>): List<ShuttleTimetableView>
 }

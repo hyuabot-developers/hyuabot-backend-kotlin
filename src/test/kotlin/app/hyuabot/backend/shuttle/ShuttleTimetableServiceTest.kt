@@ -339,6 +339,75 @@ class ShuttleTimetableServiceTest {
                 ),
             ),
         )
+        whenever(
+            shuttleTimetableViewRepository
+                .findBySeqIn(
+                    listOf(1, 2),
+                ),
+        ).thenReturn(
+            listOf(
+                ShuttleTimetableView(
+                    seq = 1,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "dormitory_o",
+                    departureTime = LocalTime.parse("09:00:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+                ShuttleTimetableView(
+                    seq = 1,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "shuttlecock_o",
+                    departureTime = LocalTime.parse("09:05:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+                ShuttleTimetableView(
+                    seq = 1,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "station",
+                    departureTime = LocalTime.parse("09:15:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+                ShuttleTimetableView(
+                    seq = 2,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "dormitory_o",
+                    departureTime = LocalTime.parse("09:20:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+                ShuttleTimetableView(
+                    seq = 2,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "shuttlecock_o",
+                    departureTime = LocalTime.parse("09:25:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+                ShuttleTimetableView(
+                    seq = 2,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "station",
+                    departureTime = LocalTime.parse("09:35:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+            ),
+        )
         val result = shuttleTimetableService.getShuttleTimetableBatch(setOf(key))
         val timetable = result[key]!!
         assertEquals(1, timetable.order.size)
@@ -366,6 +435,75 @@ class ShuttleTimetableServiceTest {
                 weekdays = listOf(true),
                 stops = listOf(key.stop),
             ),
+        ).thenReturn(
+            listOf(
+                ShuttleTimetableView(
+                    seq = 1,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "dormitory_o",
+                    departureTime = LocalTime.parse("09:00:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+                ShuttleTimetableView(
+                    seq = 1,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "shuttlecock_o",
+                    departureTime = LocalTime.parse("09:05:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+                ShuttleTimetableView(
+                    seq = 1,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "station",
+                    departureTime = LocalTime.parse("09:15:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+                ShuttleTimetableView(
+                    seq = 2,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "dormitory_o",
+                    departureTime = LocalTime.parse("09:20:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+                ShuttleTimetableView(
+                    seq = 2,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "shuttlecock_o",
+                    departureTime = LocalTime.parse("09:25:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+                ShuttleTimetableView(
+                    seq = 2,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "station",
+                    departureTime = LocalTime.parse("09:35:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+            ),
+        )
+        whenever(
+            shuttleTimetableViewRepository
+                .findBySeqIn(
+                    listOf(1, 2),
+                ),
         ).thenReturn(
             listOf(
                 ShuttleTimetableView(
@@ -497,6 +635,45 @@ class ShuttleTimetableServiceTest {
                 weekdays = listOf(true),
                 stops = listOf("dormitory_o", "shuttlecock_o"),
             ),
+        ).thenReturn(
+            listOf(
+                ShuttleTimetableView(
+                    seq = 1,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "dormitory_o",
+                    departureTime = LocalTime.parse("09:00:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+                ShuttleTimetableView(
+                    seq = 1,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "shuttlecock_o",
+                    departureTime = LocalTime.parse("09:05:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+                ShuttleTimetableView(
+                    seq = 1,
+                    routeTag = "C",
+                    routeName = "CDD",
+                    stopName = "station",
+                    departureTime = LocalTime.parse("09:15:00"),
+                    destinationGroup = "STATION",
+                    periodType = "semester",
+                    weekday = true,
+                ),
+            ),
+        )
+        whenever(
+            shuttleTimetableViewRepository
+                .findBySeqIn(
+                    listOf(1),
+                ),
         ).thenReturn(
             listOf(
                 ShuttleTimetableView(
@@ -810,6 +987,12 @@ class ShuttleTimetableServiceTest {
                     routes = listOf("CDD"),
                     tags = listOf("C"),
                     groups = listOf("STATION"),
+                ),
+        ).thenReturn(repositoryReturnValue)
+        whenever(
+            shuttleTimetableViewRepository
+                .findBySeqIn(
+                    listOf(1),
                 ),
         ).thenReturn(repositoryReturnValue)
 
