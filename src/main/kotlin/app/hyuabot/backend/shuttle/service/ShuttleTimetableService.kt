@@ -38,7 +38,7 @@ class ShuttleTimetableService(
                     val tags = combo.second?.toList()
                     val destinations = combo.third?.toList()
                     when {
-                        routes != null && tags != null && destinations != null ->
+                        routes != null && tags != null && destinations != null -> {
                             shuttleTimetableViewRepository
                                 .findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndRouteTagIsInAndDestinationGroupIsIn(
                                     allPeriods,
@@ -48,7 +48,9 @@ class ShuttleTimetableService(
                                     tags,
                                     destinations,
                                 )
-                        routes != null && tags != null ->
+                        }
+
+                        routes != null && tags != null -> {
                             shuttleTimetableViewRepository
                                 .findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndRouteTagIsIn(
                                     allPeriods,
@@ -57,7 +59,9 @@ class ShuttleTimetableService(
                                     routes,
                                     tags,
                                 )
-                        routes != null && destinations != null ->
+                        }
+
+                        routes != null && destinations != null -> {
                             shuttleTimetableViewRepository
                                 .findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsInAndDestinationGroupIsIn(
                                     allPeriods,
@@ -66,7 +70,9 @@ class ShuttleTimetableService(
                                     routes,
                                     destinations,
                                 )
-                        tags != null && destinations != null ->
+                        }
+
+                        tags != null && destinations != null -> {
                             shuttleTimetableViewRepository
                                 .findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteTagIsInAndDestinationGroupIsIn(
                                     allPeriods,
@@ -75,7 +81,9 @@ class ShuttleTimetableService(
                                     tags,
                                     destinations,
                                 )
-                        routes != null ->
+                        }
+
+                        routes != null -> {
                             shuttleTimetableViewRepository
                                 .findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteNameIsIn(
                                     allPeriods,
@@ -83,7 +91,9 @@ class ShuttleTimetableService(
                                     allWeekdays,
                                     routes,
                                 )
-                        tags != null ->
+                        }
+
+                        tags != null -> {
                             shuttleTimetableViewRepository
                                 .findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndRouteTagIsIn(
                                     allPeriods,
@@ -91,7 +101,9 @@ class ShuttleTimetableService(
                                     allWeekdays,
                                     tags,
                                 )
-                        destinations != null ->
+                        }
+
+                        destinations != null -> {
                             shuttleTimetableViewRepository
                                 .findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsInAndDestinationGroupIsIn(
                                     allPeriods,
@@ -99,16 +111,29 @@ class ShuttleTimetableService(
                                     allWeekdays,
                                     destinations,
                                 )
-                        else ->
+                        }
+
+                        else -> {
                             shuttleTimetableViewRepository.findByPeriodTypeIsInAndStopNameIsInAndWeekdayIsIn(
                                 allPeriods,
                                 groupStops,
                                 allWeekdays,
                             )
+                        }
                     }
                 }.distinct()
-        val groupedBySeqAndGroup = allRows.groupBy { it.seq to it.destinationGroup }
-        val groupedBySeq = allRows.groupBy { it.seq }
+        val allSequences = allRows.map { it.seq }.distinct()
+        val viaRows: List<ShuttleTimetableView> =
+            if (allSequences.isEmpty()) {
+                emptyList()
+            } else {
+                shuttleTimetableViewRepository
+                    .findBySeqIn(
+                        allSequences,
+                    ).distinct()
+            }
+        val allRowsGroupedBySeqAndGroup = allRows.groupBy { it.seq to it.destinationGroup }
+        val viaRowsGroupedBySeq = viaRows.groupBy { it.seq }
         return keys.associateWith { key ->
             val relevantKeys =
                 allRows
@@ -129,8 +154,13 @@ class ShuttleTimetableService(
             val entries =
                 relevantKeys
                     .map { seqKey ->
-                        val stops = groupedBySeqAndGroup[seqKey].orEmpty().sortedBy { it.departureTime }
-                        val viaStops = groupedBySeq[seqKey.first].orEmpty().sortedBy { it.departureTime }
+                        val stops = allRowsGroupedBySeqAndGroup[seqKey].orEmpty().sortedBy { it.departureTime }
+                        val viaStops =
+                            viaRowsGroupedBySeq[seqKey.first]
+                                .orEmpty()
+                                .distinctBy {
+                                    it.stopName to it.departureTime
+                                }.sortedBy { it.departureTime }
                         val main = stops.first { it.stopName == key.stop }
                         ShuttleTimetableViewItem(
                             seq = seqKey.first,
