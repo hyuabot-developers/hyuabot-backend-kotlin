@@ -146,8 +146,8 @@ class BusDataFetcher(
         val afterMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, LocalTime?>>("afterMap")
         val routeID = routeStop.route.seq
         val startStopID = routeStop.startStop.seq
-        val weekdays = weekdaysMap[routeID to routeStop.order]
-        val after = afterMap[routeID to routeStop.order]
+        val weekdays = weekdaysMap[routeID to routeStop.stop.seq]
+        val after = afterMap[routeID to routeStop.stop.seq]
         val key = BusTimetableKey(routeID = routeID, startStopID = startStopID, weekdays = weekdays, after = after)
         val dataLoader = dfe.getDataLoader<BusTimetableKey, List<BusTimetableEntity>>("busTimetableDataLoader")!!
         return dataLoader.load(key).thenApply { timetableList ->
@@ -167,9 +167,8 @@ class BusDataFetcher(
         val datesMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, List<LocalDate>>>("datesMap")
         val routeID = routeStop.route.seq
         val stopID = routeStop.stop.seq
-        val dates =
-            datesMap[routeID to routeStop.order]
-                ?: return CompletableFuture.completedFuture(emptyList())
+        val dates = datesMap[routeID to stopID]!!
+
         val key = BusDepartureLogKey(routeID = routeID, stopID = stopID, dates = dates)
         val dataLoader = dfe.getDataLoader<BusDepartureLogKey, List<BusDepartureLogEntity>>("busDepartureLogDataLoader")!!
         return dataLoader.load(key).thenApply { logList ->
