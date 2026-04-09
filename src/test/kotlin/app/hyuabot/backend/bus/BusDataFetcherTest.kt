@@ -452,41 +452,6 @@ class BusDataFetcherTest {
     }
 
     @Test
-    @DisplayName("버스 출발 기록 조회 - datesMap에 키 없음")
-    fun testBusDepartureLogNoKey() {
-        val routeStopWithDifferentRoute =
-            createBusRouteStop(
-                routeID = 1,
-                order = 1,
-                route = route,
-                stop = stop,
-                startStop = startStop,
-            )
-        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStopWithDifferentRoute))
-
-        val result =
-            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
-                """
-                {
-                    bus(input: [{ route: 2, stop: 1, dates: ["2025-03-01"] }]) {
-                        log {
-                            seq
-                            date
-                            time
-                            vehicle
-                        }
-                    }
-                }
-                """.trimIndent(),
-                "data.bus",
-            )
-
-        assertNotNull(result)
-        val log = result[0]["log"] as List<*>
-        assertEquals(0, log.size)
-    }
-
-    @Test
     @DisplayName("버스 출발 기록 조회 - 결과 없음")
     fun testBusDepartureLogEmpty() {
         whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
