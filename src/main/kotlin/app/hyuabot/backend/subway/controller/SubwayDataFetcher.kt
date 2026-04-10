@@ -38,7 +38,9 @@ class SubwayDataFetcher(
                     directions to weekdays
                 }
         dfe.graphQlContext.put("filterMap", filterMap)
-        dfe.graphQlContext.put("limit", input.limit)
+        if (input.limit != null) {
+            dfe.graphQlContext.put("limit", input.limit)
+        }
         return subwayService.getStations(input.keys.map { it.stationID }).map { station ->
             SubwayStation(
                 stationID = station.id,
