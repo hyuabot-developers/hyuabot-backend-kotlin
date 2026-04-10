@@ -421,7 +421,7 @@ class SubwayDataFetcherTest {
                             direction: ["up"],
                             weekdays: ["weekdays", "weekends"]
                         }],
-                        limit: 10
+                        limit: null
                     }) {
                         stationID
                         name
