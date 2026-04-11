@@ -15,7 +15,6 @@ import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.time.LocalTime
-import java.util.Collections.min
 
 @Service
 class BusTimetableService(
@@ -148,40 +147,54 @@ class BusTimetableService(
         if (keys.isEmpty()) return emptyMap()
         val routeIDs = keys.map { it.routeID }.distinct()
         val startStopIDs = keys.map { it.startStopID }.distinct()
-        val afterValues = keys.map { it.after }.distinct()
         val sort =
             Sort.by(
                 Sort.Order.asc("routeID"),
                 Sort.Order.asc("startStopID"),
                 Sort.Order.asc("departureTime"),
             )
-        val after =
-            if (afterValues.any { it == null }) {
-                LocalTime.MIN
-            } else {
-                min(afterValues.filterNotNull())
-            }
+        // Fetch all entries; midnight-aware filtering is done in-memory below
         val grouped =
             timetableRepository
                 .findByRouteIDInAndStartStopIDInAndDepartureTimeAfter(
                     routeIDs,
                     startStopIDs,
-                    after,
+                    LocalTime.MIN,
                     sort,
                 ).groupBy { it.routeID to it.startStopID }
         return keys.associateWith { key ->
             val timetables = grouped[key.routeID to key.startStopID] ?: emptyList()
-            if (key.weekdays.isNullOrEmpty()) {
-                if (key.after != null) {
-                    timetables.filter { it.departureTime.isAfter(key.after) }
-                } else {
-                    timetables
+            val filtered =
+                when {
+                    key.weekdays.isNullOrEmpty() && key.after != null -> {
+                        timetables.filter { it.departureTime.toServiceMinutes() > key.after.toServiceMinutes() }
+                    }
+
+                    !key.weekdays.isNullOrEmpty() && key.after != null -> {
+                        timetables.filter {
+                            it.weekday in key.weekdays && it.departureTime.toServiceMinutes() > key.after.toServiceMinutes()
+                        }
+                    }
+
+                    !key.weekdays.isNullOrEmpty() -> {
+                        timetables.filter { it.weekday in key.weekdays }
+                    }
+
+                    else -> {
+                        timetables
+                    }
                 }
-            } else if (key.after != null) {
-                timetables.filter { it.weekday in key.weekdays && it.departureTime.isAfter(key.after) }
-            } else {
-                timetables.filter { it.weekday in key.weekdays }
-            }
+            filtered.sortedBy { it.departureTime.toServiceMinutes() }
+        }
+    }
+
+    companion object {
+        val SERVICE_DAY_START: LocalTime = LocalTime.of(4, 0)
+
+        fun LocalTime.toServiceMinutes(): Int {
+            val seconds = this.toSecondOfDay()
+            val threshold = SERVICE_DAY_START.toSecondOfDay()
+            return if (seconds >= threshold) seconds else seconds + 24 * 60 * 60
         }
     }
 }
