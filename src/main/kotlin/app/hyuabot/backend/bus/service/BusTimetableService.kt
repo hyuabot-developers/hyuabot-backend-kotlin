@@ -192,9 +192,9 @@ class BusTimetableService(
         val SERVICE_DAY_START: LocalTime = LocalTime.of(4, 0)
 
         fun LocalTime.toServiceMinutes(): Int {
-            val mins = this.hour * 60 + this.minute
-            val threshold = SERVICE_DAY_START.hour * 60 + SERVICE_DAY_START.minute
-            return if (mins >= threshold) mins else mins + 24 * 60
+            val seconds = this.toSecondOfDay()
+            val threshold = SERVICE_DAY_START.toSecondOfDay()
+            return if (seconds >= threshold) seconds else seconds + 24 * 60 * 60
         }
     }
 }
