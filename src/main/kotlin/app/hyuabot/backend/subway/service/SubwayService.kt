@@ -31,7 +31,6 @@ import app.hyuabot.backend.subway.exception.SubwayTerminalStationNotFoundExcepti
 import app.hyuabot.backend.subway.exception.SubwayTimetableNotFoundException
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.stereotype.Service
-import java.time.Duration
 import java.time.LocalTime
 import java.time.ZoneId
 import kotlin.collections.emptyList
@@ -291,6 +290,14 @@ class SubwayService(
         return realtimeRepository.findByStationIDAndHeadingIn(stationID, directions)
     }
 
+    private val serviceStartTime = LocalTime.of(4, 0)
+
+    private fun toServiceSeconds(time: LocalTime): Long {
+        val seconds = time.toSecondOfDay().toLong()
+        val threshold = serviceStartTime.toSecondOfDay().toLong()
+        return if (seconds >= threshold) seconds else seconds + 24L * 60 * 60
+    }
+
     fun getArrival(
         stationID: String,
         directions: List<String>,
@@ -304,21 +311,43 @@ class SubwayService(
                 .findByStationIDAndHeadingIn(stationID, directions)
                 .sortedBy { it.remainingTime }
                 .groupBy { it.heading }
-        val timetableStartTimeMap =
+        // Compute per-direction timetable search start in service-day seconds (no midnight wraparound)
+        val currentServiceSecs = toServiceSeconds(currentTime)
+        val timetableStartSvcSecsMap =
             directions.associateWith { direction ->
-                val realtimeList = realtimeGroups[direction].orEmpty()
-                val lastMinutes = realtimeList.maxOfOrNull { it.remainingTime.toMinutes() }
-                if (lastMinutes != null) currentTime.plusMinutes(lastMinutes + 5) else currentTime
+                val lastMinutes = realtimeGroups[direction].orEmpty().maxOfOrNull { it.remainingTime.toMinutes() }
+                if (lastMinutes != null) currentServiceSecs + (lastMinutes + 5) * 60 else currentServiceSecs
             }
-        val earliestStartTime = timetableStartTimeMap.values.min()
-        val timetableGroups =
-            timetableRepository
-                .findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeAfter(
-                    stationID = stationID,
-                    heading = directions,
-                    weekday = weekday,
-                    departureTime = earliestStartTime,
-                ).groupBy { it.heading }
+        // Fetch timetable entries with midnight-aware two-query approach
+        val timetableEntries =
+            if (currentTime.isBefore(serviceStartTime)) {
+                // After midnight: only remaining after-midnight trains (currentTime to serviceStartTime)
+                timetableRepository
+                    .findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeAfter(
+                        stationID = stationID,
+                        heading = directions,
+                        weekday = weekday,
+                        departureTime = currentTime,
+                    ).filter { it.departureTime.isBefore(serviceStartTime) }
+            } else {
+                // Normal hours: trains from now + after-midnight trains (00:00–serviceStartTime)
+                val remaining =
+                    timetableRepository.findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeAfter(
+                        stationID = stationID,
+                        heading = directions,
+                        weekday = weekday,
+                        departureTime = currentTime,
+                    )
+                val afterMidnight =
+                    timetableRepository.findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeBefore(
+                        stationID = stationID,
+                        heading = directions,
+                        weekday = weekday,
+                        departureTime = serviceStartTime,
+                    )
+                remaining + afterMidnight
+            }
+        val timetableGroups = timetableEntries.groupBy { it.heading }
         return directions.map { direction ->
             val realtimeArrivals =
                 realtimeGroups[direction].orEmpty().map { realtime ->
@@ -333,14 +362,14 @@ class SubwayService(
                         isLast = realtime.isLast,
                     )
                 }
+            val startSvcSecs = timetableStartSvcSecsMap[direction]!!
             val timetableArrivals =
                 timetableGroups[direction]
                     .orEmpty()
-                    .filter {
-                        it.departureTime > timetableStartTimeMap[direction]!!
-                    }.map { timetable ->
+                    .filter { toServiceSeconds(it.departureTime) > startSvcSecs }
+                    .map { timetable ->
                         SubwayArrival(
-                            minutes = Duration.between(currentTime, timetable.departureTime).toMinutes().toInt(),
+                            minutes = ((toServiceSeconds(timetable.departureTime) - currentServiceSecs) / 60).toInt(),
                             terminal = timetable.terminalStation!!.toSubwayStation(),
                             isRealtime = false,
                             location = null,

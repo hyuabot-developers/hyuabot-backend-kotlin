@@ -74,6 +74,13 @@ interface SubwayTimetableRepository : JpaRepository<SubwayTimetable, Int> {
         departureTime: LocalTime,
     ): List<SubwayTimetable>
 
+    fun findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeBefore(
+        stationID: String,
+        heading: List<String>,
+        weekday: String,
+        departureTime: LocalTime,
+    ): List<SubwayTimetable>
+
     fun findByStationIDAndHeadingAndWeekdayAndDepartureTime(
         stationID: String,
         heading: String,
