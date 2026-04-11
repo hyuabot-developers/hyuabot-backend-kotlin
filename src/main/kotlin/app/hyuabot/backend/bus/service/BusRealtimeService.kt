@@ -28,9 +28,9 @@ class BusRealtimeService(
         }
 
     private fun toServiceMinutes(time: LocalTime): Int {
-        val mins = time.hour * 60 + time.minute
-        val threshold = serviceStartTime.hour * 60 + serviceStartTime.minute
-        return if (mins >= threshold) mins else mins + 24 * 60
+        val seconds = time.toSecondOfDay()
+        val threshold = serviceStartTime.toSecondOfDay()
+        return if (seconds >= threshold) seconds else seconds + 24 * 60 * 60
     }
 
     internal fun currentTime(): LocalDateTime = LocalDateTime.now(ZoneId.of("Asia/Seoul"))
