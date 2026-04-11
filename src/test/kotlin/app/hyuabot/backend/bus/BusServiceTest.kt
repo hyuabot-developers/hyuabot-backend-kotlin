@@ -43,13 +43,16 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
+import org.mockito.Mockito.spy
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.Sort
 import java.time.Duration
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZonedDateTime
 import java.util.Optional
@@ -1960,11 +1963,18 @@ class BusServiceTest {
             timetableRepository.findByRouteIDInAndStartStopIDInAndDepartureTimeAfter(
                 listOf(216000068),
                 listOf(216000358),
-                LocalTime.parse("06:00:00"),
+                LocalTime.MIN,
                 sort,
             ),
         ).thenReturn(
             listOf(
+                BusTimetable(
+                    seq = 2,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "sunday",
+                    departureTime = LocalTime.parse("05:00:00"),
+                ),
                 BusTimetable(
                     seq = 3,
                     routeID = 216000068,
@@ -1986,6 +1996,144 @@ class BusServiceTest {
             ]
         assertEquals(1, timetables?.size)
         assertEquals("sunday", timetables?.get(0)?.weekday)
+        assertEquals(LocalTime.parse("07:00:00"), timetables?.get(0)?.departureTime)
+    }
+
+    @Test
+    @DisplayName("버스 시간표 배치 조회 - 자정 이후 시간 필터링")
+    fun testGetBusTimetableBatchAfterMidnightFilter() {
+        val keys =
+            setOf(
+                BusTimetableKey(
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekdays = listOf("weekdays"),
+                    after = LocalTime.parse("23:00:00"),
+                ),
+            )
+        val sort =
+            Sort.by(
+                Sort.Order.asc("routeID"),
+                Sort.Order.asc("startStopID"),
+                Sort.Order.asc("departureTime"),
+            )
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndDepartureTimeAfter(
+                listOf(216000068),
+                listOf(216000358),
+                LocalTime.MIN,
+                sort,
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("22:00:00"),
+                ),
+                BusTimetable(
+                    seq = 2,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("23:30:00"),
+                ),
+                BusTimetable(
+                    seq = 3,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("00:30:00"),
+                ),
+                BusTimetable(
+                    seq = 4,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("01:00:00"),
+                ),
+            ),
+        )
+        val result = timetableService.getBusTimetableBatch(keys)
+        val key =
+            BusTimetableKey(
+                routeID = 216000068,
+                startStopID = 216000358,
+                weekdays = listOf("weekdays"),
+                after = LocalTime.parse("23:00:00"),
+            )
+        val timetables = result[key]
+        // 22:00 excluded (before 23:00 in service-day order); 23:30, 00:30, 01:00 all included
+        assertEquals(3, timetables?.size)
+        assertEquals(LocalTime.parse("23:30:00"), timetables?.get(0)?.departureTime)
+        assertEquals(LocalTime.parse("00:30:00"), timetables?.get(1)?.departureTime)
+        assertEquals(LocalTime.parse("01:00:00"), timetables?.get(2)?.departureTime)
+    }
+
+    @Test
+    @DisplayName("버스 시간표 배치 조회 - 서비스 일 기준 정렬 (자정 이후 버스가 늦은 밤 버스 뒤에 위치)")
+    fun testGetBusTimetableBatchServiceDayOrdering() {
+        val keys =
+            setOf(
+                BusTimetableKey(routeID = 216000068, startStopID = 216000358, weekdays = listOf("weekdays"), after = null),
+            )
+        val sort =
+            Sort.by(
+                Sort.Order.asc("routeID"),
+                Sort.Order.asc("startStopID"),
+                Sort.Order.asc("departureTime"),
+            )
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndDepartureTimeAfter(
+                listOf(216000068),
+                listOf(216000358),
+                LocalTime.MIN,
+                sort,
+            ),
+        ).thenReturn(
+            listOf(
+                // DB returns in LocalTime order: 00:30, 01:00 come before 05:00 and 23:50
+                BusTimetable(
+                    seq = 3,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("00:30:00"),
+                ),
+                BusTimetable(
+                    seq = 4,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("01:00:00"),
+                ),
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("05:30:00"),
+                ),
+                BusTimetable(
+                    seq = 2,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("23:50:00"),
+                ),
+            ),
+        )
+        val result = timetableService.getBusTimetableBatch(keys)
+        val key = BusTimetableKey(routeID = 216000068, startStopID = 216000358, weekdays = listOf("weekdays"), after = null)
+        val timetables = result[key]
+        assertEquals(4, timetables?.size)
+        // Service-day order: 05:30, 23:50, 00:30, 01:00
+        assertEquals(LocalTime.parse("05:30:00"), timetables?.get(0)?.departureTime)
+        assertEquals(LocalTime.parse("23:50:00"), timetables?.get(1)?.departureTime)
+        assertEquals(LocalTime.parse("00:30:00"), timetables?.get(2)?.departureTime)
+        assertEquals(LocalTime.parse("01:00:00"), timetables?.get(3)?.departureTime)
     }
 
     @Test
@@ -2016,7 +2164,7 @@ class BusServiceTest {
             timetableRepository.findByRouteIDInAndStartStopIDInAndDepartureTimeAfter(
                 listOf(216000068),
                 listOf(216000358),
-                LocalTime.parse("05:30:00"),
+                LocalTime.MIN,
                 sort,
             ),
         ).thenReturn(
@@ -2811,6 +2959,15 @@ class BusServiceTest {
                 ),
             ),
         )
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeBefore(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(emptyList())
 
         val result = realtimeService.getArrivalBatch(setOf(key))
 
@@ -2990,6 +3147,178 @@ class BusServiceTest {
         assertEquals(true, result[key2]!![0].isRealtime)
     }
 
+    // ── After-midnight branch (currentTime < SERVICE_DAY_START = 04:00) ─────────
+    // Uses spy(realtimeService) + doReturn(fixedTime).whenever(spy).currentTime()
+    // to control the clock without changing the production API.
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 자정 이후 (01:30): 이전 서비스 날 weekday 사용")
+    fun testGetArrivalBatchAfterMidnightUsesServiceDayWeekday() {
+        // Monday 2025-03-03 01:30 KST → serviceDate = Sunday 2025-03-02 → weekday = "sunday"
+        val fixedNow = LocalDateTime.of(2025, 3, 3, 1, 30)
+        val spyService = spy(realtimeService)
+        doReturn(fixedNow).whenever(spyService).currentTime()
+
+        val key = BusArrivalKey(routeID = 216000068, stopID = 216000138, startStopID = 216000358, limit = null)
+        whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
+        // The code calls findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter with weekday="sunday"
+        // and then filters departureTime < SERVICE_DAY_START (04:00)
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
+                listOf(216000068),
+                listOf(216000358),
+                "sunday",
+                LocalTime.of(1, 30),
+                Sort.by(Sort.Order.asc("departureTime")),
+            ),
+        ).thenReturn(
+            listOf(
+                // departureTime < 04:00 → kept after filter
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "sunday",
+                    departureTime = LocalTime.parse("02:00:00"),
+                ),
+                BusTimetable(
+                    seq = 2,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "sunday",
+                    departureTime = LocalTime.parse("02:30:00"),
+                ),
+                // departureTime >= 04:00 → removed by filter
+                BusTimetable(
+                    seq = 3,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "sunday",
+                    departureTime = LocalTime.parse("05:00:00"),
+                ),
+            ),
+        )
+
+        val result = spyService.getArrivalBatch(setOf(key))
+        val arrivals = result[key]!!
+
+        assertEquals(2, arrivals.size)
+        assertEquals(LocalTime.parse("02:00:00"), arrivals[0].time)
+        assertEquals(LocalTime.parse("02:30:00"), arrivals[1].time)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 자정 이후 (01:30): 자정 이후 버스만 반환")
+    fun testGetArrivalBatchAfterMidnightReturnsOnlyRemainingBuses() {
+        // Sunday 2025-03-02 01:00 KST → serviceDate = Saturday 2025-03-01 → weekday = "saturday"
+        val fixedNow = LocalDateTime.of(2025, 3, 2, 1, 0)
+        val spyService = spy(realtimeService)
+        doReturn(fixedNow).whenever(spyService).currentTime()
+
+        val key = BusArrivalKey(routeID = 216000068, stopID = 216000138, startStopID = 216000358, limit = null)
+        whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
+                listOf(216000068),
+                listOf(216000358),
+                "saturday",
+                LocalTime.of(1, 0),
+                Sort.by(Sort.Order.asc("departureTime")),
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "saturday",
+                    departureTime = LocalTime.parse("01:30:00"),
+                ),
+                BusTimetable(
+                    seq = 2,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "saturday",
+                    departureTime = LocalTime.parse("02:00:00"),
+                ),
+            ),
+        )
+
+        val result = spyService.getArrivalBatch(setOf(key))
+        val arrivals = result[key]!!
+
+        assertEquals(2, arrivals.size)
+        assertEquals(LocalTime.parse("01:30:00"), arrivals[0].time)
+        assertEquals(LocalTime.parse("02:00:00"), arrivals[1].time)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 자정 이후 (01:30): limit 적용")
+    fun testGetArrivalBatchAfterMidnightWithLimit() {
+        val fixedNow = LocalDateTime.of(2025, 3, 3, 1, 0)
+        val spyService = spy(realtimeService)
+        doReturn(fixedNow).whenever(spyService).currentTime()
+
+        val key = BusArrivalKey(routeID = 216000068, stopID = 216000138, startStopID = 216000358, limit = 1)
+        whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "sunday",
+                    departureTime = LocalTime.parse("01:30:00"),
+                ),
+                BusTimetable(
+                    seq = 2,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "sunday",
+                    departureTime = LocalTime.parse("02:00:00"),
+                ),
+            ),
+        )
+
+        val result = spyService.getArrivalBatch(setOf(key))
+        val arrivals = result[key]!!
+
+        assertEquals(1, arrivals.size)
+        assertEquals(LocalTime.parse("01:30:00"), arrivals[0].time)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 자정 이후 (01:30): 결과 없음")
+    fun testGetArrivalBatchAfterMidnightNoResult() {
+        // 03:50 - just before service day start, no more buses
+        val fixedNow = LocalDateTime.of(2025, 3, 3, 3, 50)
+        val spyService = spy(realtimeService)
+        doReturn(fixedNow).whenever(spyService).currentTime()
+
+        val key = BusArrivalKey(routeID = 216000068, stopID = 216000138, startStopID = 216000358, limit = null)
+        whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(emptyList())
+
+        val result = spyService.getArrivalBatch(setOf(key))
+        assertEquals(0, result[key]!!.size)
+    }
+
     @Test
     @DisplayName("weekday 결정 - 평일")
     fun testResolveWeekday() {
@@ -3009,5 +3338,226 @@ class BusServiceTest {
     fun testResolveWeekdaySunday() {
         val sunday = LocalDate.of(2025, 3, 2)
         assertEquals("sunday", realtimeService.resolveWeekday(sunday))
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 자정 이후 버스 포함")
+    fun testGetArrivalBatchIncludesAfterMidnightBuses() {
+        val key =
+            BusArrivalKey(
+                routeID = 216000068,
+                stopID = 216000138,
+                startStopID = 216000358,
+                limit = null,
+            )
+        whenever(
+            realtimeRepository.findByRouteIDInAndStopIDIn(
+                listOf(216000068),
+                listOf(216000138),
+            ),
+        ).thenReturn(emptyList())
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("23:30:00"),
+                ),
+                BusTimetable(
+                    seq = 2,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("23:50:00"),
+                ),
+            ),
+        )
+        // After-midnight buses returned by DepartureTimeBefore(04:00) query
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeBefore(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 3,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("00:30:00"),
+                ),
+                BusTimetable(
+                    seq = 4,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("01:00:00"),
+                ),
+            ),
+        )
+
+        val result = realtimeService.getArrivalBatch(setOf(key))
+
+        assertEquals(1, result.size)
+        val arrivals = result[key]!!
+        assertEquals(4, arrivals.size)
+        assertEquals(false, arrivals[0].isRealtime)
+        // Service-day ordering: 23:30, 23:50 come before 00:30, 01:00
+        assertEquals(LocalTime.parse("23:30:00"), arrivals[0].time)
+        assertEquals(LocalTime.parse("23:50:00"), arrivals[1].time)
+        assertEquals(LocalTime.parse("00:30:00"), arrivals[2].time)
+        assertEquals(LocalTime.parse("01:00:00"), arrivals[3].time)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 자정 이후 버스 정렬 순서 검증")
+    fun testGetArrivalBatchAfterMidnightSorting() {
+        val key =
+            BusArrivalKey(
+                routeID = 216000068,
+                stopID = 216000138,
+                startStopID = 216000358,
+                limit = null,
+            )
+        whenever(
+            realtimeRepository.findByRouteIDInAndStopIDIn(any(), any()),
+        ).thenReturn(emptyList())
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("22:00:00"),
+                ),
+            ),
+        )
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeBefore(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 2,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("01:00:00"),
+                ),
+            ),
+        )
+
+        val result = realtimeService.getArrivalBatch(setOf(key))
+        val arrivals = result[key]!!
+
+        assertEquals(2, arrivals.size)
+        // 22:00 comes before 01:00 in service-day order (01:00 = next-day continuation)
+        assertEquals(LocalTime.parse("22:00:00"), arrivals[0].time)
+        assertEquals(LocalTime.parse("01:00:00"), arrivals[1].time)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - limit 적용 시 자정 이후 버스 포함")
+    fun testGetArrivalBatchLimitWithAfterMidnightBuses() {
+        val key =
+            BusArrivalKey(
+                routeID = 216000068,
+                stopID = 216000138,
+                startStopID = 216000358,
+                limit = 3,
+            )
+        whenever(
+            realtimeRepository.findByRouteIDInAndStopIDIn(any(), any()),
+        ).thenReturn(emptyList())
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("23:00:00"),
+                ),
+                BusTimetable(
+                    seq = 2,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("23:30:00"),
+                ),
+            ),
+        )
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeBefore(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 3,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime =
+                        LocalTime.parse("00:30:00"),
+                ),
+                BusTimetable(
+                    seq = 4,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("01:00:00"),
+                ),
+            ),
+        )
+
+        val result = realtimeService.getArrivalBatch(setOf(key))
+        val arrivals = result[key]!!
+
+        // limit = 3: 23:00, 23:30, 00:30 (01:00 cut off)
+        assertEquals(3, arrivals.size)
+        assertEquals(LocalTime.parse("23:00:00"), arrivals[0].time)
+        assertEquals(LocalTime.parse("23:30:00"), arrivals[1].time)
+        assertEquals(LocalTime.parse("00:30:00"), arrivals[2].time)
     }
 }

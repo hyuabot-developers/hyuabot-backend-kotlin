@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 
 @Service
@@ -17,12 +18,22 @@ class BusRealtimeService(
     private val realtimeRepository: BusRealtimeRepository,
     private val timetableRepository: BusTimetableRepository,
 ) {
+    private val serviceStartTime: LocalTime = LocalTime.of(4, 0)
+
     internal fun resolveWeekday(date: LocalDate): String =
         when (date.dayOfWeek) {
             DayOfWeek.SATURDAY -> "saturday"
             DayOfWeek.SUNDAY -> "sunday"
             else -> "weekdays"
         }
+
+    private fun toServiceMinutes(time: LocalTime): Int {
+        val mins = time.hour * 60 + time.minute
+        val threshold = serviceStartTime.hour * 60 + serviceStartTime.minute
+        return if (mins >= threshold) mins else mins + 24 * 60
+    }
+
+    internal fun currentTime(): LocalDateTime = LocalDateTime.now(ZoneId.of("Asia/Seoul"))
 
     fun getBusRealtimeList(): List<BusRealtime> = realtimeRepository.findAll()
 
@@ -44,8 +55,8 @@ class BusRealtimeService(
 
     fun getArrivalBatch(keys: Set<BusArrivalKey>): Map<BusArrivalKey, List<BusArrival>> {
         if (keys.isEmpty()) return emptyMap()
-        val now = LocalDateTime.now(ZoneId.of("Asia/Seoul"))
-        val weekday = resolveWeekday(now.toLocalDate())
+        val now = currentTime()
+        val currentTime = now.toLocalTime()
         val sort = Sort.by(Sort.Order.asc("departureTime"))
         val routeIDs = keys.map { it.routeID }.distinct()
         val stopIDs = keys.map { it.stopID }.distinct()
@@ -54,15 +65,46 @@ class BusRealtimeService(
             realtimeRepository
                 .findByRouteIDInAndStopIDIn(routeIDs, stopIDs)
                 .groupBy { it.routeID to it.stopID }
-        val timetableGrouped =
-            timetableRepository
-                .findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
-                    routeIDs,
-                    startStopIDs,
-                    weekday,
-                    now.toLocalTime(),
-                    sort,
-                ).groupBy { it.routeID to it.startStopID }
+        // Times before serviceStartTime (04:00) belong to the previous calendar day's service
+        val serviceDate =
+            if (currentTime.isBefore(serviceStartTime)) {
+                now.toLocalDate().minusDays(1)
+            } else {
+                now.toLocalDate()
+            }
+        val weekday = resolveWeekday(serviceDate)
+        val timetableEntries =
+            if (currentTime.isBefore(serviceStartTime)) {
+                // After midnight: remaining buses are between currentTime and serviceStartTime
+                timetableRepository
+                    .findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
+                        routeIDs,
+                        startStopIDs,
+                        weekday,
+                        currentTime,
+                        sort,
+                    ).filter { it.departureTime.isBefore(serviceStartTime) }
+            } else {
+                // Normal hours: buses from now until midnight + after-midnight buses (00:00–serviceStartTime)
+                val remaining =
+                    timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
+                        routeIDs,
+                        startStopIDs,
+                        weekday,
+                        currentTime,
+                        sort,
+                    )
+                val afterMidnight =
+                    timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeBefore(
+                        routeIDs,
+                        startStopIDs,
+                        weekday,
+                        serviceStartTime,
+                        sort,
+                    )
+                remaining + afterMidnight
+            }
+        val timetableGrouped = timetableEntries.groupBy { it.routeID to it.startStopID }
         return keys.associateWith { key ->
             val realtimeArrivals =
                 (realtimeGrouped[key.routeID to key.stopID] ?: emptyList())
@@ -78,7 +120,7 @@ class BusRealtimeService(
             val timetableArrivals =
                 (timetableGrouped[key.routeID to key.startStopID] ?: emptyList())
                     .map { BusArrival(isRealtime = false, time = it.departureTime) }
-                    .sortedBy { it.time }
+                    .sortedBy { toServiceMinutes(it.time!!) }
             (realtimeArrivals + timetableArrivals).take(key.limit ?: Int.MAX_VALUE)
         }
     }
