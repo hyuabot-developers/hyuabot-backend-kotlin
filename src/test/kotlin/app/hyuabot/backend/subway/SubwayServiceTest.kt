@@ -2741,7 +2741,18 @@ class SubwayServiceTest {
                     weekday = "weekdays",
                     heading = "down",
                     station = null,
-                    startStation = null,
+                    startStation =
+                        SubwayRouteStation(
+                            id = "K409",
+                            routeID = 1004,
+                            name = "당고개",
+                            order = 1,
+                            cumulativeTime = Duration.ofMinutes(20),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            stationName = null,
+                            realtime = emptyList(),
+                            timetable = emptyList(),
+                        ),
                     terminalStation =
                         SubwayRouteStation(
                             id = "K456",

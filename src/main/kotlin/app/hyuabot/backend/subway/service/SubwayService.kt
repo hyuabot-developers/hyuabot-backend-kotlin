@@ -353,6 +353,7 @@ class SubwayService(
                 realtimeGroups[direction].orEmpty().map { realtime ->
                     SubwayArrival(
                         minutes = realtime.remainingTime.toMinutes().toInt(),
+                        origin = null,
                         terminal = realtime.terminalStation!!.toSubwayStation(),
                         isRealtime = true,
                         location = realtime.location,
@@ -370,6 +371,7 @@ class SubwayService(
                     .map { timetable ->
                         SubwayArrival(
                             minutes = ((toServiceSeconds(timetable.departureTime) - currentServiceSecs) / 60).toInt(),
+                            origin = timetable.startStation?.toSubwayStation(),
                             terminal = timetable.terminalStation!!.toSubwayStation(),
                             isRealtime = false,
                             location = null,

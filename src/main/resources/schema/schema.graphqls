@@ -346,6 +346,7 @@ type SubwayArrivalGroup {
 
 type SubwayArrival {
     minutes: Int!
+    origin: SubwayOriginTerminal,
     terminal: SubwayOriginTerminal!
     isRealtime: Boolean!
     location: String
