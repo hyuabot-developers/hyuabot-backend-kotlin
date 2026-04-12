@@ -367,7 +367,7 @@ class SubwayService(
             val timetableArrivals =
                 timetableGroups[direction]
                     .orEmpty()
-                    .filter { toServiceSeconds(it.departureTime) > startSvcSecs }
+                    .filter { it.startStationID == stationID || toServiceSeconds(it.departureTime) > startSvcSecs }
                     .map { timetable ->
                         SubwayArrival(
                             minutes = ((toServiceSeconds(timetable.departureTime) - currentServiceSecs) / 60).toInt(),
