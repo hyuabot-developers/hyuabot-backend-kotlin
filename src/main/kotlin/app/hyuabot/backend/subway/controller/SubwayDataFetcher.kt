@@ -38,9 +38,11 @@ class SubwayDataFetcher(
                     directions to weekdays
                 }
         dfe.graphQlContext.put("filterMap", filterMap)
-        if (input.limit != null) {
-            dfe.graphQlContext.put("limit", input.limit)
-        }
+        val limitMap =
+            input.keys.associate {
+                it.stationID to it.limit
+            }
+        dfe.graphQlContext.put("limitMap", limitMap)
         return subwayService.getStations(input.keys.map { it.stationID }).map { station ->
             SubwayStation(
                 stationID = station.id,
@@ -114,12 +116,13 @@ class SubwayDataFetcher(
             )
         }
         val weekday = weekdays.first()
+        val limitMap = dfe.graphQlContext.get<Map<String, Int>>("limitMap")
         return subwayService
             .getArrival(
                 stationID = station.stationID,
                 directions = directions,
                 weekday = weekday,
-                limit = dfe.graphQlContext.get<Int>("limit"),
+                limit = limitMap[station.stationID],
             )
     }
 
