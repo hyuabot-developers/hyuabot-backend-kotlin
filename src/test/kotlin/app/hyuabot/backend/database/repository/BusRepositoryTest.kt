@@ -70,6 +70,8 @@ class BusRepositoryTest {
             companyName = "Test Bus Company",
             companyPhone = "",
             stop = listOf(),
+            startStop = stops[0],
+            endStop = stops[9],
         )
 
     private val routeStops =

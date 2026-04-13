@@ -3,7 +3,9 @@ package app.hyuabot.backend.database.entity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import java.time.LocalTime
 
@@ -41,4 +43,10 @@ data class BusRoute(
     val companyPhone: String,
     @OneToMany(mappedBy = "route")
     val stop: List<BusRouteStop>,
+    @OneToOne
+    @JoinColumn(name = "start_stop_id", insertable = false, updatable = false)
+    val startStop: BusStop,
+    @OneToOne
+    @JoinColumn(name = "end_stop_id", insertable = false, updatable = false)
+    val endStop: BusStop,
 )

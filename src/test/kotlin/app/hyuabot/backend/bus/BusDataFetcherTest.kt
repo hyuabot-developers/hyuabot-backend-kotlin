@@ -91,6 +91,8 @@ class BusDataFetcherTest {
         companyName = companyName,
         companyPhone = companyPhone,
         stop = emptyList(),
+        startStop = createBusStop(id = startStopID, name = "Start Stop"),
+        endStop = createBusStop(id = endStopID, name = "End Stop"),
     )
 
     private fun createBusStop(
