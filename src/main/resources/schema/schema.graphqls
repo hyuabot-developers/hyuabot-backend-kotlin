@@ -286,13 +286,13 @@ type BusArrival {
 # 전철 정보를 반환하는 쿼리입니다.
 input SubwayInput {
     keys: [SubwayStationInput!]!
-    limit: Int
 }
 
 input SubwayStationInput {
     stationID: String!
     direction: [String!]!
     weekdays: [String!]!
+    limit: Int
 }
 
 type SubwayStation {
@@ -346,6 +346,7 @@ type SubwayArrivalGroup {
 
 type SubwayArrival {
     minutes: Int!
+    origin: SubwayOriginTerminal,
     terminal: SubwayOriginTerminal!
     isRealtime: Boolean!
     location: String

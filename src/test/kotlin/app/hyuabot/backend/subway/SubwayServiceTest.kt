@@ -1879,7 +1879,7 @@ class SubwayServiceTest {
                 stationID = "K449",
                 heading = listOf("down"),
                 weekday = "weekdays",
-                departureTime = LocalTime.parse("09:21"),
+                departureTime = LocalTime.parse("09:00"),
             ),
         ).thenReturn(
             listOf(
@@ -1913,6 +1913,14 @@ class SubwayServiceTest {
                 ),
             ),
         )
+        whenever(
+            timetableRepository.findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeBefore(
+                stationID = "K449",
+                heading = listOf("down"),
+                weekday = "weekdays",
+                departureTime = LocalTime.of(4, 0),
+            ),
+        ).thenReturn(emptyList())
         val arrivals =
             service.getArrival(
                 stationID = "K449",
@@ -1975,7 +1983,7 @@ class SubwayServiceTest {
                 stationID = "K449",
                 heading = listOf("down"),
                 weekday = "weekdays",
-                departureTime = LocalTime.parse("09:21"),
+                departureTime = LocalTime.parse("09:00"),
             ),
         ).thenReturn(
             listOf(
@@ -2009,6 +2017,14 @@ class SubwayServiceTest {
                 ),
             ),
         )
+        whenever(
+            timetableRepository.findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeBefore(
+                stationID = "K449",
+                heading = listOf("down"),
+                weekday = "weekdays",
+                departureTime = LocalTime.of(4, 0),
+            ),
+        ).thenReturn(emptyList())
         val arrivals = service.getArrival("K449", listOf("down"), "weekdays", 1, now)
         assertEquals(1, arrivals.size)
         assertEquals("down", arrivals[0].direction)
@@ -2061,6 +2077,14 @@ class SubwayServiceTest {
                 ),
             ),
         )
+        whenever(
+            timetableRepository.findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeBefore(
+                stationID = "K449",
+                heading = listOf("down"),
+                weekday = "weekdays",
+                departureTime = LocalTime.of(4, 0),
+            ),
+        ).thenReturn(emptyList())
         val arrivals = service.getArrival("K449", listOf("down"), "weekdays", null, now)
         assertEquals(1, arrivals.size)
         assertEquals("down", arrivals[0].direction)
@@ -2148,7 +2172,7 @@ class SubwayServiceTest {
                 stationID = "K449",
                 heading = listOf("up", "down"),
                 weekday = "weekdays",
-                departureTime = LocalTime.parse("09:21"),
+                departureTime = LocalTime.parse("09:00"),
             ),
         ).thenReturn(
             listOf(
@@ -2200,6 +2224,14 @@ class SubwayServiceTest {
                 ),
             ),
         )
+        whenever(
+            timetableRepository.findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeBefore(
+                stationID = "K449",
+                heading = listOf("up", "down"),
+                weekday = "weekdays",
+                departureTime = LocalTime.of(4, 0),
+            ),
+        ).thenReturn(emptyList())
 
         val result =
             service.getArrival(
@@ -2349,6 +2381,14 @@ class SubwayServiceTest {
                 ),
             ),
         )
+        whenever(
+            timetableRepository.findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeBefore(
+                stationID = "K449",
+                heading = listOf("up", "down"),
+                weekday = "weekdays",
+                departureTime = LocalTime.of(4, 0),
+            ),
+        ).thenReturn(emptyList())
 
         val result =
             service.getArrival(
@@ -2436,10 +2476,11 @@ class SubwayServiceTest {
                 stationID = "K449",
                 heading = listOf("down"),
                 weekday = "weekdays",
-                departureTime = LocalTime.parse("09:11"),
+                departureTime = LocalTime.parse("09:00"),
             ),
         ).thenReturn(
             listOf(
+                // 09:08 < timetableStartSvcSecs (09:00 + 11min) so filtered out in-memory
                 SubwayTimetable(
                     seq = 1,
                     stationID = "K449",
@@ -2465,6 +2506,14 @@ class SubwayServiceTest {
                 ),
             ),
         )
+        whenever(
+            timetableRepository.findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeBefore(
+                stationID = "K449",
+                heading = listOf("down"),
+                weekday = "weekdays",
+                departureTime = LocalTime.of(4, 0),
+            ),
+        ).thenReturn(emptyList())
 
         val result =
             service.getArrival(
@@ -2477,6 +2526,196 @@ class SubwayServiceTest {
         assertEquals(1, result.size)
         assertEquals(2, result[0].entries.size)
         assertEquals(true, result[0].entries[0].isRealtime)
+    }
+
+    @Test
+    @DisplayName("전철 도착 정보 조회 (정상 - 출발역 시간표는 실시간 버퍼 제외)")
+    fun testGetArrivalTimetableStartStationNotFilteredOut() {
+        // Trains at 1, 5, 20 mins via realtime → buffer = 25 mins
+        // A timetable train that STARTS at K258 (8 mins later) must NOT be filtered out
+        val now = LocalTime.parse("09:00")
+        whenever(
+            realtimeRepository.findByStationIDAndHeadingIn("K258", listOf("down")),
+        ).thenReturn(
+            listOf(
+                SubwayRealtime(
+                    stationID = "K258",
+                    heading = "down",
+                    order = 1,
+                    location = "K250",
+                    remainingStop = 3,
+                    remainingTime = Duration.ofMinutes(1),
+                    terminalStationID = "K271",
+                    trainNumber = "1001",
+                    updatedAt = ZonedDateTime.now(),
+                    isExpress = false,
+                    isLast = false,
+                    status = 99,
+                    station = null,
+                    terminalStation =
+                        SubwayRouteStation(
+                            id = "K271",
+                            routeID = 1001,
+                            name = "소요산",
+                            order = 71,
+                            cumulativeTime = Duration.ofMinutes(60),
+                            route = SubwayRoute(id = 1001, name = "1호선", station = emptyList()),
+                            stationName = null,
+                            realtime = emptyList(),
+                            timetable = emptyList(),
+                        ),
+                ),
+                SubwayRealtime(
+                    stationID = "K258",
+                    heading = "down",
+                    order = 2,
+                    location = "K253",
+                    remainingStop = 2,
+                    remainingTime = Duration.ofMinutes(5),
+                    terminalStationID = "K271",
+                    trainNumber = "1002",
+                    updatedAt = ZonedDateTime.now(),
+                    isExpress = false,
+                    isLast = false,
+                    status = 99,
+                    station = null,
+                    terminalStation =
+                        SubwayRouteStation(
+                            id = "K271",
+                            routeID = 1001,
+                            name = "소요산",
+                            order = 71,
+                            cumulativeTime = Duration.ofMinutes(60),
+                            route = SubwayRoute(id = 1001, name = "1호선", station = emptyList()),
+                            stationName = null,
+                            realtime = emptyList(),
+                            timetable = emptyList(),
+                        ),
+                ),
+                SubwayRealtime(
+                    stationID = "K258",
+                    heading = "down",
+                    order = 3,
+                    location = "K255",
+                    remainingStop = 1,
+                    remainingTime = Duration.ofMinutes(20),
+                    terminalStationID = "K271",
+                    trainNumber = "1003",
+                    updatedAt = ZonedDateTime.now(),
+                    isExpress = false,
+                    isLast = false,
+                    status = 99,
+                    station = null,
+                    terminalStation =
+                        SubwayRouteStation(
+                            id = "K271",
+                            routeID = 1001,
+                            name = "소요산",
+                            order = 71,
+                            cumulativeTime = Duration.ofMinutes(60),
+                            route = SubwayRoute(id = 1001, name = "1호선", station = emptyList()),
+                            stationName = null,
+                            realtime = emptyList(),
+                            timetable = emptyList(),
+                        ),
+                ),
+            ),
+        )
+        val terminalStation =
+            SubwayRouteStation(
+                id = "K271",
+                routeID = 1001,
+                name = "소요산",
+                order = 71,
+                cumulativeTime = Duration.ofMinutes(60),
+                route = SubwayRoute(id = 1001, name = "1호선", station = emptyList()),
+                stationName = null,
+                realtime = emptyList(),
+                timetable = emptyList(),
+            )
+        val startStation =
+            SubwayRouteStation(
+                id = "K258",
+                routeID = 1001,
+                name = "의정부",
+                order = 58,
+                cumulativeTime = Duration.ofMinutes(40),
+                route = SubwayRoute(id = 1001, name = "1호선", station = emptyList()),
+                stationName = null,
+                realtime = emptyList(),
+                timetable = emptyList(),
+            )
+        whenever(
+            timetableRepository.findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeAfter(
+                stationID = "K258",
+                heading = listOf("down"),
+                weekday = "weekdays",
+                departureTime = LocalTime.parse("09:00"),
+            ),
+        ).thenReturn(
+            listOf(
+                // 09:08 is within the 25-min buffer but startStationID == stationID → must NOT be filtered
+                SubwayTimetable(
+                    seq = 1,
+                    stationID = "K258",
+                    startStationID = "K258",
+                    terminalStationID = "K271",
+                    departureTime = LocalTime.parse("09:08"),
+                    weekday = "weekdays",
+                    heading = "down",
+                    station = null,
+                    startStation = startStation,
+                    terminalStation = terminalStation,
+                ),
+                // 09:30 is outside the 25-min buffer → included normally
+                SubwayTimetable(
+                    seq = 2,
+                    stationID = "K258",
+                    startStationID = "K209",
+                    terminalStationID = "K271",
+                    departureTime = LocalTime.parse("09:30"),
+                    weekday = "weekdays",
+                    heading = "down",
+                    station = null,
+                    startStation = null,
+                    terminalStation = terminalStation,
+                ),
+            ),
+        )
+        whenever(
+            timetableRepository.findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeBefore(
+                stationID = "K258",
+                heading = listOf("down"),
+                weekday = "weekdays",
+                departureTime = LocalTime.of(4, 0),
+            ),
+        ).thenReturn(emptyList())
+
+        val result =
+            service.getArrival(
+                stationID = "K258",
+                directions = listOf("down"),
+                weekday = "weekdays",
+                currentTime = now,
+            )
+
+        assertEquals(1, result.size)
+        // 3 realtime + 1 start-station timetable (09:08) + 1 normal timetable (09:30) = 5
+        assertEquals(5, result[0].entries.size)
+        // Realtime entries: 1, 5, 20 min
+        assertEquals(true, result[0].entries[0].isRealtime)
+        assertEquals(1, result[0].entries[0].minutes)
+        assertEquals(true, result[0].entries[1].isRealtime)
+        assertEquals(5, result[0].entries[1].minutes)
+        // Start-station timetable at 09:08 = 8 min
+        assertEquals(false, result[0].entries[2].isRealtime)
+        assertEquals(8, result[0].entries[2].minutes)
+        // Realtime at 20 min
+        assertEquals(true, result[0].entries[3].isRealtime)
+        assertEquals(20, result[0].entries[3].minutes)
+        // Normal timetable at 09:30 = 30 min
+        assertEquals(false, result[0].entries[4].isRealtime)
+        assertEquals(30, result[0].entries[4].minutes)
     }
 
     @Test
@@ -2494,6 +2733,14 @@ class SubwayServiceTest {
                 departureTime = currentTime,
             ),
         ).thenReturn(emptyList())
+        whenever(
+            timetableRepository.findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeBefore(
+                stationID = "K449",
+                heading = listOf("down"),
+                weekday = "weekdays",
+                departureTime = LocalTime.of(4, 0),
+            ),
+        ).thenReturn(emptyList())
 
         val result =
             service.getArrival(
@@ -2504,6 +2751,267 @@ class SubwayServiceTest {
             )
 
         assertEquals(1, result.size)
+        assertEquals(0, result[0].entries.size)
+    }
+
+    // ── Midnight-crossing tests ────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("전철 도착 정보 조회 - 막차 이후 시간표 조회 시 자정 이후 열차 포함")
+    fun testGetArrivalIncludesAfterMidnightTrains() {
+        // currentTime = 23:30, last realtime in 40 min → timetable search starts at 00:15 (service-day)
+        // Old bug: currentTime.plusMinutes(45) = 00:15 → DepartureTimeAfter(00:15) includes morning trains
+        // Fix: two queries; after-midnight trains correctly included, morning trains excluded
+        val currentTime = LocalTime.parse("23:30")
+        whenever(
+            realtimeRepository.findByStationIDAndHeadingIn("K449", listOf("down")),
+        ).thenReturn(
+            listOf(
+                SubwayRealtime(
+                    stationID = "K449",
+                    heading = "down",
+                    order = 1,
+                    location = "금정",
+                    remainingStop = 2,
+                    remainingTime = Duration.ofMinutes(40),
+                    terminalStationID = "K456",
+                    trainNumber = "9999",
+                    updatedAt = ZonedDateTime.now(),
+                    isExpress = false,
+                    isLast = true,
+                    status = 99,
+                    station = null,
+                    terminalStation =
+                        SubwayRouteStation(
+                            id = "K456",
+                            routeID = 1004,
+                            name = "오이도",
+                            order = 56,
+                            cumulativeTime = Duration.ofMinutes(20),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            stationName = null,
+                            realtime = emptyList(),
+                            timetable = emptyList(),
+                        ),
+                ),
+            ),
+        )
+        // DepartureTimeAfter(23:30): returns late-night train at 23:50
+        whenever(
+            timetableRepository.findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeAfter(
+                stationID = "K449",
+                heading = listOf("down"),
+                weekday = "weekdays",
+                departureTime = LocalTime.parse("23:30"),
+            ),
+        ).thenReturn(
+            listOf(
+                SubwayTimetable(
+                    seq = 1,
+                    stationID = "K449",
+                    startStationID = "K409",
+                    terminalStationID = "K456",
+                    departureTime = LocalTime.parse("23:50"),
+                    weekday = "weekdays",
+                    heading = "down",
+                    station = null,
+                    startStation = null,
+                    terminalStation =
+                        SubwayRouteStation(
+                            id = "K456",
+                            routeID = 1004,
+                            name = "오이도",
+                            order = 56,
+                            cumulativeTime = Duration.ofMinutes(20),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            stationName = null,
+                            realtime = emptyList(),
+                            timetable = emptyList(),
+                        ),
+                ),
+            ),
+        )
+        // DepartureTimeBefore(04:00): after-midnight trains at 00:30, 01:10
+        whenever(
+            timetableRepository.findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeBefore(
+                stationID = "K449",
+                heading = listOf("down"),
+                weekday = "weekdays",
+                departureTime = LocalTime.of(4, 0),
+            ),
+        ).thenReturn(
+            listOf(
+                SubwayTimetable(
+                    seq = 2,
+                    stationID = "K449",
+                    startStationID = "K409",
+                    terminalStationID = "K456",
+                    departureTime = LocalTime.parse("00:30"),
+                    weekday = "weekdays",
+                    heading = "down",
+                    station = null,
+                    startStation = null,
+                    terminalStation =
+                        SubwayRouteStation(
+                            id = "K456",
+                            routeID = 1004,
+                            name = "오이도",
+                            order = 56,
+                            cumulativeTime = Duration.ofMinutes(20),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            stationName = null,
+                            realtime = emptyList(),
+                            timetable = emptyList(),
+                        ),
+                ),
+                SubwayTimetable(
+                    seq = 3,
+                    stationID = "K449",
+                    startStationID = "K409",
+                    terminalStationID = "K456",
+                    departureTime = LocalTime.parse("01:10"),
+                    weekday = "weekdays",
+                    heading = "down",
+                    station = null,
+                    startStation = null,
+                    terminalStation =
+                        SubwayRouteStation(
+                            id = "K456",
+                            routeID = 1004,
+                            name = "오이도",
+                            order = 56,
+                            cumulativeTime = Duration.ofMinutes(20),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            stationName = null,
+                            realtime = emptyList(),
+                            timetable = emptyList(),
+                        ),
+                ),
+            ),
+        )
+
+        val result = service.getArrival("K449", listOf("down"), "weekdays", null, currentTime)
+
+        assertEquals(1, result.size)
+        val entries = result[0].entries
+
+        assertEquals(3, entries.size)
+        assertEquals(40, entries[0].minutes)
+        assertEquals(true, entries[0].isRealtime)
+        assertEquals(60, entries[1].minutes)
+        assertEquals(false, entries[1].isRealtime)
+        assertEquals(100, entries[2].minutes)
+        assertEquals(false, entries[2].isRealtime)
+    }
+
+    @Test
+    @DisplayName("전철 도착 정보 조회 - 자정 이후 (01:30): 남은 자정 이후 열차만 반환")
+    fun testGetArrivalAfterMidnightReturnsRemainingTrains() {
+        // currentTime = 01:30, service date = previous day
+        // Only trains between 01:30 and 04:00 are returned
+        val currentTime = LocalTime.parse("01:30")
+        whenever(
+            realtimeRepository.findByStationIDAndHeadingIn("K449", listOf("down")),
+        ).thenReturn(emptyList())
+        whenever(
+            timetableRepository.findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeAfter(
+                stationID = "K449",
+                heading = listOf("down"),
+                weekday = "weekdays",
+                departureTime = LocalTime.parse("01:30"),
+            ),
+        ).thenReturn(
+            listOf(
+                SubwayTimetable(
+                    seq = 1,
+                    stationID = "K449",
+                    startStationID = "K409",
+                    terminalStationID = "K456",
+                    departureTime = LocalTime.parse("02:00"),
+                    weekday = "weekdays",
+                    heading = "down",
+                    station = null,
+                    startStation =
+                        SubwayRouteStation(
+                            id = "K409",
+                            routeID = 1004,
+                            name = "당고개",
+                            order = 1,
+                            cumulativeTime = Duration.ofMinutes(20),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            stationName = null,
+                            realtime = emptyList(),
+                            timetable = emptyList(),
+                        ),
+                    terminalStation =
+                        SubwayRouteStation(
+                            id = "K456",
+                            routeID = 1004,
+                            name = "오이도",
+                            order = 56,
+                            cumulativeTime = Duration.ofMinutes(20),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            stationName = null,
+                            realtime = emptyList(),
+                            timetable = emptyList(),
+                        ),
+                ),
+                // 05:30 is a morning train (>= 04:00) and should be filtered out
+                SubwayTimetable(
+                    seq = 2,
+                    stationID = "K449",
+                    startStationID = "K409",
+                    terminalStationID = "K456",
+                    departureTime = LocalTime.parse("05:30"),
+                    weekday = "weekdays",
+                    heading = "down",
+                    station = null,
+                    startStation = null,
+                    terminalStation =
+                        SubwayRouteStation(
+                            id = "K456",
+                            routeID = 1004,
+                            name = "오이도",
+                            order = 56,
+                            cumulativeTime = Duration.ofMinutes(20),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            stationName = null,
+                            realtime = emptyList(),
+                            timetable = emptyList(),
+                        ),
+                ),
+            ),
+        )
+
+        val result = service.getArrival("K449", listOf("down"), "weekdays", null, currentTime)
+
+        val entries = result[0].entries
+        // Only 02:00 train survives; 05:30 is filtered (>= 04:00)
+        assertEquals(1, entries.size)
+        assertEquals(false, entries[0].isRealtime)
+        // minutes = (toServiceSeconds(02:00) - toServiceSeconds(01:30)) / 60
+        //         = (86400+7200 - (86400+5400)) / 60 = 1800/60 = 30
+        assertEquals(30, entries[0].minutes)
+    }
+
+    @Test
+    @DisplayName("전철 도착 정보 조회 - 자정 이후 열차 없이 남은 열차 없음")
+    fun testGetArrivalAfterMidnightNoTrainsLeft() {
+        val currentTime = LocalTime.parse("03:50")
+        whenever(
+            realtimeRepository.findByStationIDAndHeadingIn("K449", listOf("down")),
+        ).thenReturn(emptyList())
+        whenever(
+            timetableRepository.findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeAfter(
+                stationID = "K449",
+                heading = listOf("down"),
+                weekday = "weekdays",
+                departureTime = LocalTime.parse("03:50"),
+            ),
+        ).thenReturn(emptyList())
+
+        val result = service.getArrival("K449", listOf("down"), "weekdays", null, currentTime)
+
         assertEquals(0, result[0].entries.size)
     }
 }

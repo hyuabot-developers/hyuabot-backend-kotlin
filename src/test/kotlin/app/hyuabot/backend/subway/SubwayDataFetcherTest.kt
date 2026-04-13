@@ -169,9 +169,9 @@ class SubwayDataFetcherTest {
                         keys: [{
                             stationID: "K449",
                             direction: ["up"],
-                            weekdays: ["weekdays"]
+                            weekdays: ["weekdays"],
+                            limit: 10
                         }],
-                        limit: 10
                     }) {
                         stationID
                         name
@@ -268,9 +268,9 @@ class SubwayDataFetcherTest {
                         keys: [{
                             stationID: "K449",
                             direction: ["up"],
-                            weekdays: ["weekdays"]
+                            weekdays: ["weekdays"],
+                            limit: 10
                         }],
-                        limit: 10
                     }) {
                         stationID
                         name
@@ -326,9 +326,9 @@ class SubwayDataFetcherTest {
                         keys: [{
                             stationID: "K449",
                             direction: [],
-                            weekdays: ["weekdays"]
+                            weekdays: ["weekdays"],
+                            limit: 10
                         }],
-                        limit: 10
                     }) {
                         stationID
                         name
@@ -377,9 +377,9 @@ class SubwayDataFetcherTest {
                         keys: [{
                             stationID: "K449",
                             direction: ["up"],
-                            weekdays: []
+                            weekdays: [],
+                            limit: 10
                         }],
-                        limit: 10
                     }) {
                         stationID
                         name
@@ -419,9 +419,9 @@ class SubwayDataFetcherTest {
                         keys: [{
                             stationID: "K449",
                             direction: ["up"],
-                            weekdays: ["weekdays", "weekends"]
+                            weekdays: ["weekdays", "weekends"],
+                            limit: null
                         }],
-                        limit: null
                     }) {
                         stationID
                         name
