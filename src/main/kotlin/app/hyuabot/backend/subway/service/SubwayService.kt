@@ -361,6 +361,7 @@ class SubwayService(
                         trainNumber = realtime.trainNumber,
                         isExpress = realtime.isExpress,
                         isLast = realtime.isLast,
+                        status = realtime.status,
                     )
                 }
             val startSvcSecs = timetableStartSvcSecsMap[direction]!!
@@ -379,6 +380,7 @@ class SubwayService(
                             trainNumber = null,
                             isExpress = null,
                             isLast = null,
+                            status = null,
                         )
                     }
             val allArrivals = (realtimeArrivals + timetableArrivals).sortedBy { it.minutes }
