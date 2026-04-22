@@ -240,6 +240,7 @@ type BusRunningTime {
 type BusRunningTimeEntry {
     first: LocalTime!
     last: LocalTime!
+    terminal: BusStop!
 }
 
 type BusStop {

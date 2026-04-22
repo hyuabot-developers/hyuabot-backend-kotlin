@@ -76,24 +76,6 @@ class BusControllerTest {
     private lateinit var objectMapper: ObjectMapper
 
     companion object {
-        val TEST_ROUTE_1 =
-            BusRoute(
-                id = 216000068,
-                name = "10-1",
-                typeCode = "13",
-                typeName = "일반형시내버스",
-                startStopID = 216000358,
-                endStopID = 216000138,
-                upFirstTime = LocalTime.parse("05:30"),
-                upLastTime = LocalTime.parse("23:10"),
-                downFirstTime = LocalTime.parse("06:00"),
-                downLastTime = LocalTime.parse("23:40"),
-                districtCode = 2,
-                companyID = 4100700,
-                companyName = "경원여객",
-                companyPhone = "031-492-2260",
-                stop = emptyList(),
-            )
         val TEST_STOP_1 =
             BusStop(
                 id = 216000358,
@@ -117,6 +99,26 @@ class BusControllerTest {
                 regionName = "경기",
                 busRoutes = emptyList(),
                 startBusRoutes = emptyList(),
+            )
+        val TEST_ROUTE_1 =
+            BusRoute(
+                id = 216000068,
+                name = "10-1",
+                typeCode = "13",
+                typeName = "일반형시내버스",
+                startStopID = 216000358,
+                endStopID = 216000138,
+                upFirstTime = LocalTime.parse("05:30"),
+                upLastTime = LocalTime.parse("23:10"),
+                downFirstTime = LocalTime.parse("06:00"),
+                downLastTime = LocalTime.parse("23:40"),
+                districtCode = 2,
+                companyID = 4100700,
+                companyName = "경원여객",
+                companyPhone = "031-492-2260",
+                stop = emptyList(),
+                startStop = TEST_STOP_1,
+                endStop = TEST_STOP_2,
             )
         val TEST_ROUTE_STOP_1 =
             BusRouteStop(
@@ -198,6 +200,8 @@ class BusControllerTest {
                 companyName = "경원여객",
                 companyPhone = "031-492-2260",
                 stop = emptyList(),
+                startStop = TEST_STOP_1,
+                endStop = TEST_STOP_2,
             )
         val payload =
             CreateBusRouteRequest(
@@ -459,6 +463,8 @@ class BusControllerTest {
                 companyName = "경원여객",
                 companyPhone = "031-492-2260",
                 stop = emptyList(),
+                startStop = TEST_STOP_1,
+                endStop = TEST_STOP_2,
             )
         val payload =
             UpdateBusRouteRequest(

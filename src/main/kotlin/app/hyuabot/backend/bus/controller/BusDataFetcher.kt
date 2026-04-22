@@ -82,11 +82,35 @@ class BusDataFetcher(
                                     BusRunningTimeEntry(
                                         first = it.route!!.upFirstTime,
                                         last = it.route!!.upLastTime,
+                                        terminal =
+                                            it.route!!.endStop.let { endStop ->
+                                                BusStop(
+                                                    seq = endStop.id,
+                                                    name = endStop.name,
+                                                    districtCode = endStop.districtCode,
+                                                    region = endStop.regionName,
+                                                    mobileNumber = endStop.mobileNumber,
+                                                    latitude = endStop.latitude,
+                                                    longitude = endStop.longitude,
+                                                )
+                                            },
                                     ),
                                 down =
                                     BusRunningTimeEntry(
                                         first = it.route!!.downFirstTime,
                                         last = it.route!!.downLastTime,
+                                        terminal =
+                                            it.route!!.startStop.let { startStop ->
+                                                BusStop(
+                                                    seq = startStop.id,
+                                                    name = startStop.name,
+                                                    districtCode = startStop.districtCode,
+                                                    region = startStop.regionName,
+                                                    mobileNumber = startStop.mobileNumber,
+                                                    latitude = startStop.latitude,
+                                                    longitude = startStop.longitude,
+                                                )
+                                            },
                                     ),
                             ),
                     ),

@@ -46,8 +46,8 @@ class BusRouteService(
         routeRepository.findById(payload.id).orElse(null)?.let {
             throw DuplicateBusRouteException()
         }
-        stopRepository.findById(payload.startStopID).orElseThrow { throw BusStartStopNotFoundException() }
-        stopRepository.findById(payload.endStopID).orElseThrow { throw BusEndStopNotFoundException() }
+        val startStop = stopRepository.findById(payload.startStopID).orElseThrow { throw BusStartStopNotFoundException() }
+        val endStop = stopRepository.findById(payload.endStopID).orElseThrow { throw BusEndStopNotFoundException() }
         return routeRepository.save(
             BusRoute(
                 id = payload.id,
@@ -65,6 +65,8 @@ class BusRouteService(
                 companyName = payload.companyName,
                 companyPhone = payload.companyPhone,
                 stop = emptyList(),
+                startStop = startStop,
+                endStop = endStop,
             ),
         )
     }
