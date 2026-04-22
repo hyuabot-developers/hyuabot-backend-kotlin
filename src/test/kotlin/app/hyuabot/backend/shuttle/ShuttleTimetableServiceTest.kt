@@ -248,6 +248,7 @@ class ShuttleTimetableServiceTest {
         )
         val result = shuttleTimetableService.getShuttleTimetableBatch(setOf(key))
         val timetable = result[key]!!
+        assertEquals(1, timetable.order.size)
         assertEquals(2, timetable.destination.size)
         assertEquals("STATION", timetable.destination.keys.first())
         assertEquals("TERMINAL", timetable.destination.keys.last())
