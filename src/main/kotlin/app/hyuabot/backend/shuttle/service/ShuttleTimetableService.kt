@@ -179,7 +179,21 @@ class ShuttleTimetableService(
                                 },
                         )
                     }.sortedBy { it.time }
-            val orderEntries = entries.distinctBy { it.seq }
+            val filteredEntries =
+                when (key.stop) {
+                    in listOf("dormitory_o", "shuttlecock_o") -> {
+                        entries.filter { it.group in listOf("STATION", "TERMINAL", "JUNGANG") }
+                    }
+
+                    "station" -> {
+                        entries.filter { it.group in listOf("CAMPUS", "TERMINAL", "JUNGANG") }
+                    }
+
+                    else -> {
+                        entries.filter { it.group == "CAMPUS" }
+                    }
+                }
+            val orderEntries = filteredEntries.distinctBy { it.seq }
             val order = if (key.limit.order != null) orderEntries.take(key.limit.order) else orderEntries
             val destination =
                 entries

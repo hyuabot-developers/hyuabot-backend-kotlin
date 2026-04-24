@@ -140,7 +140,7 @@ class ShuttleTimetableServiceTest {
                     routeTag = "A",
                     stopName = "dormitory_o",
                     departureTime = LocalTime.parse("09:00:00"),
-                    destinationGroup = "Group1",
+                    destinationGroup = "STATION",
                 ),
                 ShuttleTimetableView(
                     seq = 2,
@@ -150,7 +150,7 @@ class ShuttleTimetableServiceTest {
                     routeTag = "B",
                     stopName = "dormitory_o",
                     departureTime = LocalTime.parse("10:00:00"),
-                    destinationGroup = "Group2",
+                    destinationGroup = "TERMINAL",
                 ),
             ),
         )
@@ -167,7 +167,7 @@ class ShuttleTimetableServiceTest {
     fun getShuttleTimetableBatchWithDestinationGrouping() {
         val key =
             ShuttleTimetableKey(
-                stop = "dormitory_o",
+                stop = "station",
                 periods = setOf("semester"),
                 weekdays = setOf(true),
                 after = null,
@@ -190,7 +190,7 @@ class ShuttleTimetableServiceTest {
                     routeName = "CDD",
                     stopName = "dormitory_o",
                     departureTime = LocalTime.parse("09:00:00"),
-                    destinationGroup = "STATION",
+                    destinationGroup = "CAMPUS",
                     periodType = "semester",
                     weekday = true,
                 ),
@@ -200,7 +200,7 @@ class ShuttleTimetableServiceTest {
                     routeName = "CDD",
                     stopName = "shuttlecock_o",
                     departureTime = LocalTime.parse("09:05:00"),
-                    destinationGroup = "STATION",
+                    destinationGroup = "CAMPUS",
                     periodType = "semester",
                     weekday = true,
                 ),
@@ -210,7 +210,7 @@ class ShuttleTimetableServiceTest {
                     routeName = "CDD",
                     stopName = "station",
                     departureTime = LocalTime.parse("09:15:00"),
-                    destinationGroup = "STATION",
+                    destinationGroup = "CAMPUS",
                     periodType = "semester",
                     weekday = true,
                 ),
@@ -250,9 +250,9 @@ class ShuttleTimetableServiceTest {
         val timetable = result[key]!!
         assertEquals(1, timetable.order.size)
         assertEquals(2, timetable.destination.size)
-        assertEquals("STATION", timetable.destination.keys.first())
+        assertEquals("CAMPUS", timetable.destination.keys.first())
         assertEquals("TERMINAL", timetable.destination.keys.last())
-        assertEquals(1, timetable.destination["STATION"]!!.size)
+        assertEquals(1, timetable.destination["CAMPUS"]!!.size)
         assertEquals(1, timetable.destination["TERMINAL"]!!.size)
     }
 
@@ -261,10 +261,10 @@ class ShuttleTimetableServiceTest {
     fun getShuttleTimetableBatchWithAfterFiltering() {
         val key =
             ShuttleTimetableKey(
-                stop = "dormitory_o",
+                stop = "terminal",
                 periods = setOf("semester"),
                 weekdays = setOf(true),
-                after = LocalTime.parse("09:10"),
+                after = LocalTime.parse("09:20"),
                 limit = ShuttleLimitInput(order = null, destination = null),
                 destinations = null,
                 routes = null,
@@ -284,7 +284,7 @@ class ShuttleTimetableServiceTest {
                     routeName = "CDD",
                     stopName = "dormitory_o",
                     departureTime = LocalTime.parse("09:00:00"),
-                    destinationGroup = "STATION",
+                    destinationGroup = "CAMPUS",
                     periodType = "semester",
                     weekday = true,
                 ),
@@ -294,7 +294,7 @@ class ShuttleTimetableServiceTest {
                     routeName = "CDD",
                     stopName = "shuttlecock_o",
                     departureTime = LocalTime.parse("09:05:00"),
-                    destinationGroup = "STATION",
+                    destinationGroup = "CAMPUS",
                     periodType = "semester",
                     weekday = true,
                 ),
@@ -302,9 +302,9 @@ class ShuttleTimetableServiceTest {
                     seq = 1,
                     routeTag = "C",
                     routeName = "CDD",
-                    stopName = "station",
+                    stopName = "terminal",
                     departureTime = LocalTime.parse("09:15:00"),
-                    destinationGroup = "STATION",
+                    destinationGroup = "CAMPUS",
                     periodType = "semester",
                     weekday = true,
                 ),
@@ -314,7 +314,7 @@ class ShuttleTimetableServiceTest {
                     routeName = "CDD",
                     stopName = "dormitory_o",
                     departureTime = LocalTime.parse("09:20:00"),
-                    destinationGroup = "STATION",
+                    destinationGroup = "CAMPUS",
                     periodType = "semester",
                     weekday = true,
                 ),
@@ -324,7 +324,7 @@ class ShuttleTimetableServiceTest {
                     routeName = "CDD",
                     stopName = "shuttlecock_o",
                     departureTime = LocalTime.parse("09:25:00"),
-                    destinationGroup = "STATION",
+                    destinationGroup = "CAMPUS",
                     periodType = "semester",
                     weekday = true,
                 ),
@@ -332,9 +332,9 @@ class ShuttleTimetableServiceTest {
                     seq = 2,
                     routeTag = "C",
                     routeName = "CDD",
-                    stopName = "station",
+                    stopName = "terminal",
                     departureTime = LocalTime.parse("09:35:00"),
-                    destinationGroup = "STATION",
+                    destinationGroup = "CAMPUS",
                     periodType = "semester",
                     weekday = true,
                 ),
@@ -353,7 +353,7 @@ class ShuttleTimetableServiceTest {
                     routeName = "CDD",
                     stopName = "dormitory_o",
                     departureTime = LocalTime.parse("09:00:00"),
-                    destinationGroup = "STATION",
+                    destinationGroup = "CAMPUS",
                     periodType = "semester",
                     weekday = true,
                 ),
@@ -363,7 +363,7 @@ class ShuttleTimetableServiceTest {
                     routeName = "CDD",
                     stopName = "shuttlecock_o",
                     departureTime = LocalTime.parse("09:05:00"),
-                    destinationGroup = "STATION",
+                    destinationGroup = "CAMPUS",
                     periodType = "semester",
                     weekday = true,
                 ),
@@ -371,9 +371,9 @@ class ShuttleTimetableServiceTest {
                     seq = 1,
                     routeTag = "C",
                     routeName = "CDD",
-                    stopName = "station",
+                    stopName = "terminal",
                     departureTime = LocalTime.parse("09:15:00"),
-                    destinationGroup = "STATION",
+                    destinationGroup = "TERMINAL",
                     periodType = "semester",
                     weekday = true,
                 ),
@@ -383,7 +383,7 @@ class ShuttleTimetableServiceTest {
                     routeName = "CDD",
                     stopName = "dormitory_o",
                     departureTime = LocalTime.parse("09:20:00"),
-                    destinationGroup = "STATION",
+                    destinationGroup = "CAMPUS",
                     periodType = "semester",
                     weekday = true,
                 ),
@@ -393,7 +393,7 @@ class ShuttleTimetableServiceTest {
                     routeName = "CDD",
                     stopName = "shuttlecock_o",
                     departureTime = LocalTime.parse("09:25:00"),
-                    destinationGroup = "STATION",
+                    destinationGroup = "CAMPUS",
                     periodType = "semester",
                     weekday = true,
                 ),
@@ -401,9 +401,9 @@ class ShuttleTimetableServiceTest {
                     seq = 2,
                     routeTag = "C",
                     routeName = "CDD",
-                    stopName = "station",
+                    stopName = "terminal",
                     departureTime = LocalTime.parse("09:35:00"),
-                    destinationGroup = "STATION",
+                    destinationGroup = "CAMPUS",
                     periodType = "semester",
                     weekday = true,
                 ),
@@ -412,7 +412,7 @@ class ShuttleTimetableServiceTest {
         val result = shuttleTimetableService.getShuttleTimetableBatch(setOf(key))
         val timetable = result[key]!!
         assertEquals(1, timetable.order.size)
-        assertEquals(LocalTime.parse("09:20"), timetable.order[0].time)
+        assertEquals(LocalTime.parse("09:35"), timetable.order[0].time)
         assertEquals(3, timetable.order[0].stops.size)
     }
 
