@@ -635,7 +635,7 @@ class NoticeServiceTest {
 
         val result =
             service.fetchNotices(
-                "general",
+                "General Notice",
                 null,
                 null,
                 ZonedDateTime.now(),

@@ -128,10 +128,11 @@ class NoticeService(
         currentTime: ZonedDateTime,
     ): List<NoticeCategory> {
         val categories = noticeRepository.findAllWithNotices()
+        val categoryFilter = category?.split(",")?.map { it.trim() } ?: emptyList()
         val timestamp = since ?: currentTime
         return categories
             .filter { cat ->
-                category == null || cat.name.contains(category, ignoreCase = true)
+                categoryFilter.isEmpty() || categoryFilter.contains(cat.name)
             }.map { cat ->
                 val filteredNotices =
                     cat.notice
