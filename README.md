@@ -135,7 +135,7 @@ The Dockerfile uses a multi-stage build with `eclipse-temurin:21-jre-alpine` as 
 
 | Workflow | Trigger | Actions |
 |---|---|---|
-| `codecheck.yml` | Push / PR | ktlint check, tests, JaCoCo coverage |
+| `code-check.yml` | Push / PR | ktlint check, tests, JaCoCo coverage |
 | `deploy.yml` | Merged PR / manual | Docker build & push, Kubernetes rolling restart |
 
 Deployment targets a Kubernetes cluster under the `hyuabot` namespace.

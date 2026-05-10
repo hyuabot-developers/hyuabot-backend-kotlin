@@ -1,4 +1,4 @@
-name: Check code convention
+name: Code Check and Test
 on:
   push:
     branches-ignore:
