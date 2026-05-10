@@ -1,4 +1,4 @@
-name: Deploy Spring Boot Backend Application
+name: Deploy Docker Image
 on:
   pull_request:
     branches:
