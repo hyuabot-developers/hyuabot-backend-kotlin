@@ -10,7 +10,7 @@ import java.time.ZonedDateTime
 
 @Entity(name = "reading_room")
 @Table(name = "reading_room")
-data class ReadingRoom(
+class ReadingRoom(
     @Id
     @Column(name = "room_id", columnDefinition = "integer", nullable = false)
     val id: Int,
@@ -27,12 +27,21 @@ data class ReadingRoom(
     @Column(name = "active_total", columnDefinition = "integer", nullable = false)
     var active: Int,
     @Column(name = "occupied", columnDefinition = "integer", nullable = false)
-    val occupied: Int,
+    var occupied: Int,
     @Column(name = "available", columnDefinition = "integer", nullable = false, insertable = false, updatable = false)
-    val available: Int = active - occupied,
+    var available: Int = active - occupied,
     @Column(name = "last_updated_time", columnDefinition = "timestamptz", nullable = false)
-    val updatedAt: ZonedDateTime,
+    var updatedAt: ZonedDateTime,
     @ManyToOne
     @JoinColumn(name = "campus_id", referencedColumnName = "campus_id", insertable = false, updatable = false)
     val campus: Campus?,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as ReadingRoom
+        return id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+}

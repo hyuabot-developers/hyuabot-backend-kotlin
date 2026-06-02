@@ -12,7 +12,7 @@ import jakarta.persistence.Table
 @Entity(name = "campus")
 @Table(name = "campus")
 @SequenceGenerator(name = "campus_campus_id_seq", allocationSize = 1)
-data class Campus(
+class Campus(
     @Id
     @Column(name = "campus_id", columnDefinition = "integer", nullable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "campus_campus_id_seq")
@@ -20,9 +20,18 @@ data class Campus(
     @Column(name = "campus_name", length = 30, nullable = false)
     var name: String,
     @OneToMany(mappedBy = "campus")
-    val building: List<Building> = emptyList(),
+    val building: MutableList<Building> = mutableListOf(),
     @OneToMany(mappedBy = "campus")
-    val cafeteria: List<Cafeteria> = emptyList(),
+    val cafeteria: MutableList<Cafeteria> = mutableListOf(),
     @OneToMany(mappedBy = "campus")
-    val readingRoom: List<ReadingRoom> = emptyList(),
-)
+    val readingRoom: MutableList<ReadingRoom> = mutableListOf(),
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as Campus
+        return id != null && id == other.id
+    }
+
+    override fun hashCode(): Int = javaClass.hashCode()
+}

@@ -13,7 +13,7 @@ import java.time.Duration
 
 @Entity(name = "subway_route_station")
 @Table(name = "subway_route_station")
-data class SubwayRouteStation(
+class SubwayRouteStation(
     @Id
     @Column(name = "station_id", length = 10, nullable = false)
     val id: String,
@@ -33,7 +33,16 @@ data class SubwayRouteStation(
     @JoinColumn(name = "station_name", referencedColumnName = "station_name", insertable = false, updatable = false)
     val stationName: SubwayStation?,
     @OneToMany(mappedBy = "station")
-    val realtime: List<SubwayRealtime>?,
+    val realtime: MutableList<SubwayRealtime>?,
     @OneToMany(mappedBy = "station")
-    val timetable: List<SubwayTimetable>?,
-)
+    val timetable: MutableList<SubwayTimetable>?,
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as SubwayRouteStation
+        return id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+}

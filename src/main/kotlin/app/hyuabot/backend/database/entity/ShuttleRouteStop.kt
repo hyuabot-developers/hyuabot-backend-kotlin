@@ -22,15 +22,15 @@ import java.time.Duration
     ],
 )
 @SequenceGenerator(name = "shuttle_route_stop_seq_seq", allocationSize = 1)
-data class ShuttleRouteStop(
+class ShuttleRouteStop(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "shuttle_route_stop_seq_seq")
     val seq: Int? = null,
     @Column(name = "route_name", length = 15, nullable = false)
-    val routeName: String,
+    var routeName: String,
     @Column(name = "stop_name", length = 15, nullable = false)
-    val stopName: String,
+    var stopName: String,
     @Column(name = "stop_order", columnDefinition = "integer", nullable = false)
     var order: Int,
     @Type(PostgreSQLIntervalType::class)
@@ -42,4 +42,13 @@ data class ShuttleRouteStop(
     @ManyToOne
     @JoinColumn(name = "stop_name", referencedColumnName = "stop_name", insertable = false, updatable = false)
     val stop: ShuttleStop?,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as ShuttleRouteStop
+        return seq != null && seq == other.seq
+    }
+
+    override fun hashCode(): Int = javaClass.hashCode()
+}

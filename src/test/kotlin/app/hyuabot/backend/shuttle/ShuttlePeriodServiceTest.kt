@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.LocalDate
@@ -89,7 +90,15 @@ class ShuttlePeriodServiceTest {
                 periodType = null,
             )
 
-        whenever(shuttlePeriodRepository.save(expectedPeriod)).thenReturn(expectedPeriod)
+        whenever(
+            shuttlePeriodRepository.save(
+                argThat<ShuttlePeriod> {
+                    type == expectedPeriod.type &&
+                        start == expectedPeriod.start &&
+                        end == expectedPeriod.end
+                },
+            ),
+        ).thenReturn(expectedPeriod)
 
         val createdPeriod = shuttlePeriodService.createShuttlePeriod(payload)
         assertEquals(expectedPeriod.type, createdPeriod.type)

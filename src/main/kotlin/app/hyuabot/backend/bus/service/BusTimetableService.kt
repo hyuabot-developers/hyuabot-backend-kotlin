@@ -127,14 +127,11 @@ class BusTimetableService(
             )?.let {
                 throw DuplicateBusTimetableException()
             }
-        val updatedBusTimetable =
-            busTimetable.copy(
-                routeID = payload.routeID,
-                startStopID = payload.startStopID,
-                weekday = payload.dayType,
-                departureTime = LocalTime.parse(payload.departureTime),
-            )
-        return timetableRepository.save(updatedBusTimetable)
+        busTimetable.routeID = payload.routeID
+        busTimetable.startStopID = payload.startStopID
+        busTimetable.weekday = payload.dayType
+        busTimetable.departureTime = LocalTime.parse(payload.departureTime)
+        return timetableRepository.save(busTimetable)
     }
 
     fun deleteBusTimetableById(id: Int) {

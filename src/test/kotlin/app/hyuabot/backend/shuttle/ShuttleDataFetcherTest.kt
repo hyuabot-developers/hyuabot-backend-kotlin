@@ -84,9 +84,9 @@ class ShuttleDataFetcherTest {
         name = name,
         latitude = latitude,
         longitude = longitude,
-        route = emptyList(),
-        routeToStart = emptyList(),
-        routeToEnd = emptyList(),
+        route = mutableListOf(),
+        routeToStart = mutableListOf(),
+        routeToEnd = mutableListOf(),
     )
 
     private fun createTimetableView(

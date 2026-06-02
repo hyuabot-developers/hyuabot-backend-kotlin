@@ -13,11 +13,12 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.Type
 import java.time.Duration
 import java.time.ZonedDateTime
+import java.util.Objects
 
 @Entity(name = "subway_realtime")
 @Table(name = "subway_realtime")
 @IdClass(SubwayRealtimeID::class)
-data class SubwayRealtime(
+class SubwayRealtime(
     @Id
     @Column(name = "station_id", length = 10, nullable = false)
     val stationID: String,
@@ -28,28 +29,39 @@ data class SubwayRealtime(
     @Column(name = "arrival_seq", columnDefinition = "integer", nullable = false)
     val order: Int,
     @Column(name = "current_station_name", length = 30)
-    val location: String,
+    var location: String,
     @Column(name = "remaining_stop_count", columnDefinition = "integer", nullable = false)
-    val remainingStop: Int,
+    var remainingStop: Int,
     @Type(value = PostgreSQLIntervalType::class)
     @Column(name = "remaining_time", columnDefinition = "interval", nullable = false)
-    val remainingTime: Duration,
+    var remainingTime: Duration,
     @Column(name = "terminal_station_id", length = 10, nullable = false)
-    val terminalStationID: String,
+    var terminalStationID: String,
     @Column(name = "train_number", length = 10, nullable = false)
-    val trainNumber: String,
+    var trainNumber: String,
     @Column(name = "last_updated_time", columnDefinition = "timestamptz", nullable = false)
-    val updatedAt: ZonedDateTime,
+    var updatedAt: ZonedDateTime,
     @Column(name = "is_express_train", columnDefinition = "boolean", nullable = false)
-    val isExpress: Boolean,
+    var isExpress: Boolean,
     @Column(name = "is_last_train", columnDefinition = "boolean", nullable = false)
-    val isLast: Boolean,
+    var isLast: Boolean,
     @Column(name = "status_code", columnDefinition = "integer", nullable = false)
-    val status: Int,
+    var status: Int,
     @ManyToOne
     @JoinColumn(name = "station_id", referencedColumnName = "station_id", insertable = false, updatable = false)
     val station: SubwayRouteStation?,
     @OneToOne
     @JoinColumn(name = "terminal_station_id", referencedColumnName = "station_id", insertable = false, updatable = false)
     val terminalStation: SubwayRouteStation?,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as SubwayRealtime
+        return stationID == other.stationID &&
+            heading == other.heading &&
+            order == other.order
+    }
+
+    override fun hashCode(): Int = Objects.hash(stationID, heading, order)
+}

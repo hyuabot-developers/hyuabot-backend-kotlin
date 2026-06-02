@@ -22,25 +22,34 @@ import java.time.LocalTime
     ],
 )
 @SequenceGenerator(name = "bus_departure_log_seq_seq", allocationSize = 1)
-data class BusDepartureLog(
+class BusDepartureLog(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "bus_departure_log_seq_seq")
     val seq: Int? = null,
     @Column(name = "route_id", columnDefinition = "integer", nullable = false)
-    val routeID: Int,
+    var routeID: Int,
     @Column(name = "stop_id", columnDefinition = "integer", nullable = false)
-    val stopID: Int,
+    var stopID: Int,
     @Column(name = "departure_date", columnDefinition = "date", nullable = false)
-    val departureDate: LocalDate,
+    var departureDate: LocalDate,
     @Column(name = "departure_time", columnDefinition = "time", nullable = false)
-    val departureTime: LocalTime,
+    var departureTime: LocalTime,
     @Column(name = "vehicle_id", length = 20, nullable = false)
-    val vehicleID: String,
+    var vehicleID: String,
     @ManyToOne
     @JoinColumns(
         JoinColumn(name = "route_id", referencedColumnName = "route_id", insertable = false, updatable = false),
         JoinColumn(name = "stop_id", referencedColumnName = "stop_id", insertable = false, updatable = false),
     )
     val routeStop: BusRouteStop?,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as BusDepartureLog
+        return seq != null && seq == other.seq
+    }
+
+    override fun hashCode(): Int = javaClass.hashCode()
+}

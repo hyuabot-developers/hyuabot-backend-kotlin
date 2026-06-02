@@ -20,7 +20,7 @@ import java.time.ZonedDateTime
     ],
 )
 @SequenceGenerator(name = "shuttle_period_seq_seq", allocationSize = 1)
-data class ShuttlePeriod(
+class ShuttlePeriod(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "shuttle_period_seq_seq")
@@ -34,4 +34,13 @@ data class ShuttlePeriod(
     @ManyToOne
     @JoinColumn(name = "period_type", referencedColumnName = "period_type", insertable = false, updatable = false)
     val periodType: ShuttlePeriodType?,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as ShuttlePeriod
+        return seq != null && seq == other.seq
+    }
+
+    override fun hashCode(): Int = javaClass.hashCode()
+}

@@ -67,12 +67,12 @@ class SubwayControllerTest {
                 SubwayRoute(
                     id = 1,
                     name = "1호선",
-                    station = emptyList(),
+                    station = mutableListOf(),
                 ),
                 SubwayRoute(
                     id = 2,
                     name = "2호선",
-                    station = emptyList(),
+                    station = mutableListOf(),
                 ),
             ),
         ).whenever(service).getSubwayRoutes()
@@ -95,7 +95,7 @@ class SubwayControllerTest {
             SubwayRoute(
                 id = 3,
                 name = "3호선",
-                station = emptyList(),
+                station = mutableListOf(),
             )
         doReturn(newRoute).whenever(service).createSubwayRoute(
             CreateSubwayRouteRequest(
@@ -182,7 +182,7 @@ class SubwayControllerTest {
             SubwayRoute(
                 id = 1,
                 name = "1호선",
-                station = emptyList(),
+                station = mutableListOf(),
             ),
         ).whenever(service).getSubwayRouteById(1)
         mockMvc
@@ -227,7 +227,7 @@ class SubwayControllerTest {
             SubwayRoute(
                 id = 1,
                 name = "1호선-수정",
-                station = emptyList(),
+                station = mutableListOf(),
             )
         val payload = mapOf("name" to "1호선-수정")
         doReturn(updatedRoute).whenever(service).updateSubwayRoute(
@@ -345,8 +345,8 @@ class SubwayControllerTest {
                     cumulativeTime = Duration.ofMinutes(10),
                     route = null,
                     stationName = null,
-                    realtime = emptyList(),
-                    timetable = emptyList(),
+                    realtime = mutableListOf(),
+                    timetable = mutableListOf(),
                 ),
                 SubwayRouteStation(
                     id = "K402",
@@ -356,8 +356,8 @@ class SubwayControllerTest {
                     cumulativeTime = Duration.ofMinutes(20),
                     route = null,
                     stationName = null,
-                    realtime = emptyList(),
-                    timetable = emptyList(),
+                    realtime = mutableListOf(),
+                    timetable = mutableListOf(),
                 ),
             ),
         ).whenever(service).getAllStations()
@@ -385,8 +385,8 @@ class SubwayControllerTest {
                 cumulativeTime = Duration.ofMinutes(30),
                 route = null,
                 stationName = null,
-                realtime = emptyList(),
-                timetable = emptyList(),
+                realtime = mutableListOf(),
+                timetable = mutableListOf(),
             )
         val payload =
             CreateSubwayStationRequest(
@@ -490,8 +490,8 @@ class SubwayControllerTest {
                 cumulativeTime = Duration.ofMinutes(10),
                 route = null,
                 stationName = null,
-                realtime = emptyList(),
-                timetable = emptyList(),
+                realtime = mutableListOf(),
+                timetable = mutableListOf(),
             ),
         ).whenever(service).getStationById("K401")
         mockMvc
@@ -539,8 +539,8 @@ class SubwayControllerTest {
                 cumulativeTime = Duration.ofMinutes(15),
                 route = null,
                 stationName = null,
-                realtime = emptyList(),
-                timetable = emptyList(),
+                realtime = mutableListOf(),
+                timetable = mutableListOf(),
             )
         val payload =
             mapOf(

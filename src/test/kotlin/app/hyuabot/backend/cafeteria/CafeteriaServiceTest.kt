@@ -278,7 +278,18 @@ class CafeteriaServiceTest {
         whenever(cafeteriaRepository.findById(1)).thenReturn(Optional.of(existingCafeteria))
         whenever(campusRepository.existsById(1)).thenReturn(true)
         whenever(cafeteriaRepository.save(existingCafeteria)).thenReturn(
-            existingCafeteria.copy(name = "Updated Cafeteria A", breakfastTime = "07:30-10:30"),
+            Cafeteria(
+                id = existingCafeteria.id,
+                campusID = existingCafeteria.campusID,
+                name = "Updated Cafeteria A",
+                latitude = existingCafeteria.latitude,
+                longitude = existingCafeteria.longitude,
+                breakfastTime = "07:30-10:30",
+                lunchTime = existingCafeteria.lunchTime,
+                dinnerTime = existingCafeteria.dinnerTime,
+                campus = existingCafeteria.campus,
+                menu = existingCafeteria.menu,
+            ),
         )
 
         val updatedCafeteria =

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.LocalDate
@@ -174,14 +175,13 @@ class MenuServiceTest {
         whenever(cafeteriaRepository.existsById(1)).thenReturn(true)
         whenever(
             menuRepository.save(
-                Menu(
-                    restaurantID = 1,
-                    date = LocalDate.of(2025, 8, 10),
-                    type = "조식",
-                    food = "Sample Menu",
-                    price = "Sample Price",
-                    cafeteria = null,
-                ),
+                argThat<Menu> {
+                    restaurantID == 1 &&
+                        date == LocalDate.of(2025, 8, 10) &&
+                        type == "조식" &&
+                        food == "Sample Menu" &&
+                        price == "Sample Price"
+                },
             ),
         ).thenReturn(menu)
 
@@ -229,9 +229,14 @@ class MenuServiceTest {
                 cafeteria = null,
             )
         val updatedMenu =
-            existingMenu.copy(
+            Menu(
+                seq = existingMenu.seq,
+                restaurantID = existingMenu.restaurantID,
+                date = existingMenu.date,
+                type = existingMenu.type,
                 food = "Updated Menu",
                 price = "Updated Price",
+                cafeteria = existingMenu.cafeteria,
             )
 
         // Mocking the repository call

@@ -20,7 +20,7 @@ import java.time.LocalDate
     ],
 )
 @SequenceGenerator(name = "menu_seq_seq", allocationSize = 1)
-data class Menu(
+class Menu(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "menu_seq_seq")
@@ -38,4 +38,13 @@ data class Menu(
     @JoinColumn(name = "restaurant_id", referencedColumnName = "restaurant_id", insertable = false, updatable = false)
     @ManyToOne
     val cafeteria: Cafeteria?,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as Menu
+        return seq != null && seq == other.seq
+    }
+
+    override fun hashCode(): Int = javaClass.hashCode()
+}

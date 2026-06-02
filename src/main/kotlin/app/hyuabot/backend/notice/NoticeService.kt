@@ -103,15 +103,12 @@ class NoticeService(
         val expiredAt = ZonedDateTime.of(expiredLocalDateTime, LocalDateTimeBuilder.serviceTimezone)
         categoryRepository.findById(payload.categoryID).orElseThrow { NoticeCategoryNotFoundException() }
         return noticeRepository.findById(id).orElseThrow { NoticeNotFoundException() }.let { notice ->
-            val updatedNotice =
-                notice.copy(
-                    title = payload.title,
-                    url = payload.url,
-                    expiredAt = expiredAt,
-                    categoryID = payload.categoryID,
-                    language = payload.language,
-                )
-            noticeRepository.save(updatedNotice)
+            notice.title = payload.title
+            notice.url = payload.url
+            notice.expiredAt = expiredAt
+            notice.categoryID = payload.categoryID
+            notice.language = payload.language
+            noticeRepository.save(notice)
         }
     }
 
@@ -139,7 +136,7 @@ class NoticeService(
                         .filter { n ->
                             (language == null || n.language == language) && n.expiredAt.isAfter(timestamp)
                         }.toMutableList()
-                cat.copy(notice = filteredNotices)
+                NoticeCategory(id = cat.id, name = cat.name, notice = filteredNotices)
             }
     }
 }

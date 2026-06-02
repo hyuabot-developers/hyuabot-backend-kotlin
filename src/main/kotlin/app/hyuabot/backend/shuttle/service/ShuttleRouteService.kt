@@ -62,8 +62,8 @@ class ShuttleRouteService(
                 endStopID = payload.endStopID,
                 startStop = null,
                 endStop = null,
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
             ),
         )
     }

@@ -39,7 +39,7 @@ class CalendarService(
         return categoryRepository.save(
             CalendarCategory(
                 name = payload.name,
-                event = emptyList(),
+                event = mutableListOf(),
             ),
         )
     }
@@ -163,8 +163,10 @@ class CalendarService(
             .filter { cat ->
                 category == null || cat.name.contains(category, ignoreCase = true)
             }.map {
-                it.copy(
-                    event = it.event.sortedBy { event -> event.id },
+                CalendarCategory(
+                    id = it.id,
+                    name = it.name,
+                    event = it.event.sortedBy { event -> event.id }.toMutableList(),
                 )
             }
     }

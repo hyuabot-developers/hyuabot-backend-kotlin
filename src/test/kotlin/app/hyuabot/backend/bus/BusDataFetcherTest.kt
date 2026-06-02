@@ -90,7 +90,7 @@ class BusDataFetcherTest {
         companyID = companyID,
         companyName = companyName,
         companyPhone = companyPhone,
-        stop = emptyList(),
+        stop = mutableListOf(),
         startStop = createBusStop(id = startStopID, name = "Start Stop"),
         endStop = createBusStop(id = endStopID, name = "End Stop"),
     )
@@ -111,8 +111,8 @@ class BusDataFetcherTest {
         regionName = regionName,
         latitude = latitude,
         longitude = longitude,
-        busRoutes = emptyList(),
-        startBusRoutes = emptyList(),
+        busRoutes = mutableListOf(),
+        startBusRoutes = mutableListOf(),
     )
 
     private fun createBusRouteStop(
@@ -135,8 +135,8 @@ class BusDataFetcherTest {
         route = route,
         stop = stop,
         startStop = startStop,
-        realtime = emptyList(),
-        log = emptyList(),
+        realtime = mutableListOf(),
+        log = mutableListOf(),
     )
 
     private fun createBusTimetable(

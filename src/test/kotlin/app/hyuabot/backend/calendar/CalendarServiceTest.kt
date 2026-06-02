@@ -21,6 +21,7 @@ import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.whenever
 import java.time.LocalDate
 import java.time.ZonedDateTime
@@ -94,12 +95,12 @@ class CalendarServiceTest {
                 CalendarCategory(
                     id = 1,
                     name = "General",
-                    event = emptyList(),
+                    event = mutableListOf(),
                 ),
                 CalendarCategory(
                     id = 2,
                     name = "Exam",
-                    event = emptyList(),
+                    event = mutableListOf(),
                 ),
             ),
         )
@@ -113,20 +114,14 @@ class CalendarServiceTest {
     @DisplayName("학사일정 카테고리 생성")
     fun testCreateCalendarCategory() {
         val payload = CalendarCategoryRequest(name = "Holiday")
-        val newCategory =
-            CalendarCategory(
-                id = null,
-                name = payload.name,
-                event = emptyList(),
-            )
         whenever(categoryRepository.findByName(payload.name)).thenReturn(null)
         whenever(
-            categoryRepository.save(newCategory),
+            categoryRepository.save(argThat<CalendarCategory> { name == payload.name }),
         ).thenReturn(
             CalendarCategory(
                 id = 1,
                 name = payload.name,
-                event = emptyList(),
+                event = mutableListOf(),
             ),
         )
         val category = service.createCalendarCategory(payload)
@@ -142,7 +137,7 @@ class CalendarServiceTest {
             CalendarCategory(
                 id = 1,
                 name = payload.name,
-                event = emptyList(),
+                event = mutableListOf(),
             ),
         )
         assertThrows<DuplicateCategoryException> { service.createCalendarCategory(payload) }
@@ -157,7 +152,7 @@ class CalendarServiceTest {
                 CalendarCategory(
                     id = categoryId,
                     name = "General",
-                    event = emptyList(),
+                    event = mutableListOf(),
                 ),
             ),
         )
@@ -185,7 +180,7 @@ class CalendarServiceTest {
             CalendarCategory(
                 id = 1,
                 name = "General",
-                event = listOf(),
+                event = mutableListOf(),
             )
         whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
         whenever(categoryRepository.findByName(payload.name)).thenReturn(null)
@@ -210,14 +205,14 @@ class CalendarServiceTest {
             CalendarCategory(
                 id = 1,
                 name = "General",
-                event = listOf(),
+                event = mutableListOf(),
             )
         whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
         whenever(categoryRepository.findByName(payload.name)).thenReturn(
             CalendarCategory(
                 id = 1,
                 name = payload.name,
-                event = listOf(),
+                event = mutableListOf(),
             ),
         )
         whenever(categoryRepository.save(existingCategory)).thenReturn(existingCategory)
@@ -237,14 +232,14 @@ class CalendarServiceTest {
             CalendarCategory(
                 id = 1,
                 name = "General",
-                event = listOf(),
+                event = mutableListOf(),
             )
         whenever(categoryRepository.findById(1)).thenReturn(Optional.of(existingCategory))
         whenever(categoryRepository.findByName(payload.name)).thenReturn(
             CalendarCategory(
                 id = 2,
                 name = payload.name,
-                event = listOf(),
+                event = mutableListOf(),
             ),
         )
         assertThrows<DuplicateCategoryException> {
@@ -273,7 +268,7 @@ class CalendarServiceTest {
             CalendarCategory(
                 id = categoryId,
                 name = "General",
-                event = emptyList(),
+                event = mutableListOf(),
             )
         whenever(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category))
         service.deleteCalendarCategoryById(categoryId)
@@ -342,7 +337,7 @@ class CalendarServiceTest {
                 id = categoryId,
                 name = "General",
                 event =
-                    listOf(
+                    mutableListOf(
                         CalendarEvent(
                             id = 2,
                             categoryID = categoryId,
@@ -408,21 +403,21 @@ class CalendarServiceTest {
                 CalendarCategory(
                     id = payload.categoryID,
                     name = "Exam",
-                    event = emptyList(),
+                    event = mutableListOf(),
                 ),
             ),
         )
-        val newEvent =
-            CalendarEvent(
-                id = null,
-                title = payload.title,
-                description = payload.description,
-                categoryID = payload.categoryID,
-                start = LocalDate.parse(payload.start),
-                end = LocalDate.parse(payload.end),
-                category = null,
-            )
-        whenever(eventRepository.save(newEvent)).thenReturn(
+        whenever(
+            eventRepository.save(
+                argThat<CalendarEvent> {
+                    title == payload.title &&
+                        description == payload.description &&
+                        categoryID == payload.categoryID &&
+                        start == LocalDate.parse(payload.start) &&
+                        end == LocalDate.parse(payload.end)
+                },
+            ),
+        ).thenReturn(
             CalendarEvent(
                 id = 1,
                 title = payload.title,
@@ -532,7 +527,7 @@ class CalendarServiceTest {
                 CalendarCategory(
                     id = payload.categoryID,
                     name = "Exam",
-                    event = emptyList(),
+                    event = mutableListOf(),
                 ),
             ),
         )
@@ -630,7 +625,7 @@ class CalendarServiceTest {
                 CalendarCategory(
                     id = payload.categoryID,
                     name = "Exam",
-                    event = emptyList(),
+                    event = mutableListOf(),
                 ),
             ),
         )

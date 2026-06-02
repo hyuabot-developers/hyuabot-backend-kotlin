@@ -20,7 +20,7 @@ import java.time.LocalTime
     ],
 )
 @SequenceGenerator(name = "commute_shuttle_timetable_seq_seq", allocationSize = 1)
-data class CommuteShuttleTimetable(
+class CommuteShuttleTimetable(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "commute_shuttle_timetable_seq_seq")
@@ -39,4 +39,13 @@ data class CommuteShuttleTimetable(
     @ManyToOne
     @JoinColumn(name = "stop_name", referencedColumnName = "stop_name", insertable = false, updatable = false)
     val stop: CommuteShuttleStop?,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as CommuteShuttleTimetable
+        return seq != null && seq == other.seq
+    }
+
+    override fun hashCode(): Int = javaClass.hashCode()
+}

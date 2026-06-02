@@ -12,7 +12,7 @@ import java.time.ZonedDateTime
 @Entity(name = "contact_version")
 @Table(name = "phonebook_version")
 @SequenceGenerator(name = "phonebook_version_version_id_seq", allocationSize = 1)
-data class ContactVersion(
+class ContactVersion(
     @Id
     @Column(name = "version_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "phonebook_version_version_id_seq")
@@ -21,4 +21,13 @@ data class ContactVersion(
     var name: String,
     @Column(name = "created_at", columnDefinition = "timestamptz", nullable = false)
     var createdAt: ZonedDateTime,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as ContactVersion
+        return id != null && id == other.id
+    }
+
+    override fun hashCode(): Int = javaClass.hashCode()
+}

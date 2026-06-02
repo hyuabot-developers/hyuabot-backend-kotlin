@@ -30,6 +30,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.Duration
@@ -61,8 +62,8 @@ class ShuttleRouteServiceTest {
                     tag = "A",
                     startStopID = "Stop 1",
                     endStopID = "Stop 2",
-                    timetable = emptyList(),
-                    stop = emptyList(),
+                    timetable = mutableListOf(),
+                    stop = mutableListOf(),
                     startStop = null,
                     endStop = null,
                 ),
@@ -73,8 +74,8 @@ class ShuttleRouteServiceTest {
                     tag = "B",
                     startStopID = "Stop 3",
                     endStopID = "Stop 4",
-                    timetable = emptyList(),
-                    stop = emptyList(),
+                    timetable = mutableListOf(),
+                    stop = mutableListOf(),
                     startStop = null,
                     endStop = null,
                 ),
@@ -97,8 +98,8 @@ class ShuttleRouteServiceTest {
                     tag = "A",
                     startStopID = "Stop 1",
                     endStopID = "Stop 2",
-                    timetable = emptyList(),
-                    stop = emptyList(),
+                    timetable = mutableListOf(),
+                    stop = mutableListOf(),
                     startStop = null,
                     endStop = null,
                 ),
@@ -119,8 +120,8 @@ class ShuttleRouteServiceTest {
                 tag = "A",
                 startStopID = "Stop 1",
                 endStopID = "Stop 2",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -149,8 +150,8 @@ class ShuttleRouteServiceTest {
                 tag = "NR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -178,8 +179,8 @@ class ShuttleRouteServiceTest {
                 tag = "ER",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -209,8 +210,8 @@ class ShuttleRouteServiceTest {
                 tag = "ER",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -268,8 +269,8 @@ class ShuttleRouteServiceTest {
                 tag = "RTD",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -300,8 +301,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -355,8 +356,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -365,9 +366,9 @@ class ShuttleRouteServiceTest {
                 name = stopName,
                 latitude = 37.5665,
                 longitude = 126.978,
-                route = emptyList(),
-                routeToStart = emptyList(),
-                routeToEnd = emptyList(),
+                route = mutableListOf(),
+                routeToStart = mutableListOf(),
+                routeToEnd = mutableListOf(),
             )
         val newRouteStop =
             ShuttleRouteStop(
@@ -380,7 +381,16 @@ class ShuttleRouteServiceTest {
             )
         whenever(shuttleRouteRepository.findById(routeName)).thenReturn(Optional.of(existingRoute))
         whenever(shuttleStopRepository.findById(stopName)).thenReturn(Optional.of(existingStop))
-        whenever(shuttleRouteStopRepository.save(newRouteStop)).thenReturn(newRouteStop)
+        whenever(
+            shuttleRouteStopRepository.save(
+                argThat<ShuttleRouteStop> {
+                    stopName == newRouteStop.stopName &&
+                        routeName == newRouteStop.routeName &&
+                        order == newRouteStop.order &&
+                        cumulativeTime == newRouteStop.cumulativeTime
+                },
+            ),
+        ).thenReturn(newRouteStop)
 
         val result =
             shuttleRouteService.createShuttleRouteStop(
@@ -426,8 +436,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -458,8 +468,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -468,9 +478,9 @@ class ShuttleRouteServiceTest {
                 name = stopName,
                 latitude = 37.5665,
                 longitude = 126.978,
-                route = emptyList(),
-                routeToStart = emptyList(),
-                routeToEnd = emptyList(),
+                route = mutableListOf(),
+                routeToStart = mutableListOf(),
+                routeToEnd = mutableListOf(),
             )
         val existingRouteStop =
             ShuttleRouteStop(
@@ -510,8 +520,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -520,9 +530,9 @@ class ShuttleRouteServiceTest {
                 name = stopName,
                 latitude = 37.5665,
                 longitude = 126.978,
-                route = emptyList(),
-                routeToStart = emptyList(),
-                routeToEnd = emptyList(),
+                route = mutableListOf(),
+                routeToStart = mutableListOf(),
+                routeToEnd = mutableListOf(),
             )
         whenever(shuttleRouteRepository.findById(routeName)).thenReturn(Optional.of(existingRoute))
         whenever(shuttleStopRepository.findById(stopName)).thenReturn(Optional.of(existingStop))
@@ -552,8 +562,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -604,8 +614,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -633,8 +643,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -702,8 +712,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -733,8 +743,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -780,8 +790,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -830,8 +840,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -853,8 +863,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -895,8 +905,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -929,8 +939,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -963,8 +973,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -1007,8 +1017,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -1022,7 +1032,16 @@ class ShuttleRouteServiceTest {
                 route = null,
             )
         whenever(shuttleRouteRepository.findById(routeName)).thenReturn(Optional.of(existingRoute))
-        whenever(shuttleTimetableRepository.save(newTimetable)).thenReturn(newTimetable)
+        whenever(
+            shuttleTimetableRepository.save(
+                argThat<ShuttleTimetable> {
+                    periodType == newTimetable.periodType &&
+                        weekday == newTimetable.weekday &&
+                        routeName == newTimetable.routeName &&
+                        departureTime == newTimetable.departureTime
+                },
+            ),
+        ).thenReturn(newTimetable)
 
         val result =
             shuttleRouteService.createShuttleTimetable(
@@ -1064,8 +1083,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -1095,8 +1114,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -1144,8 +1163,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -1189,8 +1208,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -1215,8 +1234,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -1281,8 +1300,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -1315,8 +1334,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -1358,8 +1377,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )
@@ -1403,8 +1422,8 @@ class ShuttleRouteServiceTest {
                 tag = "TR",
                 startStopID = "StartStop",
                 endStopID = "EndStop",
-                timetable = emptyList(),
-                stop = emptyList(),
+                timetable = mutableListOf(),
+                stop = mutableListOf(),
                 startStop = null,
                 endStop = null,
             )

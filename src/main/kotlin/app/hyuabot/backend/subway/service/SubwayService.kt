@@ -53,7 +53,7 @@ class SubwayService(
             SubwayRoute(
                 id = payload.id,
                 name = payload.name,
-                station = emptyList(),
+                station = mutableListOf(),
             ),
         )
     }
@@ -96,7 +96,7 @@ class SubwayService(
         stationRepository.findById(payload.id).orElse(null)?.let {
             throw DuplicateSubwayStationException()
         }
-        nameRepository.findByName(payload.name) ?: nameRepository.save(SubwayStation(name = payload.name, emptyList()))
+        nameRepository.findByName(payload.name) ?: nameRepository.save(SubwayStation(name = payload.name, mutableListOf()))
         return stationRepository.save(
             SubwayRouteStation(
                 id = payload.id,
@@ -106,8 +106,8 @@ class SubwayService(
                 cumulativeTime = LocalDateTimeBuilder.convertStringToDuration(payload.cumulativeTime),
                 route = null,
                 stationName = null,
-                realtime = emptyList(),
-                timetable = emptyList(),
+                realtime = mutableListOf(),
+                timetable = mutableListOf(),
             ),
         )
     }
@@ -139,7 +139,7 @@ class SubwayService(
         }
         if (oldStationName != payload.name) {
             cleanUpUselessStationName(oldStationName)
-            nameRepository.findByName(payload.name) ?: nameRepository.save(SubwayStation(name = payload.name, emptyList()))
+            nameRepository.findByName(payload.name) ?: nameRepository.save(SubwayStation(name = payload.name, mutableListOf()))
         }
         return stationRepository.save(station)
     }

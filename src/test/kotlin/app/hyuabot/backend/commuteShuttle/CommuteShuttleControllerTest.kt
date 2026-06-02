@@ -59,13 +59,13 @@ class CommuteShuttleControllerTest {
                     name = "TEST_ROUTE_1",
                     descriptionKorean = "테스트 노선 1",
                     descriptionEnglish = "Test Route 1",
-                    timetable = listOf(),
+                    timetable = mutableListOf(),
                 ),
                 CommuteShuttleRoute(
                     name = "TEST_ROUTE_2",
                     descriptionKorean = "테스트 노선 2",
                     descriptionEnglish = "Test Route 2",
-                    timetable = listOf(),
+                    timetable = mutableListOf(),
                 ),
             ),
         ).whenever(service).getAllRoutes()
@@ -91,7 +91,7 @@ class CommuteShuttleControllerTest {
                 name = "TEST_ROUTE_1",
                 descriptionKorean = "테스트 노선 1",
                 descriptionEnglish = "Test Route 1",
-                timetable = listOf(),
+                timetable = mutableListOf(),
             ),
         ).whenever(service).createRoute(
             CreateShuttleRouteRequest(
@@ -184,7 +184,7 @@ class CommuteShuttleControllerTest {
                 name = "TEST_ROUTE_1",
                 descriptionKorean = "테스트 노선 1",
                 descriptionEnglish = "Test Route 1",
-                timetable = listOf(),
+                timetable = mutableListOf(),
             ),
         ).whenever(service).getRouteByName("TEST_ROUTE_1")
         mockMvc
@@ -226,7 +226,7 @@ class CommuteShuttleControllerTest {
                 name = "TEST_ROUTE_1",
                 descriptionKorean = "테스트 노선 1 - 수정됨",
                 descriptionEnglish = "Test Route 1 - Updated",
-                timetable = listOf(),
+                timetable = mutableListOf(),
             ),
         ).whenever(service).updateRoute(
             "TEST_ROUTE_1",
@@ -894,14 +894,14 @@ class CommuteShuttleControllerTest {
                     description = "테스트 정류장 1",
                     latitude = 37.123456,
                     longitude = 127.123456,
-                    timetable = emptyList(),
+                    timetable = mutableListOf(),
                 ),
                 CommuteShuttleStop(
                     name = "TEST_STOP_2",
                     description = "테스트 정류장 2",
                     latitude = 37.654321,
                     longitude = 127.654321,
-                    timetable = emptyList(),
+                    timetable = mutableListOf(),
                 ),
             ),
         ).whenever(service).getAllStops()
@@ -930,7 +930,7 @@ class CommuteShuttleControllerTest {
                 description = "테스트 정류장 1",
                 latitude = 37.123456,
                 longitude = 127.123456,
-                timetable = emptyList(),
+                timetable = mutableListOf(),
             ),
         ).whenever(service).createStop(
             CreateShuttleStopRequest(
@@ -1031,7 +1031,7 @@ class CommuteShuttleControllerTest {
                 description = "테스트 정류장 1",
                 latitude = 37.123456,
                 longitude = 127.123456,
-                timetable = emptyList(),
+                timetable = mutableListOf(),
             ),
         ).whenever(service).getStopByName("TEST_STOP_1")
         mockMvc
@@ -1075,7 +1075,7 @@ class CommuteShuttleControllerTest {
                 description = "테스트 정류장 1 - 수정됨",
                 latitude = 37.123456,
                 longitude = 127.123456,
-                timetable = emptyList(),
+                timetable = mutableListOf(),
             ),
         ).whenever(service).updateStop(
             "TEST_STOP_1",

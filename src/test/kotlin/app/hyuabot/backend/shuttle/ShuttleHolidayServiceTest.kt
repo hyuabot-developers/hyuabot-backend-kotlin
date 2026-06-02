@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.whenever
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -72,12 +73,11 @@ class ShuttleHolidayServiceTest {
             )
         whenever(
             repository.save(
-                ShuttleHoliday(
-                    seq = null,
-                    date = LocalDate.of(2024, 3, 1),
-                    calendarType = "solar",
-                    type = "Independence Movement Day",
-                ),
+                argThat<ShuttleHoliday> {
+                    date == LocalDate.of(2024, 3, 1) &&
+                        calendarType == "solar" &&
+                        type == "Independence Movement Day"
+                },
             ),
         ).thenReturn(newHoliday)
         val createdHoliday =

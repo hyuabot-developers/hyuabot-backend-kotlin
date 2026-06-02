@@ -14,27 +14,36 @@ import java.time.ZonedDateTime
 @Entity(name = "notice")
 @Table(name = "notices")
 @SequenceGenerator(name = "notices_notice_id_seq", allocationSize = 1)
-data class Notice(
+class Notice(
     @Id
     @Column(name = "notice_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "notices_notice_id_seq")
     val id: Int? = null,
     @Column(name = "title", length = 100, nullable = false)
-    val title: String,
+    var title: String,
     @Column(name = "url", length = 200, nullable = false)
-    val url: String,
+    var url: String,
     @Column(name = "expired_at", columnDefinition = "timestamptz", nullable = false)
-    val expiredAt: ZonedDateTime,
+    var expiredAt: ZonedDateTime,
     @Column(name = "category_id", columnDefinition = "integer", nullable = false)
-    val categoryID: Int,
+    var categoryID: Int,
     @Column(name = "user_id", length = 20, nullable = false)
-    val userID: String,
+    var userID: String,
     @Column(name = "language", length = 10, nullable = false)
-    val language: String,
+    var language: String,
     @ManyToOne
     @JoinColumn(name = "category_id", referencedColumnName = "category_id", insertable = false, updatable = false)
     val category: NoticeCategory?,
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "user_id", insertable = false, updatable = false)
     val user: User?,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as Notice
+        return id != null && id == other.id
+    }
+
+    override fun hashCode(): Int = javaClass.hashCode()
+}

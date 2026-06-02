@@ -33,8 +33,8 @@ class SubwayRepositoryTest {
 
     @Autowired private lateinit var timetableRepository: SubwayTimetableRepository
 
-    val stationName = (1..10).map { SubwayStation("STATION$it", emptyList()) }
-    val route = SubwayRoute(1001, "1호선", emptyList())
+    val stationName = (1..10).map { SubwayStation("STATION$it", mutableListOf()) }
+    val route = SubwayRoute(1001, "1호선", mutableListOf())
     val station =
         (1..10).map {
             SubwayRouteStation(
@@ -45,8 +45,8 @@ class SubwayRepositoryTest {
                 Duration.ofMinutes(it.toLong()),
                 route,
                 stationName[it - 1],
-                emptyList(),
-                emptyList(),
+                mutableListOf(),
+                mutableListOf(),
             )
         }
     val realtime =

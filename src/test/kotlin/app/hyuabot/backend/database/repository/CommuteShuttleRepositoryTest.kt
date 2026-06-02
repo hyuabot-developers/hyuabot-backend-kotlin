@@ -30,7 +30,7 @@ class CommuteShuttleRepositoryTest {
             name = "TEST_ROUTE_1",
             descriptionKorean = "테스트 노선 1",
             descriptionEnglish = "Test Route 1",
-            timetable = listOf(),
+            timetable = mutableListOf(),
         )
 
     val stops =
@@ -40,21 +40,21 @@ class CommuteShuttleRepositoryTest {
                 latitude = 37.7749,
                 longitude = -122.4194,
                 description = "Test Stop 1",
-                timetable = listOf(),
+                timetable = mutableListOf(),
             ),
             CommuteShuttleStop(
                 name = "TEST_STOP_2",
                 latitude = 37.7750,
                 longitude = -122.4195,
                 description = "Test Stop 2",
-                timetable = listOf(),
+                timetable = mutableListOf(),
             ),
             CommuteShuttleStop(
                 name = "TEST_STOP_3",
                 latitude = 37.7751,
                 longitude = -122.4196,
                 description = "Test Stop 3",
-                timetable = listOf(),
+                timetable = mutableListOf(),
             ),
         )
 

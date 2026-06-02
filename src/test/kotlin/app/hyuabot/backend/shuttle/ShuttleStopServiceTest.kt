@@ -36,17 +36,17 @@ class ShuttleStopServiceTest {
                     name = "Stop1",
                     latitude = 37.5665,
                     longitude = 126.978,
-                    route = emptyList(),
-                    routeToStart = emptyList(),
-                    routeToEnd = emptyList(),
+                    route = mutableListOf(),
+                    routeToStart = mutableListOf(),
+                    routeToEnd = mutableListOf(),
                 ),
                 ShuttleStop(
                     name = "Stop2",
                     latitude = 37.5670,
                     longitude = 126.979,
-                    route = emptyList(),
-                    routeToStart = emptyList(),
-                    routeToEnd = emptyList(),
+                    route = mutableListOf(),
+                    routeToStart = mutableListOf(),
+                    routeToEnd = mutableListOf(),
                 ),
             ),
         )
@@ -69,17 +69,17 @@ class ShuttleStopServiceTest {
                     name = "Stop1",
                     latitude = 37.5665,
                     longitude = 126.978,
-                    route = emptyList(),
-                    routeToStart = emptyList(),
-                    routeToEnd = emptyList(),
+                    route = mutableListOf(),
+                    routeToStart = mutableListOf(),
+                    routeToEnd = mutableListOf(),
                 ),
                 ShuttleStop(
                     name = "Stop2",
                     latitude = 37.5670,
                     longitude = 126.979,
-                    route = emptyList(),
-                    routeToStart = emptyList(),
-                    routeToEnd = emptyList(),
+                    route = mutableListOf(),
+                    routeToStart = mutableListOf(),
+                    routeToEnd = mutableListOf(),
                 ),
             ),
         )
@@ -97,9 +97,9 @@ class ShuttleStopServiceTest {
                     name = "Stop1",
                     latitude = 37.5665,
                     longitude = 126.978,
-                    route = emptyList(),
-                    routeToStart = emptyList(),
-                    routeToEnd = emptyList(),
+                    route = mutableListOf(),
+                    routeToStart = mutableListOf(),
+                    routeToEnd = mutableListOf(),
                 ),
             ),
         )
@@ -117,9 +117,9 @@ class ShuttleStopServiceTest {
                 name = stopName,
                 latitude = 37.5665,
                 longitude = 126.978,
-                route = emptyList(),
-                routeToStart = emptyList(),
-                routeToEnd = emptyList(),
+                route = mutableListOf(),
+                routeToStart = mutableListOf(),
+                routeToEnd = mutableListOf(),
             )
         whenever(shuttleStopRepository.findById(stopName)).thenReturn(Optional.of(expectedStop))
 
@@ -145,9 +145,9 @@ class ShuttleStopServiceTest {
                 name = "NewStop",
                 latitude = 37.5670,
                 longitude = 126.979,
-                route = emptyList(),
-                routeToStart = emptyList(),
-                routeToEnd = emptyList(),
+                route = mutableListOf(),
+                routeToStart = mutableListOf(),
+                routeToEnd = mutableListOf(),
             )
         whenever(shuttleStopRepository.save(newStop)).thenReturn(newStop)
         val result =
@@ -169,9 +169,9 @@ class ShuttleStopServiceTest {
                 name = "ExistingStop",
                 latitude = 37.5665,
                 longitude = 126.978,
-                route = emptyList(),
-                routeToStart = emptyList(),
-                routeToEnd = emptyList(),
+                route = mutableListOf(),
+                routeToStart = mutableListOf(),
+                routeToEnd = mutableListOf(),
             )
         whenever(shuttleStopRepository.findByName(existingStop.name)).thenReturn(existingStop)
 
@@ -194,9 +194,9 @@ class ShuttleStopServiceTest {
                 name = "ExistingStop",
                 latitude = 37.5665,
                 longitude = 126.978,
-                route = emptyList(),
-                routeToStart = emptyList(),
-                routeToEnd = emptyList(),
+                route = mutableListOf(),
+                routeToStart = mutableListOf(),
+                routeToEnd = mutableListOf(),
             )
         val updatedLatitude = 37.5670
         val updatedLongitude = 126.979
@@ -246,9 +246,9 @@ class ShuttleStopServiceTest {
                 name = stopName,
                 latitude = 37.5665,
                 longitude = 126.978,
-                route = emptyList(),
-                routeToStart = emptyList(),
-                routeToEnd = emptyList(),
+                route = mutableListOf(),
+                routeToStart = mutableListOf(),
+                routeToEnd = mutableListOf(),
             )
         whenever(shuttleStopRepository.findByName(stopName)).thenReturn(existingStop)
         shuttleStopService.deleteStopByName(stopName)

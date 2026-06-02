@@ -35,9 +35,9 @@ class ShuttleStopService(
                 name = payload.name,
                 latitude = payload.latitude,
                 longitude = payload.longitude,
-                route = emptyList(),
-                routeToStart = emptyList(),
-                routeToEnd = emptyList(),
+                route = mutableListOf(),
+                routeToStart = mutableListOf(),
+                routeToEnd = mutableListOf(),
             ),
         )
     }

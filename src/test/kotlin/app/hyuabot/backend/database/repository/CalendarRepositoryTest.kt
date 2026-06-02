@@ -37,7 +37,7 @@ class CalendarRepositoryTest {
     val category =
         CalendarCategory(
             name = "General",
-            event = listOf(),
+            event = mutableListOf(),
         )
 
     val calendarVersion =

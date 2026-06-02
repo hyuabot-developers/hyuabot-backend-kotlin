@@ -8,7 +8,7 @@ import jakarta.persistence.Table
 
 @Entity(name = "commute_shuttle_stop")
 @Table(name = "commute_shuttle_stop")
-data class CommuteShuttleStop(
+class CommuteShuttleStop(
     @Id
     @Column(name = "stop_name", length = 50, nullable = false)
     val name: String,
@@ -19,5 +19,14 @@ data class CommuteShuttleStop(
     @Column(name = "longitude", columnDefinition = "double precision", nullable = false)
     var longitude: Double,
     @OneToMany(mappedBy = "stop")
-    val timetable: List<CommuteShuttleTimetable>,
-)
+    val timetable: MutableList<CommuteShuttleTimetable>,
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as CommuteShuttleStop
+        return name == other.name
+    }
+
+    override fun hashCode(): Int = name.hashCode()
+}

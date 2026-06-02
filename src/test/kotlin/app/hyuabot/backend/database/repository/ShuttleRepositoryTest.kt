@@ -56,9 +56,9 @@ class ShuttleRepositoryTest {
 
     private val periodTypes =
         listOf(
-            ShuttlePeriodType("semester", listOf()),
-            ShuttlePeriodType("vacation_session", listOf()),
-            ShuttlePeriodType("vacation", listOf()),
+            ShuttlePeriodType("semester", mutableListOf()),
+            ShuttlePeriodType("vacation_session", mutableListOf()),
+            ShuttlePeriodType("vacation", mutableListOf()),
         )
 
     private val periods =
@@ -106,25 +106,25 @@ class ShuttleRepositoryTest {
                 "dormitory_o",
                 37.5665,
                 126.978,
-                listOf(),
-                listOf(),
-                listOf(),
+                mutableListOf(),
+                mutableListOf(),
+                mutableListOf(),
             ),
             ShuttleStop(
                 "shuttlecock_o",
                 37.5666,
                 126.979,
-                listOf(),
-                listOf(),
-                listOf(),
+                mutableListOf(),
+                mutableListOf(),
+                mutableListOf(),
             ),
             ShuttleStop(
                 "dormitory_i",
                 37.5667,
                 126.980,
-                listOf(),
-                listOf(),
-                listOf(),
+                mutableListOf(),
+                mutableListOf(),
+                mutableListOf(),
             ),
         )
     private val route =
@@ -135,8 +135,8 @@ class ShuttleRepositoryTest {
             "C",
             "dormitory_o",
             "dormitory_i",
-            listOf(),
-            listOf(),
+            mutableListOf(),
+            mutableListOf(),
             stops[0],
             stops[2],
         )

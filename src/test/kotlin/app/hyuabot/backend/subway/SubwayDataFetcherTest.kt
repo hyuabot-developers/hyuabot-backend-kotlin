@@ -41,7 +41,7 @@ class SubwayDataFetcherTest {
     ) = SubwayRoute(
         id = id,
         name = name,
-        station = emptyList(),
+        station = mutableListOf(),
     )
 
     private fun createStation(
@@ -59,8 +59,8 @@ class SubwayDataFetcherTest {
         cumulativeTime = cumulativeTime,
         route = route,
         stationName = null,
-        realtime = emptyList(),
-        timetable = emptyList(),
+        realtime = mutableListOf(),
+        timetable = mutableListOf(),
     )
 
     private fun createTimetable(

@@ -24,6 +24,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.whenever
 import java.time.LocalTime
 import java.util.Optional
@@ -52,13 +53,13 @@ class CommuteShuttleServiceTest {
                     name = "TEST_ROUTE_1",
                     descriptionKorean = "테스트 노선 1",
                     descriptionEnglish = "Test Route 1",
-                    timetable = listOf(),
+                    timetable = mutableListOf(),
                 ),
                 CommuteShuttleRoute(
                     name = "TEST_ROUTE_2",
                     descriptionKorean = "테스트 노선 2",
                     descriptionEnglish = "Test Route 2",
-                    timetable = listOf(),
+                    timetable = mutableListOf(),
                 ),
             ),
         )
@@ -76,7 +77,7 @@ class CommuteShuttleServiceTest {
                 name = "TEST_ROUTE_1",
                 descriptionKorean = "테스트 노선 1",
                 descriptionEnglish = "Test Route 1",
-                timetable = listOf(),
+                timetable = mutableListOf(),
             )
         whenever(routeRepository.findByName("TEST_ROUTE_1")).thenReturn(route)
         val foundRoute = service.getRouteByName("TEST_ROUTE_1")
@@ -100,7 +101,7 @@ class CommuteShuttleServiceTest {
                 name = "NEW_ROUTE",
                 descriptionKorean = "새로운 노선",
                 descriptionEnglish = "New Route",
-                timetable = listOf(),
+                timetable = mutableListOf(),
             )
         whenever(routeRepository.findByName("NEW_ROUTE")).thenReturn(null)
         whenever(routeRepository.save(newRoute)).thenReturn(newRoute)
@@ -125,7 +126,7 @@ class CommuteShuttleServiceTest {
                 name = "EXISTING_ROUTE",
                 descriptionKorean = "기존 노선",
                 descriptionEnglish = "Existing Route",
-                timetable = listOf(),
+                timetable = mutableListOf(),
             )
         whenever(routeRepository.findByName("EXISTING_ROUTE")).thenReturn(existingRoute)
         assertThrows<DuplicateShuttleRouteException> {
@@ -147,14 +148,14 @@ class CommuteShuttleServiceTest {
                 name = "EXISTING_ROUTE",
                 descriptionKorean = "기존 노선",
                 descriptionEnglish = "Existing Route",
-                timetable = listOf(),
+                timetable = mutableListOf(),
             )
         val updatedRoute =
             CommuteShuttleRoute(
                 name = "EXISTING_ROUTE",
                 descriptionKorean = "수정된 노선",
                 descriptionEnglish = "Updated Route",
-                timetable = listOf(),
+                timetable = mutableListOf(),
             )
         whenever(routeRepository.findById("EXISTING_ROUTE")).thenReturn(Optional.of(existingRoute))
         whenever(routeRepository.save(existingRoute)).thenReturn(updatedRoute)
@@ -194,7 +195,7 @@ class CommuteShuttleServiceTest {
                 name = "EXISTING_ROUTE",
                 descriptionKorean = "기존 노선",
                 descriptionEnglish = "Existing Route",
-                timetable = listOf(),
+                timetable = mutableListOf(),
             )
         whenever(routeRepository.findById("EXISTING_ROUTE")).thenReturn(Optional.of(existingRoute))
         whenever(timetableRepository.findByRouteName("EXISTING_ROUTE")).thenReturn(emptyList())
@@ -218,14 +219,14 @@ class CommuteShuttleServiceTest {
                     description = "정류장 1",
                     latitude = 37.123456,
                     longitude = 127.123456,
-                    timetable = listOf(),
+                    timetable = mutableListOf(),
                 ),
                 CommuteShuttleStop(
                     name = "STOP_2",
                     description = "정류장 2",
                     latitude = 37.654321,
                     longitude = 127.654321,
-                    timetable = listOf(),
+                    timetable = mutableListOf(),
                 ),
             ),
         )
@@ -244,7 +245,7 @@ class CommuteShuttleServiceTest {
                 description = "정류장 1",
                 latitude = 37.123456,
                 longitude = 127.123456,
-                timetable = listOf(),
+                timetable = mutableListOf(),
             )
         whenever(stopRepository.findByName("STOP_1")).thenReturn(stop)
         val foundStop = service.getStopByName("STOP_1")
@@ -270,7 +271,7 @@ class CommuteShuttleServiceTest {
                 description = "새로운 정류장",
                 latitude = 37.123456,
                 longitude = 127.123456,
-                timetable = listOf(),
+                timetable = mutableListOf(),
             )
         whenever(stopRepository.findByName("NEW_STOP")).thenReturn(null)
         whenever(stopRepository.save(newStop)).thenReturn(newStop)
@@ -298,7 +299,7 @@ class CommuteShuttleServiceTest {
                 description = "기존 정류장",
                 latitude = 37.123456,
                 longitude = 127.123456,
-                timetable = listOf(),
+                timetable = mutableListOf(),
             )
         whenever(stopRepository.findByName("EXISTING_STOP")).thenReturn(existingStop)
         assertThrows<DuplicateShuttleStopException> {
@@ -322,7 +323,7 @@ class CommuteShuttleServiceTest {
                 description = "기존 정류장",
                 latitude = 37.123456,
                 longitude = 127.123456,
-                timetable = listOf(),
+                timetable = mutableListOf(),
             )
         val updatedStop =
             CommuteShuttleStop(
@@ -330,7 +331,7 @@ class CommuteShuttleServiceTest {
                 description = "수정된 정류장",
                 latitude = 37.654321,
                 longitude = 127.654321,
-                timetable = listOf(),
+                timetable = mutableListOf(),
             )
         whenever(stopRepository.findById("EXISTING_STOP")).thenReturn(Optional.of(existingStop))
         whenever(stopRepository.save(existingStop)).thenReturn(updatedStop)
@@ -374,7 +375,7 @@ class CommuteShuttleServiceTest {
                 description = "기존 정류장",
                 latitude = 37.123456,
                 longitude = 127.123456,
-                timetable = listOf(),
+                timetable = mutableListOf(),
             )
         whenever(stopRepository.findById("EXISTING_STOP")).thenReturn(Optional.of(existingStop))
         whenever(timetableRepository.findByStopName("EXISTING_STOP")).thenReturn(emptyList())
@@ -491,7 +492,7 @@ class CommuteShuttleServiceTest {
                     "TEST_ROUTE",
                     "descK",
                     "descE",
-                    listOf(),
+                    mutableListOf(),
                 ),
             ),
         )
@@ -502,11 +503,20 @@ class CommuteShuttleServiceTest {
                     "desc",
                     37.0,
                     127.0,
-                    listOf(),
+                    mutableListOf(),
                 ),
             ),
         )
-        whenever(timetableRepository.save(newTimetable)).thenReturn(newTimetable)
+        whenever(
+            timetableRepository.save(
+                argThat<CommuteShuttleTimetable> {
+                    routeName == "TEST_ROUTE" &&
+                        stopName == "STOP_1" &&
+                        order == 0 &&
+                        departureTime == LocalTime.parse("16:00")
+                },
+            ),
+        ).thenReturn(newTimetable)
         val createdTimetable =
             service.createTimetable(
                 "TEST_ROUTE",
@@ -549,7 +559,7 @@ class CommuteShuttleServiceTest {
                     "TEST_ROUTE",
                     "descK",
                     "descE",
-                    listOf(),
+                    mutableListOf(),
                 ),
             ),
         )
@@ -576,7 +586,7 @@ class CommuteShuttleServiceTest {
                     "TEST_ROUTE",
                     "descK",
                     "descE",
-                    listOf(),
+                    mutableListOf(),
                 ),
             ),
         )
@@ -587,7 +597,7 @@ class CommuteShuttleServiceTest {
                     "desc",
                     37.0,
                     127.0,
-                    listOf(),
+                    mutableListOf(),
                 ),
             ),
         )
@@ -632,7 +642,7 @@ class CommuteShuttleServiceTest {
                     "TEST_ROUTE",
                     "descK",
                     "descE",
-                    listOf(),
+                    mutableListOf(),
                 ),
             ),
         )
@@ -643,7 +653,7 @@ class CommuteShuttleServiceTest {
                     "desc",
                     37.0,
                     127.0,
-                    listOf(),
+                    mutableListOf(),
                 ),
             ),
         )
@@ -730,7 +740,7 @@ class CommuteShuttleServiceTest {
                     "TEST_ROUTE",
                     "descK",
                     "descE",
-                    listOf(),
+                    mutableListOf(),
                 ),
             ),
         )
@@ -768,7 +778,7 @@ class CommuteShuttleServiceTest {
                     "TEST_ROUTE",
                     "descK",
                     "descE",
-                    listOf(),
+                    mutableListOf(),
                 ),
             ),
         )
@@ -779,7 +789,7 @@ class CommuteShuttleServiceTest {
                     "desc",
                     37.0,
                     127.0,
-                    listOf(),
+                    mutableListOf(),
                 ),
             ),
         )

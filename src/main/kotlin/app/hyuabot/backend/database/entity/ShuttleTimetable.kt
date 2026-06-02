@@ -14,7 +14,7 @@ import java.time.LocalTime
 @Entity(name = "shuttle_timetable")
 @Table(name = "shuttle_timetable")
 @SequenceGenerator(name = "shuttle_timetable_seq_seq", allocationSize = 1)
-data class ShuttleTimetable(
+class ShuttleTimetable(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "shuttle_timetable_seq_seq")
@@ -24,10 +24,19 @@ data class ShuttleTimetable(
     @Column(name = "weekday", nullable = false)
     var weekday: Boolean,
     @Column(name = "route_name", length = 20, nullable = false)
-    val routeName: String,
+    var routeName: String,
     @Column(name = "departure_time", columnDefinition = "time", nullable = false)
     var departureTime: LocalTime,
     @ManyToOne
     @JoinColumn(name = "route_name", referencedColumnName = "route_name", insertable = false, updatable = false)
     val route: ShuttleRoute?,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as ShuttleTimetable
+        return seq != null && seq == other.seq
+    }
+
+    override fun hashCode(): Int = javaClass.hashCode()
+}

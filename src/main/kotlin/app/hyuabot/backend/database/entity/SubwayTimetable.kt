@@ -25,7 +25,7 @@ import java.time.LocalTime
     ],
 )
 @SequenceGenerator(name = "subway_timetable_seq_seq", allocationSize = 1)
-data class SubwayTimetable(
+class SubwayTimetable(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "subway_timetable_seq_seq")
@@ -51,4 +51,13 @@ data class SubwayTimetable(
     @OneToOne
     @JoinColumn(name = "terminal_station_id", referencedColumnName = "station_id", insertable = false, updatable = false)
     val terminalStation: SubwayRouteStation?,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as SubwayTimetable
+        return seq != null && seq == other.seq
+    }
+
+    override fun hashCode(): Int = javaClass.hashCode()
+}

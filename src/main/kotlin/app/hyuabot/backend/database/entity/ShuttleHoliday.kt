@@ -18,7 +18,7 @@ import java.time.LocalDate
     ],
 )
 @SequenceGenerator(name = "shuttle_holiday_seq_seq", allocationSize = 1)
-data class ShuttleHoliday(
+class ShuttleHoliday(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "shuttle_holiday_seq_seq")
@@ -29,4 +29,13 @@ data class ShuttleHoliday(
     var type: String,
     @Column(name = "calendar_type", length = 15, nullable = false)
     var calendarType: String,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as ShuttleHoliday
+        return seq != null && seq == other.seq
+    }
+
+    override fun hashCode(): Int = javaClass.hashCode()
+}

@@ -13,7 +13,7 @@ import jakarta.persistence.Table
 @Entity(name = "contact")
 @Table(name = "phonebook")
 @SequenceGenerator(name = "phonebook_phonebook_id_seq", allocationSize = 1)
-data class Contact(
+class Contact(
     @Id
     @Column(name = "phonebook_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "phonebook_phonebook_id_seq")
@@ -29,4 +29,13 @@ data class Contact(
     @ManyToOne
     @JoinColumn(name = "category_id", referencedColumnName = "category_id", insertable = false, updatable = false)
     val category: ContactCategory?,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as Contact
+        return id != null && id == other.id
+    }
+
+    override fun hashCode(): Int = javaClass.hashCode()
+}

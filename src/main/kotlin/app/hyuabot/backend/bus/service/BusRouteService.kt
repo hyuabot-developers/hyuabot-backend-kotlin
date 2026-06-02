@@ -64,7 +64,7 @@ class BusRouteService(
                 companyID = payload.companyID,
                 companyName = payload.companyName,
                 companyPhone = payload.companyPhone,
-                stop = emptyList(),
+                stop = mutableListOf(),
                 startStop = startStop,
                 endStop = endStop,
             ),
@@ -88,23 +88,20 @@ class BusRouteService(
         }
         stopRepository.findById(payload.startStopID).orElseThrow { throw BusStartStopNotFoundException() }
         stopRepository.findById(payload.endStopID).orElseThrow { throw BusEndStopNotFoundException() }
-        val updatedBusRoute =
-            busRoute.copy(
-                name = payload.name,
-                typeCode = payload.typeCode,
-                typeName = payload.typeName,
-                startStopID = payload.startStopID,
-                endStopID = payload.endStopID,
-                upFirstTime = LocalTime.parse(payload.upFirstTime),
-                upLastTime = LocalTime.parse(payload.upLastTime),
-                downFirstTime = LocalTime.parse(payload.downFirstTime),
-                downLastTime = LocalTime.parse(payload.downLastTime),
-                districtCode = payload.districtCode,
-                companyID = payload.companyID,
-                companyName = payload.companyName,
-                companyPhone = payload.companyPhone,
-            )
-        return routeRepository.save(updatedBusRoute)
+        busRoute.name = payload.name
+        busRoute.typeCode = payload.typeCode
+        busRoute.typeName = payload.typeName
+        busRoute.startStopID = payload.startStopID
+        busRoute.endStopID = payload.endStopID
+        busRoute.upFirstTime = LocalTime.parse(payload.upFirstTime)
+        busRoute.upLastTime = LocalTime.parse(payload.upLastTime)
+        busRoute.downFirstTime = LocalTime.parse(payload.downFirstTime)
+        busRoute.downLastTime = LocalTime.parse(payload.downLastTime)
+        busRoute.districtCode = payload.districtCode
+        busRoute.companyID = payload.companyID
+        busRoute.companyName = payload.companyName
+        busRoute.companyPhone = payload.companyPhone
+        return routeRepository.save(busRoute)
     }
 
     fun deleteBusRouteById(id: Int) {
@@ -151,8 +148,8 @@ class BusRouteService(
                 route = null,
                 stop = null,
                 startStop = null,
-                log = emptyList(),
-                realtime = emptyList(),
+                log = mutableListOf(),
+                realtime = mutableListOf(),
             ),
         )
     }
@@ -170,14 +167,11 @@ class BusRouteService(
         routeStopRepository.findByRouteIDAndOrderAndSeqNot(routeID, payload.order, seq)?.let {
             throw DuplicateBusRouteStopException()
         }
-        return routeStopRepository.save(
-            stop.copy(
-                stopID = payload.stopID,
-                order = payload.order,
-                startStopID = payload.startStopID,
-                minuteFromStart = payload.travelTime,
-            ),
-        )
+        stop.stopID = payload.stopID
+        stop.order = payload.order
+        stop.startStopID = payload.startStopID
+        stop.minuteFromStart = payload.travelTime
+        return routeStopRepository.save(stop)
     }
 
     fun deleteBusRouteStopBySeq(

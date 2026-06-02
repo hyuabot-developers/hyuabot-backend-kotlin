@@ -37,7 +37,7 @@ class BuildingDataFetcherTest {
             campusID = campusID,
             latitude = latitude,
             longitude = longitude,
-            room = rooms,
+            room = rooms.toMutableList(),
         )
 
     private fun createRoom(

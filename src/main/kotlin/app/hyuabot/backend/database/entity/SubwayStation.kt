@@ -8,10 +8,19 @@ import jakarta.persistence.Table
 
 @Entity(name = "subway_station")
 @Table(name = "subway_station")
-data class SubwayStation(
+class SubwayStation(
     @Id
     @Column(name = "station_name", length = 30, nullable = false)
     val name: String,
     @OneToMany(mappedBy = "stationName")
-    val subwayLine: List<SubwayRouteStation>,
-)
+    val subwayLine: MutableList<SubwayRouteStation>,
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as SubwayStation
+        return name == other.name
+    }
+
+    override fun hashCode(): Int = name.hashCode()
+}

@@ -10,7 +10,7 @@ import jakarta.persistence.Table
 
 @Entity(name = "cafeteria")
 @Table(name = "restaurant")
-data class Cafeteria(
+class Cafeteria(
     @Id
     @Column(name = "restaurant_id", columnDefinition = "integer", nullable = false)
     val id: Int,
@@ -32,5 +32,14 @@ data class Cafeteria(
     @JoinColumn(name = "campus_id", referencedColumnName = "campus_id", insertable = false, updatable = false)
     val campus: Campus?,
     @OneToMany(mappedBy = "cafeteria")
-    val menu: List<Menu> = emptyList(),
-)
+    val menu: MutableList<Menu> = mutableListOf(),
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as Cafeteria
+        return id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+}

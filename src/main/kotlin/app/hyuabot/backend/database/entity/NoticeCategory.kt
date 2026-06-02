@@ -13,7 +13,7 @@ import jakarta.persistence.Table
 @Entity(name = "notice_category")
 @Table(name = "notice_category")
 @SequenceGenerator(name = "notice_category_category_id_seq", allocationSize = 1)
-data class NoticeCategory(
+class NoticeCategory(
     @Id
     @Column(name = "category_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "notice_category_category_id_seq")
@@ -22,4 +22,13 @@ data class NoticeCategory(
     var name: String,
     @OneToMany(mappedBy = "category", fetch = FetchType.EAGER)
     val notice: MutableList<Notice>,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as NoticeCategory
+        return id != null && id == other.id
+    }
+
+    override fun hashCode(): Int = javaClass.hashCode()
+}

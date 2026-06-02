@@ -46,6 +46,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.spy
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -100,8 +101,8 @@ class BusServiceTest {
                 longitude = 127.074569,
                 mobileNumber = "00000",
                 regionName = "경기",
-                busRoutes = emptyList(),
-                startBusRoutes = emptyList(),
+                busRoutes = mutableListOf(),
+                startBusRoutes = mutableListOf(),
             )
         val TEST_STOP_2 =
             BusStop(
@@ -112,8 +113,8 @@ class BusServiceTest {
                 longitude = 127.050743,
                 mobileNumber = "00000",
                 regionName = "경기",
-                busRoutes = emptyList(),
-                startBusRoutes = emptyList(),
+                busRoutes = mutableListOf(),
+                startBusRoutes = mutableListOf(),
             )
         val TEST_ROUTE_1 =
             BusRoute(
@@ -131,7 +132,7 @@ class BusServiceTest {
                 companyID = 4100700,
                 companyName = "경원여객",
                 companyPhone = "031-492-2260",
-                stop = emptyList(),
+                stop = mutableListOf(),
                 startStop = TEST_STOP_1,
                 endStop = TEST_STOP_2,
             )
@@ -151,7 +152,7 @@ class BusServiceTest {
                 companyID = 4100700,
                 companyName = "경원여객",
                 companyPhone = "031-492-2260",
-                stop = emptyList(),
+                stop = mutableListOf(),
                 startStop = TEST_STOP_1,
                 endStop = TEST_STOP_2,
             )
@@ -166,8 +167,8 @@ class BusServiceTest {
                 startStopID = TEST_STOP_1.id,
                 minuteFromStart = 0,
                 startStop = TEST_STOP_1,
-                log = emptyList(),
-                realtime = emptyList(),
+                log = mutableListOf(),
+                realtime = mutableListOf(),
             )
         val TEST_ROUTE_STOP_2 =
             BusRouteStop(
@@ -180,8 +181,8 @@ class BusServiceTest {
                 startStopID = TEST_STOP_1.id,
                 minuteFromStart = 10,
                 startStop = TEST_STOP_1,
-                log = emptyList(),
-                realtime = emptyList(),
+                log = mutableListOf(),
+                realtime = mutableListOf(),
             )
     }
 
@@ -235,7 +236,7 @@ class BusServiceTest {
                     companyID = 4100700,
                     companyName = "경원여객",
                     companyPhone = "031-492-2260",
-                    stop = emptyList(),
+                    stop = mutableListOf(),
                     startStop = TEST_STOP_1,
                     endStop = TEST_STOP_2,
                 ),
@@ -256,7 +257,7 @@ class BusServiceTest {
                 companyID = 4100700,
                 companyName = "경원여객",
                 companyPhone = "031-492-2260",
-                stop = emptyList(),
+                stop = mutableListOf(),
                 startStop = TEST_STOP_1,
                 endStop = TEST_STOP_2,
             ),
@@ -492,7 +493,26 @@ class BusServiceTest {
                 companyName = "경원여객",
                 companyPhone = "031-492-2260",
             )
-        val updatedRoute = TEST_ROUTE_1.copy(name = "10-1-1")
+        val updatedRoute =
+            BusRoute(
+                id = TEST_ROUTE_1.id,
+                name = "10-1-1",
+                typeCode = TEST_ROUTE_1.typeCode,
+                typeName = TEST_ROUTE_1.typeName,
+                startStopID = TEST_ROUTE_1.startStopID,
+                endStopID = TEST_ROUTE_1.endStopID,
+                upFirstTime = TEST_ROUTE_1.upFirstTime,
+                upLastTime = TEST_ROUTE_1.upLastTime,
+                downFirstTime = TEST_ROUTE_1.downFirstTime,
+                downLastTime = TEST_ROUTE_1.downLastTime,
+                districtCode = TEST_ROUTE_1.districtCode,
+                companyID = TEST_ROUTE_1.companyID,
+                companyName = TEST_ROUTE_1.companyName,
+                companyPhone = TEST_ROUTE_1.companyPhone,
+                stop = TEST_ROUTE_1.stop,
+                startStop = TEST_ROUTE_1.startStop,
+                endStop = TEST_ROUTE_1.endStop,
+            )
         whenever(routeRepository.findById(216000068)).thenReturn(Optional.of(TEST_ROUTE_1))
         whenever(stopRepository.findById(216000358)).thenReturn(Optional.of(TEST_STOP_1))
         whenever(stopRepository.findById(216000138)).thenReturn(Optional.of(TEST_STOP_2))
@@ -702,8 +722,24 @@ class BusServiceTest {
     fun testGetBusStopsByRouteId() {
         whenever(routeRepository.findById(216000068)).thenReturn(
             Optional.of(
-                TEST_ROUTE_1.copy(
-                    stop = listOf(TEST_ROUTE_STOP_1, TEST_ROUTE_STOP_2),
+                BusRoute(
+                    id = TEST_ROUTE_1.id,
+                    name = TEST_ROUTE_1.name,
+                    typeCode = TEST_ROUTE_1.typeCode,
+                    typeName = TEST_ROUTE_1.typeName,
+                    startStopID = TEST_ROUTE_1.startStopID,
+                    endStopID = TEST_ROUTE_1.endStopID,
+                    upFirstTime = TEST_ROUTE_1.upFirstTime,
+                    upLastTime = TEST_ROUTE_1.upLastTime,
+                    downFirstTime = TEST_ROUTE_1.downFirstTime,
+                    downLastTime = TEST_ROUTE_1.downLastTime,
+                    districtCode = TEST_ROUTE_1.districtCode,
+                    companyID = TEST_ROUTE_1.companyID,
+                    companyName = TEST_ROUTE_1.companyName,
+                    companyPhone = TEST_ROUTE_1.companyPhone,
+                    stop = mutableListOf(TEST_ROUTE_STOP_1, TEST_ROUTE_STOP_2),
+                    startStop = TEST_ROUTE_1.startStop,
+                    endStop = TEST_ROUTE_1.endStop,
                 ),
             ),
         )
@@ -778,27 +814,21 @@ class BusServiceTest {
                     longitude = 127.051000,
                     mobileNumber = "00000",
                     regionName = "경기",
-                    busRoutes = emptyList(),
-                    startBusRoutes = emptyList(),
+                    busRoutes = mutableListOf(),
+                    startBusRoutes = mutableListOf(),
                 ),
             ),
         )
         whenever(routeStopRepository.findByRouteIDAndOrder(216000068, 3)).thenReturn(null)
         whenever(
             routeStopRepository.save(
-                BusRouteStop(
-                    seq = null,
-                    routeID = 216000068,
-                    stopID = 216000139,
-                    startStopID = 216000138,
-                    order = 3,
-                    minuteFromStart = 20,
-                    route = null,
-                    stop = null,
-                    startStop = null,
-                    log = emptyList(),
-                    realtime = emptyList(),
-                ),
+                argThat<BusRouteStop> {
+                    routeID == 216000068 &&
+                        stopID == 216000139 &&
+                        startStopID == 216000138 &&
+                        order == 3 &&
+                        minuteFromStart == 20
+                },
             ),
         ).thenReturn(
             BusRouteStop(
@@ -811,8 +841,8 @@ class BusServiceTest {
                 route = null,
                 stop = null,
                 startStop = null,
-                log = emptyList(),
-                realtime = emptyList(),
+                log = mutableListOf(),
+                realtime = mutableListOf(),
             ),
         )
         val result =
@@ -880,8 +910,8 @@ class BusServiceTest {
                     longitude = 127.051000,
                     mobileNumber = "00000",
                     regionName = "경기",
-                    busRoutes = emptyList(),
-                    startBusRoutes = emptyList(),
+                    busRoutes = mutableListOf(),
+                    startBusRoutes = mutableListOf(),
                 ),
             ),
         )
@@ -914,8 +944,8 @@ class BusServiceTest {
                     longitude = 127.051000,
                     mobileNumber = "00000",
                     regionName = "경기",
-                    busRoutes = emptyList(),
-                    startBusRoutes = emptyList(),
+                    busRoutes = mutableListOf(),
+                    startBusRoutes = mutableListOf(),
                 ),
             ),
         )
@@ -936,7 +966,20 @@ class BusServiceTest {
     @Test
     @DisplayName("버스 노선 - 정류장 수정")
     fun testUpdateBusStopInRoute() {
-        val updatedRouteStop = TEST_ROUTE_STOP_2.copy(order = 3, minuteFromStart = 15)
+        val updatedRouteStop =
+            BusRouteStop(
+                seq = TEST_ROUTE_STOP_2.seq,
+                routeID = TEST_ROUTE_STOP_2.routeID,
+                stopID = TEST_ROUTE_STOP_2.stopID,
+                order = 3,
+                startStopID = TEST_ROUTE_STOP_2.startStopID,
+                minuteFromStart = 15,
+                route = TEST_ROUTE_STOP_2.route,
+                stop = TEST_ROUTE_STOP_2.stop,
+                startStop = TEST_ROUTE_STOP_2.startStop,
+                log = TEST_ROUTE_STOP_2.log,
+                realtime = TEST_ROUTE_STOP_2.realtime,
+            )
         whenever(routeRepository.findById(216000068)).thenReturn(Optional.of(TEST_ROUTE_1))
         whenever(routeStopRepository.findByRouteIDAndSeq(216000068, 2)).thenReturn(TEST_ROUTE_STOP_2)
         whenever(routeStopRepository.findByRouteIDAndOrderAndSeqNot(216000068, 3, 2)).thenReturn(null)
@@ -944,7 +987,19 @@ class BusServiceTest {
         whenever(stopRepository.findById(216000358)).thenReturn(Optional.of(TEST_STOP_1))
         whenever(
             routeStopRepository.save(
-                TEST_ROUTE_STOP_2.copy(order = 3, minuteFromStart = 15),
+                BusRouteStop(
+                    seq = TEST_ROUTE_STOP_2.seq,
+                    routeID = TEST_ROUTE_STOP_2.routeID,
+                    stopID = TEST_ROUTE_STOP_2.stopID,
+                    order = 3,
+                    startStopID = TEST_ROUTE_STOP_2.startStopID,
+                    minuteFromStart = 15,
+                    route = TEST_ROUTE_STOP_2.route,
+                    stop = TEST_ROUTE_STOP_2.stop,
+                    startStop = TEST_ROUTE_STOP_2.startStop,
+                    log = TEST_ROUTE_STOP_2.log,
+                    realtime = TEST_ROUTE_STOP_2.realtime,
+                ),
             ),
         ).thenReturn(updatedRouteStop)
         val result =
@@ -1361,8 +1416,8 @@ class BusServiceTest {
                     longitude = 127.051000,
                     mobileNumber = "00000",
                     regionName = "경기",
-                    busRoutes = emptyList(),
-                    startBusRoutes = emptyList(),
+                    busRoutes = mutableListOf(),
+                    startBusRoutes = mutableListOf(),
                 ),
             ),
         ).thenReturn(
@@ -1374,8 +1429,8 @@ class BusServiceTest {
                 longitude = 127.051000,
                 mobileNumber = "00000",
                 regionName = "경기",
-                busRoutes = emptyList(),
-                startBusRoutes = emptyList(),
+                busRoutes = mutableListOf(),
+                startBusRoutes = mutableListOf(),
             ),
         )
         val result = stopService.createBusStop(payload)
@@ -1432,24 +1487,30 @@ class BusServiceTest {
                 regionName = "경기",
             )
         val updatedStop =
-            TEST_STOP_2.copy(
+            BusStop(
+                id = TEST_STOP_2.id,
                 name = "수정된정류장",
                 districtCode = 2,
-                latitude = 37.785000,
-                longitude = 127.051000,
                 mobileNumber = "00000",
                 regionName = "경기",
+                latitude = 37.785000,
+                longitude = 127.051000,
+                busRoutes = TEST_STOP_2.busRoutes,
+                startBusRoutes = TEST_STOP_2.startBusRoutes,
             )
         whenever(stopRepository.findById(216000138)).thenReturn(Optional.of(TEST_STOP_2))
         whenever(
             stopRepository.save(
-                TEST_STOP_2.copy(
+                BusStop(
+                    id = TEST_STOP_2.id,
                     name = "수정된정류장",
                     districtCode = 2,
-                    latitude = 37.785000,
-                    longitude = 127.051000,
                     mobileNumber = "00000",
                     regionName = "경기",
+                    latitude = 37.785000,
+                    longitude = 127.051000,
+                    busRoutes = TEST_STOP_2.busRoutes,
+                    startBusRoutes = TEST_STOP_2.startBusRoutes,
                 ),
             ),
         ).thenReturn(updatedStop)
@@ -2364,13 +2425,12 @@ class BusServiceTest {
         whenever(stopRepository.findById(216000358)).thenReturn(Optional.of(TEST_STOP_1))
         whenever(
             timetableRepository.save(
-                BusTimetable(
-                    seq = null,
-                    routeID = 216000068,
-                    startStopID = 216000358,
-                    weekday = "weekdays",
-                    departureTime = LocalTime.parse("07:00:00"),
-                ),
+                argThat<BusTimetable> {
+                    routeID == 216000068 &&
+                        startStopID == 216000358 &&
+                        weekday == "weekdays" &&
+                        departureTime == LocalTime.parse("07:00:00")
+                },
             ),
         ).thenReturn(
             BusTimetable(

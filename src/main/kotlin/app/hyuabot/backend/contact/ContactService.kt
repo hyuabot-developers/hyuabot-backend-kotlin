@@ -170,7 +170,9 @@ class ContactService(
             .filter { cat ->
                 category == null || cat.name.contains(category, ignoreCase = true)
             }.map {
-                it.copy(
+                ContactCategory(
+                    id = it.id,
+                    name = it.name,
                     contact =
                         it.contact
                             .filter { contact ->

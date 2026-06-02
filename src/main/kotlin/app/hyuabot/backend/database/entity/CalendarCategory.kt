@@ -12,7 +12,7 @@ import jakarta.persistence.Table
 @Entity(name = "calendar_category")
 @Table(name = "academic_calendar_category")
 @SequenceGenerator(name = "academic_calendar_category_category_id_seq", allocationSize = 1)
-data class CalendarCategory(
+class CalendarCategory(
     @Id
     @Column(name = "category_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "academic_calendar_category_category_id_seq")
@@ -20,5 +20,14 @@ data class CalendarCategory(
     @Column(name = "category_name", length = 30, nullable = false)
     var name: String,
     @OneToMany(mappedBy = "category")
-    val event: List<CalendarEvent>,
-)
+    val event: MutableList<CalendarEvent>,
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        other as CalendarCategory
+        return id != null && id == other.id
+    }
+
+    override fun hashCode(): Int = javaClass.hashCode()
+}
