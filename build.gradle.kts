@@ -33,6 +33,7 @@ repositories {
 extra["netflixDgsVersion"] = "11.1.0"
 
 dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-graphql")
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
@@ -64,7 +65,7 @@ dependencies {
     // jwt
     implementation("io.jsonwebtoken:jjwt-api:0.13.0")
     // Swagger
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
     // Redis
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.13.0")

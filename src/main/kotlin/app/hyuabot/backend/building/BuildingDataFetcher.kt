@@ -7,12 +7,14 @@ import app.hyuabot.backend.codegen.types.RoomInput
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
+import org.springframework.transaction.annotation.Transactional
 
 @DgsComponent
 class BuildingDataFetcher(
     private val buildingService: BuildingService,
 ) {
     @DgsQuery
+    @Transactional(readOnly = true)
     fun building(
         @InputArgument buildingInput: BuildingInput?,
         @InputArgument roomInput: RoomInput?,

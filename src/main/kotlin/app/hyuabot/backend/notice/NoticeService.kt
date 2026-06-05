@@ -12,6 +12,7 @@ import app.hyuabot.backend.notice.exception.NoticeCategoryNotFoundException
 import app.hyuabot.backend.notice.exception.NoticeNotFoundException
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 
@@ -118,6 +119,7 @@ class NoticeService(
         }
     }
 
+    @Transactional(readOnly = true)
     fun fetchNotices(
         category: String?,
         language: String?,
