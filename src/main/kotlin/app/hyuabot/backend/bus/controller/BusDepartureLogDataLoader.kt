@@ -12,5 +12,5 @@ class BusDepartureLogDataLoader(
     private val routeService: BusRouteService,
 ) : MappedBatchLoader<BusDepartureLogKey, List<BusDepartureLog>> {
     override fun load(keys: Set<BusDepartureLogKey>): CompletableFuture<Map<BusDepartureLogKey, List<BusDepartureLog>>> =
-        CompletableFuture.supplyAsync { routeService.getBusDepartureLogBatch(keys) }
+        CompletableFuture.completedFuture(routeService.getBusDepartureLogBatch(keys))
 }

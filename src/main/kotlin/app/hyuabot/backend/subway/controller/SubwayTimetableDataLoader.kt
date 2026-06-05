@@ -12,7 +12,5 @@ class SubwayTimetableDataLoader(
     private val subwayService: SubwayService,
 ) : MappedBatchLoader<SubwayTimetableKey, List<SubwayTimetable>> {
     override fun load(keys: Set<SubwayTimetableKey>): CompletableFuture<Map<SubwayTimetableKey, List<SubwayTimetable>>> =
-        CompletableFuture.supplyAsync {
-            subwayService.getTimetable(keys)
-        }
+        CompletableFuture.completedFuture(subwayService.getTimetable(keys))
 }

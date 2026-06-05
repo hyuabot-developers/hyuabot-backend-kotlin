@@ -13,7 +13,5 @@ class ShuttleTimetableDataLoader(
     private val timetableService: ShuttleTimetableService,
 ) : MappedBatchLoader<ShuttleTimetableKey, ShuttleTimetableResult> {
     override fun load(keys: Set<ShuttleTimetableKey>): CompletionStage<Map<ShuttleTimetableKey, ShuttleTimetableResult>> =
-        CompletableFuture.supplyAsync {
-            timetableService.getShuttleTimetableBatch(keys)
-        }
+        CompletableFuture.completedFuture(timetableService.getShuttleTimetableBatch(keys))
 }
