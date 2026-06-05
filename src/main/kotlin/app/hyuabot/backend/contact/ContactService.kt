@@ -17,6 +17,7 @@ import app.hyuabot.backend.database.repository.ContactRepository
 import app.hyuabot.backend.database.repository.ContactVersionRepository
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
@@ -65,6 +66,7 @@ class ContactService(
     fun getContactCategoryById(id: Int): ContactCategory =
         categoryRepository.findById(id).orElseThrow { ContactCategoryNotFoundException() }
 
+    @Transactional
     fun deleteContactCategoryById(id: Int) {
         categoryRepository.findById(id).orElseThrow { ContactCategoryNotFoundException() }.let { category ->
             // 해당 카테고리에 속한 연락처도 모두 삭제
@@ -78,6 +80,7 @@ class ContactService(
 
     fun getContactByCampusId(id: Int): List<Contact> = contactRepository.findByCampusID(id).sortedBy { it.id }
 
+    @Transactional(readOnly = true)
     fun getContactByCategoryId(id: Int): List<Contact> {
         categoryRepository.findById(id).orElseThrow { ContactCategoryNotFoundException() }.let { category ->
             return category.contact.sortedBy { it.id }

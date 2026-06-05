@@ -22,6 +22,7 @@ import app.hyuabot.backend.database.repository.BusRouteStopRepository
 import app.hyuabot.backend.database.repository.BusStopRepository
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -104,12 +105,14 @@ class BusRouteService(
         return routeRepository.save(busRoute)
     }
 
+    @Transactional
     fun deleteBusRouteById(id: Int) {
         val busRoute = routeRepository.findById(id).orElseThrow { throw BusRouteNotFoundException() }
         routeStopRepository.deleteAll(busRoute.stop)
         routeRepository.delete(busRoute)
     }
 
+    @Transactional(readOnly = true)
     fun getBusStopListByRouteID(routeID: Int) =
         routeRepository
             .findById(routeID)

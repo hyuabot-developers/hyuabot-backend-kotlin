@@ -31,6 +31,7 @@ import app.hyuabot.backend.subway.exception.SubwayTerminalStationNotFoundExcepti
 import app.hyuabot.backend.subway.exception.SubwayTimetableNotFoundException
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalTime
 import java.time.ZoneId
 import kotlin.collections.emptyList
@@ -71,6 +72,7 @@ class SubwayService(
         }
     }
 
+    @Transactional
     fun deleteSubwayRoute(id: Int) {
         val route = routeRepository.findById(id).orElseThrow { SubwayRouteNotFoundException() }
         timetableRepository.deleteAll(route.station.flatMap { it.timetable ?: emptyList() })
@@ -122,6 +124,7 @@ class SubwayService(
         }
     }
 
+    @Transactional
     fun updateStation(
         id: String,
         payload: UpdateSubwayStationRequest,
@@ -144,6 +147,7 @@ class SubwayService(
         return stationRepository.save(station)
     }
 
+    @Transactional
     fun deleteStation(id: String) {
         val station = stationRepository.findById(id).orElseThrow { SubwayStationNotFoundException() }
         realtimeRepository.deleteAll(station.realtime ?: emptyList())
