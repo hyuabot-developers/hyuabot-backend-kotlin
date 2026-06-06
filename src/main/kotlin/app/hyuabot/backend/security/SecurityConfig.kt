@@ -48,6 +48,7 @@ class SecurityConfig(
                         "/error",
                         "/actuator/health",
                         "/actuator/health/**",
+                        "/actuator/prometheus",
                     ).permitAll()
                     .anyRequest()
                     .authenticated()
