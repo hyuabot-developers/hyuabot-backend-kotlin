@@ -3012,4 +3012,101 @@ class SubwayServiceTest {
 
         assertEquals(0, result[0].entries.size)
     }
+
+    @Test
+    @DisplayName("지하철 역 DTO 조회 (캐시용) - 정상")
+    fun testGetStationViews() {
+        whenever(stationRepository.findByIdIn(listOf("K449"))).thenReturn(
+            listOf(
+                SubwayRouteStation(
+                    id = "K449",
+                    routeID = 1004,
+                    name = "한대앞",
+                    order = 49,
+                    cumulativeTime = Duration.ofMinutes(18),
+                    route = SubwayRoute(id = 1004, name = "4호선", station = mutableListOf()),
+                    stationName = null,
+                    realtime = null,
+                    timetable = null,
+                ),
+            ),
+        )
+        val result = service.getStationViews(listOf("K449"))
+        assertEquals(1, result.size)
+        assertEquals("K449", result[0].stationID)
+        assertEquals("한대앞", result[0].name)
+        assertEquals(49, result[0].order)
+        assertEquals(18, result[0].minutes)
+        assertEquals(1004, result[0].route.seq)
+        assertEquals("4호선", result[0].route.name)
+        assertEquals(0, result[0].realtime.size)
+        assertEquals(0, result[0].timetable.size)
+        assertEquals(0, result[0].arrival.size)
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 DTO 조회 (캐시용) - 정상")
+    fun testGetTimetableView() {
+        whenever(
+            timetableRepository.findByStationIdInAndHeadingInAndWeekdayIn(
+                stationIDList = listOf("K449"),
+                directions = listOf("up"),
+                weekdayList = listOf("weekdays"),
+            ),
+        ).thenReturn(
+            listOf(
+                SubwayTimetable(
+                    seq = 1,
+                    stationID = "K449",
+                    startStationID = "K456",
+                    terminalStationID = "K409",
+                    departureTime = LocalTime.parse("09:00"),
+                    weekday = "weekdays",
+                    heading = "up",
+                    station = null,
+                    startStation =
+                        SubwayRouteStation(
+                            id = "K456",
+                            routeID = 1004,
+                            name = "오이도",
+                            order = 48,
+                            cumulativeTime = Duration.ofMinutes(0),
+                            route = null,
+                            stationName = null,
+                            realtime = null,
+                            timetable = null,
+                        ),
+                    terminalStation =
+                        SubwayRouteStation(
+                            id = "K409",
+                            routeID = 1004,
+                            name = "당고개",
+                            order = 1,
+                            cumulativeTime = Duration.ofMinutes(0),
+                            route = null,
+                            stationName = null,
+                            realtime = null,
+                            timetable = null,
+                        ),
+                ),
+            ),
+        )
+        val result = service.getTimetableView("K449", listOf("up"), listOf("weekdays"))
+        assertEquals(1, result.size)
+        assertEquals(1, result[0].seq)
+        assertEquals(LocalTime.parse("09:00"), result[0].time)
+        assertEquals("weekdays", result[0].weekday)
+        assertEquals("up", result[0].direction)
+        assertEquals("K456", result[0].origin.stationID)
+        assertEquals("오이도", result[0].origin.name)
+        assertEquals("K409", result[0].terminal.stationID)
+        assertEquals("당고개", result[0].terminal.name)
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 DTO 조회 (캐시용) - 행선/요일 비어있으면 빈 목록")
+    fun testGetTimetableViewEmptyFilters() {
+        assertEquals(0, service.getTimetableView("K449", emptyList(), listOf("weekdays")).size)
+        assertEquals(0, service.getTimetableView("K449", listOf("up"), emptyList()).size)
+    }
 }

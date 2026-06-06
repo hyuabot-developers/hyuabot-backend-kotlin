@@ -335,4 +335,22 @@ class MenuServiceTest {
         // Call the service method and expect an exception
         assertThrows<MenuNotFoundException> { menuService.deleteMenuById(1, 1) }
     }
+
+    @Test
+    @DisplayName("학식 메뉴 DTO 조회 (날짜별 캐시용) 테스트")
+    fun getMenuViewByDateTest() {
+        val date = LocalDate.of(2025, 8, 10)
+        whenever(menuRepository.findByRestaurantIDAndDate(1, date)).thenReturn(
+            listOf(
+                Menu(seq = 1, restaurantID = 1, date = date, type = "중식", food = "비빔밥", price = "5000", cafeteria = null),
+                Menu(seq = 2, restaurantID = 1, date = date, type = "석식", food = "제육볶음", price = "5500", cafeteria = null),
+            ),
+        )
+        val result = menuService.getMenuViewByDate(1, date)
+        Assertions.assertEquals(2, result.size)
+        Assertions.assertEquals(1, result[0].seq)
+        Assertions.assertEquals("중식", result[0].type)
+        Assertions.assertEquals("비빔밥", result[0].food)
+        Assertions.assertEquals("5000", result[0].price)
+    }
 }
