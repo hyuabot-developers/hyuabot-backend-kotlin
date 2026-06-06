@@ -12,7 +12,6 @@ import org.springframework.data.redis.serializer.StringRedisSerializer
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.module.kotlin.kotlinModule
 import java.time.Duration
-import java.util.function.Supplier
 
 @Configuration
 @EnableCaching
