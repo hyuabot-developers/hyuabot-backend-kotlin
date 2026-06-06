@@ -4,7 +4,6 @@ import app.hyuabot.backend.codegen.types.SubwayArrivalGroup
 import app.hyuabot.backend.codegen.types.SubwayInput
 import app.hyuabot.backend.codegen.types.SubwayOriginTerminal
 import app.hyuabot.backend.codegen.types.SubwayRealtime
-import app.hyuabot.backend.codegen.types.SubwayRoute
 import app.hyuabot.backend.codegen.types.SubwayStation
 import app.hyuabot.backend.codegen.types.SubwayTimetable
 import app.hyuabot.backend.database.entity.SubwayRouteStation
@@ -43,22 +42,7 @@ class SubwayDataFetcher(
                 it.stationID to it.limit
             }
         dfe.graphQlContext.put("limitMap", limitMap)
-        return subwayService.getStations(input.keys.map { it.stationID }).map { station ->
-            SubwayStation(
-                stationID = station.id,
-                name = station.name,
-                order = station.order,
-                minutes = station.cumulativeTime.toMinutes().toInt(),
-                route =
-                    SubwayRoute(
-                        seq = station.route!!.id,
-                        name = station.route!!.name,
-                    ),
-                realtime = emptyList(),
-                timetable = emptyList(),
-                arrival = emptyList(),
-            )
-        }
+        return subwayService.getStationViews(input.keys.map { it.stationID })
     }
 
     @DgsData(parentType = "SubwayStation")
@@ -95,12 +79,10 @@ class SubwayDataFetcher(
                 weekdays = weekdays,
             )
         val dataLoader =
-            dfe.getDataLoader<SubwayTimetableKey, List<app.hyuabot.backend.database.entity.SubwayTimetable>>(
+            dfe.getDataLoader<SubwayTimetableKey, List<SubwayTimetable>>(
                 "subwayTimetableDataLoader",
             )!!
-        return dataLoader.load(key).thenApply { timetables ->
-            timetables.map { it.toSubwayTimetable() }
-        }
+        return dataLoader.load(key)
     }
 
     @DgsData(parentType = "SubwayStation")
@@ -130,15 +112,5 @@ class SubwayDataFetcher(
         SubwayOriginTerminal(
             stationID = id,
             name = name,
-        )
-
-    private fun app.hyuabot.backend.database.entity.SubwayTimetable.toSubwayTimetable() =
-        SubwayTimetable(
-            seq = seq!!,
-            time = departureTime,
-            weekday = weekday,
-            direction = heading,
-            origin = startStation!!.toSubwayStation(),
-            terminal = terminalStation!!.toSubwayStation(),
         )
 }

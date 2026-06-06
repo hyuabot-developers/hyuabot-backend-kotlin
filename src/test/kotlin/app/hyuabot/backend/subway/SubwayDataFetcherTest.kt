@@ -6,10 +6,8 @@ import app.hyuabot.backend.codegen.types.SubwayOriginTerminal
 import app.hyuabot.backend.database.entity.SubwayRealtime
 import app.hyuabot.backend.database.entity.SubwayRoute
 import app.hyuabot.backend.database.entity.SubwayRouteStation
-import app.hyuabot.backend.database.entity.SubwayTimetable
 import app.hyuabot.backend.subway.controller.SubwayDataFetcher
 import app.hyuabot.backend.subway.controller.SubwayTimetableDataLoader
-import app.hyuabot.backend.subway.domain.SubwayTimetableKey
 import app.hyuabot.backend.subway.service.SubwayService
 import app.hyuabot.backend.utility.ScalarRegistration
 import com.netflix.graphql.dgs.DgsQueryExecutor
@@ -26,6 +24,9 @@ import java.time.LocalTime
 import java.time.ZonedDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import app.hyuabot.backend.codegen.types.SubwayRoute as SubwayRouteDto
+import app.hyuabot.backend.codegen.types.SubwayStation as SubwayStationDto
+import app.hyuabot.backend.codegen.types.SubwayTimetable as SubwayTimetableDto
 
 @EnableDgsTest
 @SpringJUnitConfig
@@ -61,29 +62,6 @@ class SubwayDataFetcherTest {
         stationName = null,
         realtime = mutableListOf(),
         timetable = mutableListOf(),
-    )
-
-    private fun createTimetable(
-        seq: Int = 1,
-        stationID: String = "K449",
-        startStationID: String = "K409",
-        terminalStationID: String = "K456",
-        departureTime: LocalTime = LocalTime.parse("09:00:00"),
-        weekday: String = "weekdays",
-        heading: String = "up",
-        startStation: SubwayRouteStation? = null,
-        terminalStation: SubwayRouteStation? = null,
-    ) = SubwayTimetable(
-        seq = seq,
-        stationID = stationID,
-        startStationID = startStationID,
-        terminalStationID = terminalStationID,
-        departureTime = departureTime,
-        weekday = weekday,
-        heading = heading,
-        station = null,
-        startStation = startStation,
-        terminalStation = terminalStation,
     )
 
     private fun createRealtime(
@@ -135,6 +113,28 @@ class SubwayDataFetcherTest {
 
     private val station = createStation(route = route)
 
+    private fun createStationView() =
+        SubwayStationDto(
+            stationID = station.id,
+            name = station.name,
+            order = station.order,
+            minutes = station.cumulativeTime.toMinutes().toInt(),
+            route = SubwayRouteDto(seq = route.id, name = route.name),
+            realtime = emptyList(),
+            timetable = emptyList(),
+            arrival = emptyList(),
+        )
+
+    private fun createTimetableView() =
+        SubwayTimetableDto(
+            seq = 1,
+            time = LocalTime.parse("09:00:00"),
+            weekday = "weekdays",
+            direction = "up",
+            origin = SubwayOriginTerminal(stationID = startStation.id, name = startStation.name),
+            terminal = SubwayOriginTerminal(stationID = terminalStation.id, name = terminalStation.name),
+        )
+
     @Test
     @DisplayName("전철 도착 정보 조회 - 빈 키")
     fun testSubwayWithEmptyKeys() {
@@ -160,7 +160,7 @@ class SubwayDataFetcherTest {
     @Test
     @DisplayName("전철 도착 정보 조회 (정상, 역 정보만)")
     fun testSubwayOnlyStationInfo() {
-        whenever(subwayService.getStations(listOf(station.id))).thenReturn(listOf(station))
+        whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
         val result =
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
@@ -191,7 +191,7 @@ class SubwayDataFetcherTest {
     @Test
     @DisplayName("전철 도착 정보 조회 (정상, 역 정보 + 실시간 정보 + 시간표 + 도착 정보)")
     fun testSubwayFullInfo() {
-        whenever(subwayService.getStations(listOf(station.id))).thenReturn(listOf(station))
+        whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
         whenever(subwayService.getRealtimeList(station.id, directions = listOf("up"))).thenReturn(
             listOf(
                 createRealtime(
@@ -200,26 +200,8 @@ class SubwayDataFetcherTest {
             ),
         )
         whenever(
-            subwayService.getTimetable(
-                setOf(
-                    SubwayTimetableKey(
-                        station.id,
-                        listOf("up"),
-                        listOf("weekdays"),
-                    ),
-                ),
-            ),
-        ).thenReturn(
-            mapOf(
-                SubwayTimetableKey(station.id, listOf("up"), listOf("weekdays")) to
-                    listOf(
-                        createTimetable(
-                            startStation = startStation,
-                            terminalStation = terminalStation,
-                        ),
-                    ),
-            ),
-        )
+            subwayService.getTimetableView(station.id, listOf("up"), listOf("weekdays")),
+        ).thenReturn(listOf(createTimetableView()))
         whenever(
             subwayService.getArrival(
                 station.id,
@@ -316,7 +298,7 @@ class SubwayDataFetcherTest {
     @Test
     @DisplayName("전철 도착 정보 조회 (빈 행선 필터링)")
     fun testSubwayEmptyDirectionFilter() {
-        whenever(subwayService.getStations(listOf(station.id))).thenReturn(listOf(station))
+        whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
 
         val result =
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
@@ -367,7 +349,7 @@ class SubwayDataFetcherTest {
     @Test
     @DisplayName("전철 도착 정보 조회 (빈 요일 필터링)")
     fun testSubwayEmptyWeekdayFilter() {
-        whenever(subwayService.getStations(listOf(station.id))).thenReturn(listOf(station))
+        whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
 
         val result =
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
@@ -409,7 +391,7 @@ class SubwayDataFetcherTest {
     @Test
     @DisplayName("전철 도착 정보 조회 (여러 요일 필터링)")
     fun testSubwayMultipleWeekdayFilter() {
-        whenever(subwayService.getStations(listOf(station.id))).thenReturn(listOf(station))
+        whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
 
         val result =
             dgsQueryExecutor.execute(

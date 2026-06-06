@@ -30,11 +30,16 @@ import app.hyuabot.backend.subway.exception.SubwayStationNotFoundException
 import app.hyuabot.backend.subway.exception.SubwayTerminalStationNotFoundException
 import app.hyuabot.backend.subway.exception.SubwayTimetableNotFoundException
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalTime
 import java.time.ZoneId
 import kotlin.collections.emptyList
+import app.hyuabot.backend.codegen.types.SubwayRoute as SubwayRouteDto
+import app.hyuabot.backend.codegen.types.SubwayStation as SubwayStationDto
+import app.hyuabot.backend.codegen.types.SubwayTimetable as SubwayTimetableDto
 
 @Service
 class SubwayService(
@@ -46,6 +51,7 @@ class SubwayService(
 ) {
     fun getSubwayRoutes() = routeRepository.findAll()
 
+    @CacheEvict(cacheNames = ["subwayStation", "subwayTimetable"], allEntries = true)
     fun createSubwayRoute(payload: CreateSubwayRouteRequest): SubwayRoute {
         routeRepository.findById(payload.id).orElse(null)?.let {
             throw DuplicateSubwayRouteException()
@@ -61,6 +67,7 @@ class SubwayService(
 
     fun getSubwayRouteById(id: Int): SubwayRoute = routeRepository.findById(id).orElseThrow { SubwayRouteNotFoundException() }
 
+    @CacheEvict(cacheNames = ["subwayStation", "subwayTimetable"], allEntries = true)
     fun updateSubwayRoute(
         id: Int,
         payload: UpdateSubwayRouteRequest,
@@ -72,6 +79,7 @@ class SubwayService(
         }
     }
 
+    @CacheEvict(cacheNames = ["subwayStation", "subwayTimetable"], allEntries = true)
     @Transactional
     fun deleteSubwayRoute(id: Int) {
         val route = routeRepository.findById(id).orElseThrow { SubwayRouteNotFoundException() }
@@ -91,6 +99,28 @@ class SubwayService(
         return stationIDList.distinct().mapNotNull { stationsById[it] }
     }
 
+    // Static station/route reference for the subway query skeleton (realtime/timetable/arrival
+    // are filled by separate field resolvers). Cached as a DTO to avoid entity lazy-serialization.
+    @Cacheable(cacheNames = ["subwayStation"], key = "#stationIDList")
+    fun getStationViews(stationIDList: List<String>): List<SubwayStationDto> =
+        getStations(stationIDList).map { station ->
+            SubwayStationDto(
+                stationID = station.id,
+                name = station.name,
+                order = station.order,
+                minutes = station.cumulativeTime.toMinutes().toInt(),
+                route =
+                    SubwayRouteDto(
+                        seq = station.route!!.id,
+                        name = station.route!!.name,
+                    ),
+                realtime = emptyList(),
+                timetable = emptyList(),
+                arrival = emptyList(),
+            )
+        }
+
+    @CacheEvict(cacheNames = ["subwayStation", "subwayTimetable"], allEntries = true)
     fun createStation(payload: CreateSubwayStationRequest): SubwayRouteStation {
         if (!LocalDateTimeBuilder.checkLocalTimeFormat(payload.cumulativeTime)) {
             throw DurationNotValidException()
@@ -124,6 +154,7 @@ class SubwayService(
         }
     }
 
+    @CacheEvict(cacheNames = ["subwayStation", "subwayTimetable"], allEntries = true)
     @Transactional
     fun updateStation(
         id: String,
@@ -147,6 +178,7 @@ class SubwayService(
         return stationRepository.save(station)
     }
 
+    @CacheEvict(cacheNames = ["subwayStation", "subwayTimetable"], allEntries = true)
     @Transactional
     fun deleteStation(id: String) {
         val station = stationRepository.findById(id).orElseThrow { SubwayStationNotFoundException() }
@@ -215,6 +247,33 @@ class SubwayService(
         }
     }
 
+    // Static timetable for one (station, directions, weekdays) key. Stable key -> high cross-request
+    // cache reuse. Cached as DTOs (entities here have EAGER OneToOne back-refs that would not serialize).
+    @Cacheable(
+        cacheNames = ["subwayTimetable"],
+        key = "#stationID + ':' + #directions + ':' + #weekdays",
+    )
+    fun getTimetableView(
+        stationID: String,
+        directions: List<String>,
+        weekdays: List<String>,
+    ): List<SubwayTimetableDto> {
+        if (directions.isEmpty() || weekdays.isEmpty()) return emptyList()
+        return timetableRepository
+            .findByStationIdInAndHeadingInAndWeekdayIn(listOf(stationID), directions, weekdays)
+            .map {
+                SubwayTimetableDto(
+                    seq = it.seq!!,
+                    time = it.departureTime,
+                    weekday = it.weekday,
+                    direction = it.heading,
+                    origin = SubwayOriginTerminal(stationID = it.startStation!!.id, name = it.startStation!!.name),
+                    terminal = SubwayOriginTerminal(stationID = it.terminalStation!!.id, name = it.terminalStation!!.name),
+                )
+            }
+    }
+
+    @CacheEvict(cacheNames = ["subwayTimetable"], allEntries = true)
     fun createTimetable(
         stationID: String,
         payload: SubwayTimetableRequest,
@@ -249,6 +308,7 @@ class SubwayService(
         )
     }
 
+    @CacheEvict(cacheNames = ["subwayTimetable"], allEntries = true)
     fun updateTimetable(
         stationID: String,
         seq: Int,
@@ -272,6 +332,7 @@ class SubwayService(
         }
     }
 
+    @CacheEvict(cacheNames = ["subwayTimetable"], allEntries = true)
     fun deleteTimetable(
         stationID: String,
         seq: Int,
