@@ -8,12 +8,14 @@ import app.hyuabot.backend.database.entity.SubwayRoute
 import app.hyuabot.backend.database.entity.SubwayRouteStation
 import app.hyuabot.backend.subway.controller.SubwayDataFetcher
 import app.hyuabot.backend.subway.controller.SubwayTimetableDataLoader
+import app.hyuabot.backend.subway.domain.SubwayTimetableKey
 import app.hyuabot.backend.subway.service.SubwayService
 import app.hyuabot.backend.utility.ScalarRegistration
 import com.netflix.graphql.dgs.DgsQueryExecutor
 import com.netflix.graphql.dgs.test.EnableDgsTest
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.assertNotNull
+import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Import
@@ -199,9 +201,11 @@ class SubwayDataFetcherTest {
                 ),
             ),
         )
-        whenever(
-            subwayService.getTimetableView(station.id, listOf("up"), listOf("weekdays")),
-        ).thenReturn(listOf(createTimetableView()))
+        whenever(subwayService.getTimetableViews(any())).thenReturn(
+            mapOf(
+                SubwayTimetableKey(station.id, listOf("up"), listOf("weekdays")) to listOf(createTimetableView()),
+            ),
+        )
         whenever(
             subwayService.getArrival(
                 station.id,

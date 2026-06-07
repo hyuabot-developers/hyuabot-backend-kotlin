@@ -43,7 +43,6 @@ class ReadingRoomTest {
         e.total = 2
         e.active = 2
         e.occupied = 2
-        e.available = 2
         e.updatedAt = ZonedDateTime.now()
     }
 }

@@ -12,9 +12,5 @@ class SubwayTimetableDataLoader(
     private val subwayService: SubwayService,
 ) : MappedBatchLoader<SubwayTimetableKey, List<SubwayTimetable>> {
     override fun load(keys: Set<SubwayTimetableKey>): CompletableFuture<Map<SubwayTimetableKey, List<SubwayTimetable>>> =
-        CompletableFuture.completedFuture(
-            keys.associateWith {
-                subwayService.getTimetableView(it.stationID, it.directions.sorted(), it.weekdays.sorted())
-            },
-        )
+        CompletableFuture.completedFuture(subwayService.getTimetableViews(keys))
 }

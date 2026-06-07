@@ -42,7 +42,13 @@ class SubwayDataFetcher(
                 it.stationID to it.limit
             }
         dfe.graphQlContext.put("limitMap", limitMap)
-        return subwayService.getStationViews(input.keys.map { it.stationID })
+        // distinct + sorted so the cache key is insensitive to request order/duplicates
+        return subwayService.getStationViews(
+            input.keys
+                .map { it.stationID }
+                .distinct()
+                .sorted(),
+        )
     }
 
     @DgsData(parentType = "SubwayStation")

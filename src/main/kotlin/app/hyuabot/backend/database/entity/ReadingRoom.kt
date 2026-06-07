@@ -6,6 +6,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 import java.time.ZonedDateTime
 
 @Entity(name = "reading_room")
@@ -29,7 +30,7 @@ class ReadingRoom(
     @Column(name = "occupied", columnDefinition = "integer", nullable = false)
     var occupied: Int,
     @Column(name = "available", columnDefinition = "integer", nullable = false, insertable = false, updatable = false)
-    var available: Int = active - occupied,
+    val available: Int = active - occupied,
     @Column(name = "last_updated_time", columnDefinition = "timestamptz", nullable = false)
     var updatedAt: ZonedDateTime,
     @ManyToOne
@@ -38,7 +39,7 @@ class ReadingRoom(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other == null || javaClass != other.javaClass) return false
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
         other as ReadingRoom
         return id == other.id
     }

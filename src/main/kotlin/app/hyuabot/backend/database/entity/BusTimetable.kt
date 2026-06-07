@@ -8,6 +8,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 import java.time.LocalTime
 
 @Entity(name = "bus_timetable")
@@ -34,10 +35,10 @@ class BusTimetable(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other == null || javaClass != other.javaClass) return false
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
         other as BusTimetable
         return seq != null && seq == other.seq
     }
 
-    override fun hashCode(): Int = javaClass.hashCode()
+    override fun hashCode(): Int = Hibernate.getClass(this).hashCode()
 }

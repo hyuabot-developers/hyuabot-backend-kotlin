@@ -9,6 +9,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 
 @Entity(name = "contact")
 @Table(name = "phonebook")
@@ -32,10 +33,10 @@ class Contact(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other == null || javaClass != other.javaClass) return false
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
         other as Contact
         return id != null && id == other.id
     }
 
-    override fun hashCode(): Int = javaClass.hashCode()
+    override fun hashCode(): Int = Hibernate.getClass(this).hashCode()
 }

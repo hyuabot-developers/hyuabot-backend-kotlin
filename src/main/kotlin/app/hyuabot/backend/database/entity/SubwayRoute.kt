@@ -5,6 +5,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 
 @Entity(name = "subway_route")
 @Table(name = "subway_route")
@@ -19,7 +20,7 @@ class SubwayRoute(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other == null || javaClass != other.javaClass) return false
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
         other as SubwayRoute
         return id == other.id
     }

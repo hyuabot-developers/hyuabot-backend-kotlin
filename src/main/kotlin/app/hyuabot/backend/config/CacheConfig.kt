@@ -10,6 +10,7 @@ import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializ
 import org.springframework.data.redis.serializer.RedisSerializationContext
 import org.springframework.data.redis.serializer.StringRedisSerializer
 import tools.jackson.databind.json.JsonMapper
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator
 import tools.jackson.module.kotlin.kotlinModule
 import java.time.Duration
 
@@ -19,11 +20,18 @@ class CacheConfig {
     @Bean
     fun cacheManager(connectionFactory: RedisConnectionFactory): RedisCacheManager {
         // Kotlin module so cached Kotlin data classes (e.g. codegen DTOs) round-trip;
-        // default typing so the concrete element types are reconstructed on read.
+        // default typing (restricted to our own DTO + collection types) so concrete element
+        // types are reconstructed on read without enabling arbitrary polymorphic deserialization.
+        val typeValidator =
+            BasicPolymorphicTypeValidator
+                .builder()
+                .allowIfSubType("app.hyuabot.backend.codegen.types.")
+                .allowIfSubType("java.util.")
+                .build()
         val valueSerializer =
             GenericJacksonJsonRedisSerializer
                 .builder { JsonMapper.builder().addModule(kotlinModule()) }
-                .enableUnsafeDefaultTyping()
+                .enableDefaultTyping(typeValidator)
                 .build()
         val defaults =
             RedisCacheConfiguration

@@ -30,6 +30,7 @@ import app.hyuabot.backend.subway.exception.SubwayStationNotFoundException
 import app.hyuabot.backend.subway.exception.SubwayTerminalStationNotFoundException
 import app.hyuabot.backend.subway.exception.SubwayTimetableNotFoundException
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
+import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
@@ -48,6 +49,7 @@ class SubwayService(
     private val routeRepository: SubwayRouteRepository,
     private val timetableRepository: SubwayTimetableRepository,
     private val realtimeRepository: SubwayRealtimeRepository,
+    private val cacheManager: CacheManager,
 ) {
     fun getSubwayRoutes() = routeRepository.findAll()
 
@@ -247,31 +249,55 @@ class SubwayService(
         }
     }
 
-    // Static timetable for one (station, directions, weekdays) key. Stable key -> high cross-request
-    // cache reuse. Cached as DTOs (entities here have EAGER OneToOne back-refs that would not serialize).
-    @Cacheable(
-        cacheNames = ["subwayTimetable"],
-        key = "#stationID + ':' + #directions + ':' + #weekdays",
-    )
-    fun getTimetableView(
-        stationID: String,
-        directions: List<String>,
-        weekdays: List<String>,
-    ): List<SubwayTimetableDto> {
-        if (directions.isEmpty() || weekdays.isEmpty()) return emptyList()
-        return timetableRepository
-            .findByStationIdInAndHeadingInAndWeekdayIn(listOf(stationID), directions, weekdays)
-            .map {
-                SubwayTimetableDto(
-                    seq = it.seq!!,
-                    time = it.departureTime,
-                    weekday = it.weekday,
-                    direction = it.heading,
-                    origin = SubwayOriginTerminal(stationID = it.startStation!!.id, name = it.startStation!!.name),
-                    terminal = SubwayOriginTerminal(stationID = it.terminalStation!!.id, name = it.terminalStation!!.name),
-                )
+    // Static timetable DTOs keyed by (station, directions, weekdays). Cross-request cached per key,
+    // but cache misses are resolved with a SINGLE batched repository query (no per-key N+1).
+    fun getTimetableViews(keys: Set<SubwayTimetableKey>): Map<SubwayTimetableKey, List<SubwayTimetableDto>> {
+        if (keys.isEmpty()) return emptyMap()
+        val cache = cacheManager.getCache("subwayTimetable")
+        val result = LinkedHashMap<SubwayTimetableKey, List<SubwayTimetableDto>>()
+        val misses = ArrayList<SubwayTimetableKey>()
+        keys.forEach { key ->
+            @Suppress("UNCHECKED_CAST")
+            val cached = cache?.get(timetableCacheKey(key))?.get() as List<SubwayTimetableDto>?
+            if (cached != null) result[key] = cached else misses.add(key)
+        }
+        if (misses.isNotEmpty()) {
+            val stationIDs = misses.map { it.stationID }.distinct()
+            val directions = misses.flatMap { it.directions }.distinct()
+            val weekdays = misses.flatMap { it.weekdays }.distinct()
+            val grouped: Map<Triple<String, String, String>, List<SubwayTimetable>> =
+                if (directions.isEmpty() || weekdays.isEmpty()) {
+                    emptyMap()
+                } else {
+                    timetableRepository
+                        .findByStationIdInAndHeadingInAndWeekdayIn(stationIDs, directions, weekdays)
+                        .groupBy { Triple(it.stationID, it.heading, it.weekday) }
+                }
+            misses.forEach { key ->
+                val dtos =
+                    key.directions.distinct().flatMap { direction ->
+                        key.weekdays.distinct().flatMap { weekday ->
+                            grouped[Triple(key.stationID, direction, weekday)].orEmpty().map { it.toTimetableDto() }
+                        }
+                    }
+                result[key] = dtos
+                cache?.put(timetableCacheKey(key), dtos)
             }
+        }
+        return result
     }
+
+    private fun timetableCacheKey(key: SubwayTimetableKey) = "${key.stationID}:${key.directions.sorted()}:${key.weekdays.sorted()}"
+
+    private fun SubwayTimetable.toTimetableDto() =
+        SubwayTimetableDto(
+            seq = seq!!,
+            time = departureTime,
+            weekday = weekday,
+            direction = heading,
+            origin = SubwayOriginTerminal(stationID = startStation!!.id, name = startStation!!.name),
+            terminal = SubwayOriginTerminal(stationID = terminalStation!!.id, name = terminalStation!!.name),
+        )
 
     @CacheEvict(cacheNames = ["subwayTimetable"], allEntries = true)
     fun createTimetable(

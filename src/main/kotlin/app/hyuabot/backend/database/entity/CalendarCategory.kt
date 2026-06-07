@@ -8,6 +8,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 
 @Entity(name = "calendar_category")
 @Table(name = "academic_calendar_category")
@@ -24,10 +25,10 @@ class CalendarCategory(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other == null || javaClass != other.javaClass) return false
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
         other as CalendarCategory
         return id != null && id == other.id
     }
 
-    override fun hashCode(): Int = javaClass.hashCode()
+    override fun hashCode(): Int = Hibernate.getClass(this).hashCode()
 }

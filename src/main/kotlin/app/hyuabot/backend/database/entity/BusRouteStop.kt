@@ -10,6 +10,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 
 @Entity(name = "bus_route_stop")
 @Table(
@@ -50,10 +51,10 @@ class BusRouteStop(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other == null || javaClass != other.javaClass) return false
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
         other as BusRouteStop
         return seq != null && seq == other.seq
     }
 
-    override fun hashCode(): Int = javaClass.hashCode()
+    override fun hashCode(): Int = Hibernate.getClass(this).hashCode()
 }

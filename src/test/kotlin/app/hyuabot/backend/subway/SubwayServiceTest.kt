@@ -1,5 +1,6 @@
 package app.hyuabot.backend.subway
 
+import app.hyuabot.backend.codegen.types.SubwayOriginTerminal
 import app.hyuabot.backend.database.entity.SubwayRealtime
 import app.hyuabot.backend.database.entity.SubwayRoute
 import app.hyuabot.backend.database.entity.SubwayRouteStation
@@ -35,14 +36,20 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.cache.Cache
+import org.springframework.cache.CacheManager
+import org.springframework.cache.support.SimpleValueWrapper
 import java.time.Duration
 import java.time.LocalTime
 import java.time.ZonedDateTime
 import java.util.Optional
 import kotlin.test.assertEquals
+import app.hyuabot.backend.codegen.types.SubwayTimetable as SubwayTimetableDto
 
 @ExtendWith(MockitoExtension::class)
 class SubwayServiceTest {
@@ -55,6 +62,8 @@ class SubwayServiceTest {
     @Mock private lateinit var timetableRepository: SubwayTimetableRepository
 
     @Mock private lateinit var realtimeRepository: SubwayRealtimeRepository
+
+    @Mock private lateinit var cacheManager: CacheManager
 
     @InjectMocks private lateinit var service: SubwayService
 
@@ -3044,69 +3053,123 @@ class SubwayServiceTest {
         assertEquals(0, result[0].arrival.size)
     }
 
+    private fun stationEntity(
+        id: String,
+        name: String,
+        order: Int,
+    ) = SubwayRouteStation(
+        id = id,
+        routeID = 1004,
+        name = name,
+        order = order,
+        cumulativeTime = Duration.ofMinutes(0),
+        route = null,
+        stationName = null,
+        realtime = null,
+        timetable = null,
+    )
+
+    private fun timetableRow() =
+        SubwayTimetable(
+            seq = 1,
+            stationID = "K449",
+            startStationID = "K456",
+            terminalStationID = "K409",
+            departureTime = LocalTime.parse("09:00"),
+            weekday = "weekdays",
+            heading = "up",
+            station = null,
+            startStation = stationEntity("K456", "오이도", 48),
+            terminalStation = stationEntity("K409", "당고개", 1),
+        )
+
     @Test
-    @DisplayName("지하철 시간표 DTO 조회 (캐시용) - 정상")
-    fun testGetTimetableView() {
+    @DisplayName("지하철 시간표 DTO 배치 조회 - 빈 키")
+    fun testGetTimetableViewsEmpty() {
+        assertEquals(0, service.getTimetableViews(emptySet()).size)
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 DTO 배치 조회 - 캐시 미스 + 배치 쿼리")
+    fun testGetTimetableViewsCacheMiss() {
         whenever(
             timetableRepository.findByStationIdInAndHeadingInAndWeekdayIn(
                 stationIDList = listOf("K449"),
                 directions = listOf("up"),
                 weekdayList = listOf("weekdays"),
             ),
-        ).thenReturn(
-            listOf(
-                SubwayTimetable(
-                    seq = 1,
-                    stationID = "K449",
-                    startStationID = "K456",
-                    terminalStationID = "K409",
-                    departureTime = LocalTime.parse("09:00"),
-                    weekday = "weekdays",
-                    heading = "up",
-                    station = null,
-                    startStation =
-                        SubwayRouteStation(
-                            id = "K456",
-                            routeID = 1004,
-                            name = "오이도",
-                            order = 48,
-                            cumulativeTime = Duration.ofMinutes(0),
-                            route = null,
-                            stationName = null,
-                            realtime = null,
-                            timetable = null,
-                        ),
-                    terminalStation =
-                        SubwayRouteStation(
-                            id = "K409",
-                            routeID = 1004,
-                            name = "당고개",
-                            order = 1,
-                            cumulativeTime = Duration.ofMinutes(0),
-                            route = null,
-                            stationName = null,
-                            realtime = null,
-                            timetable = null,
-                        ),
-                ),
-            ),
-        )
-        val result = service.getTimetableView("K449", listOf("up"), listOf("weekdays"))
-        assertEquals(1, result.size)
-        assertEquals(1, result[0].seq)
-        assertEquals(LocalTime.parse("09:00"), result[0].time)
-        assertEquals("weekdays", result[0].weekday)
-        assertEquals("up", result[0].direction)
-        assertEquals("K456", result[0].origin.stationID)
-        assertEquals("오이도", result[0].origin.name)
-        assertEquals("K409", result[0].terminal.stationID)
-        assertEquals("당고개", result[0].terminal.name)
+        ).thenReturn(listOf(timetableRow()))
+        val key = SubwayTimetableKey(stationID = "K449", directions = listOf("up"), weekdays = listOf("weekdays"))
+        val list = service.getTimetableViews(setOf(key)).getValue(key)
+        assertEquals(1, list.size)
+        assertEquals("K456", list[0].origin.stationID)
+        assertEquals("K409", list[0].terminal.stationID)
     }
 
     @Test
-    @DisplayName("지하철 시간표 DTO 조회 (캐시용) - 행선/요일 비어있으면 빈 목록")
-    fun testGetTimetableViewEmptyFilters() {
-        assertEquals(0, service.getTimetableView("K449", emptyList(), listOf("weekdays")).size)
-        assertEquals(0, service.getTimetableView("K449", listOf("up"), emptyList()).size)
+    @DisplayName("지하철 시간표 DTO 배치 조회 - 캐시 히트")
+    fun testGetTimetableViewsCacheHit() {
+        val key = SubwayTimetableKey(stationID = "K449", directions = listOf("up"), weekdays = listOf("weekdays"))
+        val cachedDto =
+            listOf(
+                SubwayTimetableDto(
+                    seq = 1,
+                    time = LocalTime.parse("09:00"),
+                    weekday = "weekdays",
+                    direction = "up",
+                    origin = SubwayOriginTerminal(stationID = "K456", name = "오이도"),
+                    terminal = SubwayOriginTerminal(stationID = "K409", name = "당고개"),
+                ),
+            )
+        val cache = mock<Cache>()
+        whenever(cacheManager.getCache("subwayTimetable")).thenReturn(cache)
+        whenever(cache.get("K449:[up]:[weekdays]")).thenReturn(SimpleValueWrapper(cachedDto))
+        assertEquals(cachedDto, service.getTimetableViews(setOf(key)).getValue(key))
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 DTO 배치 조회 - 미스 후 캐시 저장")
+    fun testGetTimetableViewsCachePut() {
+        val key = SubwayTimetableKey(stationID = "K449", directions = listOf("up"), weekdays = listOf("weekdays"))
+        val cache = mock<Cache>()
+        whenever(cacheManager.getCache("subwayTimetable")).thenReturn(cache)
+        whenever(cache.get("K449:[up]:[weekdays]")).thenReturn(null)
+        whenever(
+            timetableRepository.findByStationIdInAndHeadingInAndWeekdayIn(
+                stationIDList = listOf("K449"),
+                directions = listOf("up"),
+                weekdayList = listOf("weekdays"),
+            ),
+        ).thenReturn(listOf(timetableRow()))
+        assertEquals(1, service.getTimetableViews(setOf(key)).getValue(key).size)
+        verify(cache).put(any(), any())
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 DTO 배치 조회 - 행선 없으면 빈 목록")
+    fun testGetTimetableViewsEmptyDirections() {
+        val key = SubwayTimetableKey(stationID = "K449", directions = emptyList(), weekdays = listOf("weekdays"))
+        assertEquals(0, service.getTimetableViews(setOf(key)).getValue(key).size)
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 DTO 배치 조회 - 요일 없으면 빈 목록")
+    fun testGetTimetableViewsEmptyWeekdays() {
+        val key = SubwayTimetableKey(stationID = "K449", directions = listOf("up"), weekdays = emptyList())
+        assertEquals(0, service.getTimetableViews(setOf(key)).getValue(key).size)
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 DTO 배치 조회 - 키에 맞는 시간표 없음")
+    fun testGetTimetableViewsNoMatch() {
+        whenever(
+            timetableRepository.findByStationIdInAndHeadingInAndWeekdayIn(
+                stationIDList = listOf("K449"),
+                directions = listOf("up"),
+                weekdayList = listOf("weekdays"),
+            ),
+        ).thenReturn(emptyList())
+        val key = SubwayTimetableKey(stationID = "K449", directions = listOf("up"), weekdays = listOf("weekdays"))
+        assertEquals(0, service.getTimetableViews(setOf(key)).getValue(key).size)
     }
 }
