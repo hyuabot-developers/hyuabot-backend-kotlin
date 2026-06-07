@@ -27,6 +27,9 @@ class CacheConfig {
                 .builder()
                 .allowIfSubType("app.hyuabot.backend.codegen.types.")
                 .allowIfSubType("java.util.")
+                // Kotlin stdlib collections (e.g. EmptyList from emptyList()) appear as concrete
+                // element/collection types in cached DTOs; allow them so empty lists round-trip.
+                .allowIfSubType("kotlin.collections.")
                 .build()
         val valueSerializer =
             GenericJacksonJsonRedisSerializer
