@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import kotlin.test.assertEquals
@@ -100,7 +101,13 @@ class RoomServiceTest {
 
         whenever(buildingRepository.findByName("Building A")).thenReturn(building)
         whenever(roomRepository.findByBuildingNameAndNumber("Building A", payload.number)).thenReturn(null)
-        whenever(roomRepository.save(room)).thenReturn(room)
+        whenever(
+            roomRepository.save(
+                argThat<Room> {
+                    buildingName == "Building A" && number == payload.number && name == payload.name
+                },
+            ),
+        ).thenReturn(room)
 
         val result = roomService.createRoom("Building A", payload)
         assertEquals(room, result)

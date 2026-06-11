@@ -12,5 +12,5 @@ class BusArrivalDataLoader(
     private val realtimeService: BusRealtimeService,
 ) : MappedBatchLoader<BusArrivalKey, List<BusArrival>> {
     override fun load(keys: Set<BusArrivalKey>): CompletableFuture<Map<BusArrivalKey, List<BusArrival>>> =
-        CompletableFuture.supplyAsync { realtimeService.getArrivalBatch(keys) }
+        CompletableFuture.completedFuture(realtimeService.getArrivalBatch(keys))
 }

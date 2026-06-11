@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 import java.time.LocalTime
 
 @Entity(name = "subway_timetable")
@@ -25,7 +26,7 @@ import java.time.LocalTime
     ],
 )
 @SequenceGenerator(name = "subway_timetable_seq_seq", allocationSize = 1)
-data class SubwayTimetable(
+class SubwayTimetable(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "subway_timetable_seq_seq")
@@ -51,4 +52,13 @@ data class SubwayTimetable(
     @OneToOne
     @JoinColumn(name = "terminal_station_id", referencedColumnName = "station_id", insertable = false, updatable = false)
     val terminalStation: SubwayRouteStation?,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+        other as SubwayTimetable
+        return seq != null && seq == other.seq
+    }
+
+    override fun hashCode(): Int = Hibernate.getClass(this).hashCode()
+}

@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 import java.time.ZonedDateTime
 
 @Entity(name = "shuttle_period")
@@ -20,7 +21,7 @@ import java.time.ZonedDateTime
     ],
 )
 @SequenceGenerator(name = "shuttle_period_seq_seq", allocationSize = 1)
-data class ShuttlePeriod(
+class ShuttlePeriod(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "shuttle_period_seq_seq")
@@ -34,4 +35,13 @@ data class ShuttlePeriod(
     @ManyToOne
     @JoinColumn(name = "period_type", referencedColumnName = "period_type", insertable = false, updatable = false)
     val periodType: ShuttlePeriodType?,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+        other as ShuttlePeriod
+        return seq != null && seq == other.seq
+    }
+
+    override fun hashCode(): Int = Hibernate.getClass(this).hashCode()
+}

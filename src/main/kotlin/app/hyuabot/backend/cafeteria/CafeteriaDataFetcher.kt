@@ -44,18 +44,6 @@ class CafeteriaDataFetcher(
     fun menus(dfe: DataFetchingEnvironment): List<Menu> {
         val source = dfe.getSource<Cafeteria>()
         val date = dfe.graphQlContext.get<LocalDate>("date")
-        return menuService
-            .getMenuList(
-                cafeteriaID = source!!.seq,
-                date = date,
-                type = null,
-            ).map {
-                Menu(
-                    seq = it.seq!!,
-                    type = it.type,
-                    food = it.food,
-                    price = it.price,
-                )
-            }
+        return menuService.getMenuViewByDate(cafeteriaID = source!!.seq, date = date)
     }
 }

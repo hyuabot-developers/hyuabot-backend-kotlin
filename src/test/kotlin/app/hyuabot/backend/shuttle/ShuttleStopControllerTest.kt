@@ -52,17 +52,17 @@ class ShuttleStopControllerTest {
                     name = "Stop1",
                     latitude = 37.5665,
                     longitude = 126.978,
-                    route = emptyList(),
-                    routeToStart = emptyList(),
-                    routeToEnd = emptyList(),
+                    route = mutableListOf(),
+                    routeToStart = mutableListOf(),
+                    routeToEnd = mutableListOf(),
                 ),
                 ShuttleStop(
                     name = "Stop2",
                     latitude = 37.5670,
                     longitude = 126.979,
-                    route = emptyList(),
-                    routeToStart = emptyList(),
-                    routeToEnd = emptyList(),
+                    route = mutableListOf(),
+                    routeToStart = mutableListOf(),
+                    routeToEnd = mutableListOf(),
                 ),
             ),
         ).whenever(shuttleStopService).getAllStops()
@@ -84,9 +84,9 @@ class ShuttleStopControllerTest {
                 name = "NewStop",
                 latitude = 37.5675,
                 longitude = 126.980,
-                route = emptyList(),
-                routeToStart = emptyList(),
-                routeToEnd = emptyList(),
+                route = mutableListOf(),
+                routeToStart = mutableListOf(),
+                routeToEnd = mutableListOf(),
             )
         val payload =
             CreateShuttleStopRequest(
@@ -160,9 +160,9 @@ class ShuttleStopControllerTest {
                 name = stopName,
                 latitude = 37.5675,
                 longitude = 126.980,
-                route = emptyList(),
-                routeToStart = emptyList(),
-                routeToEnd = emptyList(),
+                route = mutableListOf(),
+                routeToStart = mutableListOf(),
+                routeToEnd = mutableListOf(),
             )
         doReturn(stop).whenever(shuttleStopService).getStopByName(stopName)
 
@@ -215,9 +215,9 @@ class ShuttleStopControllerTest {
                 name = stopName,
                 latitude = 37.5680,
                 longitude = 126.981,
-                route = emptyList(),
-                routeToStart = emptyList(),
-                routeToEnd = emptyList(),
+                route = mutableListOf(),
+                routeToStart = mutableListOf(),
+                routeToEnd = mutableListOf(),
             )
         val payload =
             UpdateShuttleStopRequest(

@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 import java.time.LocalDate
 
 @Entity(name = "menu")
@@ -20,7 +21,7 @@ import java.time.LocalDate
     ],
 )
 @SequenceGenerator(name = "menu_seq_seq", allocationSize = 1)
-data class Menu(
+class Menu(
     @Id
     @Column(name = "seq", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "menu_seq_seq")
@@ -38,4 +39,13 @@ data class Menu(
     @JoinColumn(name = "restaurant_id", referencedColumnName = "restaurant_id", insertable = false, updatable = false)
     @ManyToOne
     val cafeteria: Cafeteria?,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+        other as Menu
+        return seq != null && seq == other.seq
+    }
+
+    override fun hashCode(): Int = Hibernate.getClass(this).hashCode()
+}

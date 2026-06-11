@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.whenever
 import java.time.ZonedDateTime
 import java.util.Optional
@@ -68,12 +69,7 @@ class NoticeServiceTest {
             )
         whenever(categoryRepository.findByName("Announcements")).thenReturn(null)
         whenever(
-            categoryRepository.save(
-                NoticeCategory(
-                    name = "Announcements",
-                    notice = mutableListOf(),
-                ),
-            ),
+            categoryRepository.save(argThat<NoticeCategory> { name == "Announcements" }),
         ).thenReturn(newCategory)
 
         val createdCategory =
@@ -336,10 +332,10 @@ class NoticeServiceTest {
         whenever(categoryRepository.findById(1)).thenReturn(Optional.of(category))
         whenever(
             noticeRepository.save(
-                Notice(
-                    title = "New Notice",
-                    url = "https://example.com/new_notice",
-                    expiredAt =
+                argThat<Notice> {
+                    title == "New Notice" &&
+                        url == "https://example.com/new_notice" &&
+                        expiredAt ==
                         ZonedDateTime.of(
                             2024,
                             12,
@@ -349,13 +345,11 @@ class NoticeServiceTest {
                             59,
                             0,
                             LocalDateTimeBuilder.serviceTimezone,
-                        ),
-                    categoryID = 1,
-                    userID = "admin",
-                    language = "English",
-                    category = null,
-                    user = null,
-                ),
+                        ) &&
+                        categoryID == 1 &&
+                        userID == "admin" &&
+                        language == "English"
+                },
             ),
         ).thenReturn(
             Notice(

@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 
 @Entity(name = "room")
 @Table(
@@ -19,13 +20,13 @@ import jakarta.persistence.Table
     ],
 )
 @SequenceGenerator(name = "room_seq_seq", allocationSize = 1)
-data class Room(
+class Room(
     @Id
     @Column(name = "seq", columnDefinition = "serial", nullable = false)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "room_seq_seq")
     val seq: Int? = null,
     @Column(name = "building_name", length = 30, nullable = false)
-    val buildingName: String,
+    var buildingName: String,
     @Column(name = "number", length = 30, nullable = false)
     var number: String,
     @Column(name = "name", length = 100, nullable = false)
@@ -33,4 +34,13 @@ data class Room(
     @ManyToOne
     @JoinColumn(name = "building_name", referencedColumnName = "name", insertable = false, updatable = false)
     val building: Building? = null,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+        other as Room
+        return seq != null && seq == other.seq
+    }
+
+    override fun hashCode(): Int = Hibernate.getClass(this).hashCode()
+}

@@ -7,46 +7,56 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 import java.time.LocalTime
 
 @Entity(name = "bus_route")
 @Table(name = "bus_route")
-data class BusRoute(
+class BusRoute(
     @Id
     @Column(name = "route_id", columnDefinition = "integer", nullable = false)
     val id: Int,
     @Column(name = "route_name", length = 30, nullable = false)
-    val name: String,
+    var name: String,
     @Column(name = "route_type_code", length = 10, nullable = false)
-    val typeCode: String,
+    var typeCode: String,
     @Column(name = "route_type_name", length = 10, nullable = false)
-    val typeName: String,
+    var typeName: String,
     @Column(name = "start_stop_id", columnDefinition = "integer", nullable = false)
-    val startStopID: Int,
+    var startStopID: Int,
     @Column(name = "end_stop_id", columnDefinition = "integer", nullable = false)
-    val endStopID: Int,
+    var endStopID: Int,
     @Column(name = "up_first_time", columnDefinition = "time", nullable = false)
-    val upFirstTime: LocalTime,
+    var upFirstTime: LocalTime,
     @Column(name = "up_last_time", columnDefinition = "time", nullable = false)
-    val upLastTime: LocalTime,
+    var upLastTime: LocalTime,
     @Column(name = "down_first_time", columnDefinition = "time", nullable = false)
-    val downFirstTime: LocalTime,
+    var downFirstTime: LocalTime,
     @Column(name = "down_last_time", columnDefinition = "time", nullable = false)
-    val downLastTime: LocalTime,
+    var downLastTime: LocalTime,
     @Column(name = "district_code", columnDefinition = "integer", nullable = false)
-    val districtCode: Int,
+    var districtCode: Int,
     @Column(name = "company_id", columnDefinition = "integer", nullable = false)
-    val companyID: Int,
+    var companyID: Int,
     @Column(name = "company_name", length = 30, nullable = false)
-    val companyName: String,
+    var companyName: String,
     @Column(name = "company_telephone", length = 15, nullable = false)
-    val companyPhone: String,
+    var companyPhone: String,
     @OneToMany(mappedBy = "route")
-    val stop: List<BusRouteStop>,
+    val stop: MutableList<BusRouteStop>,
     @OneToOne
     @JoinColumn(name = "start_stop_id", insertable = false, updatable = false)
     val startStop: BusStop,
     @OneToOne
     @JoinColumn(name = "end_stop_id", insertable = false, updatable = false)
     val endStop: BusStop,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+        other as BusRoute
+        return id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+}

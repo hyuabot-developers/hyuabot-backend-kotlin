@@ -5,27 +5,37 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 
 @Entity(name = "bus_stop")
 @Table(name = "bus_stop")
-data class BusStop(
+class BusStop(
     @Id
     @Column(name = "stop_id", columnDefinition = "integer", nullable = false)
     val id: Int,
     @Column(name = "stop_name", length = 30, nullable = false)
-    val name: String,
+    var name: String,
     @Column(name = "district_code", columnDefinition = "integer", nullable = false)
-    val districtCode: Int,
+    var districtCode: Int,
     @Column(name = "mobile_number", length = 15, nullable = false)
-    val mobileNumber: String,
+    var mobileNumber: String,
     @Column(name = "region_name", length = 10, nullable = false)
-    val regionName: String,
+    var regionName: String,
     @Column(name = "latitude", columnDefinition = "double precision", nullable = false)
-    val latitude: Double,
+    var latitude: Double,
     @Column(name = "longitude", columnDefinition = "double precision", nullable = false)
-    val longitude: Double,
+    var longitude: Double,
     @OneToMany(mappedBy = "stop")
-    val busRoutes: List<BusRouteStop>,
+    val busRoutes: MutableList<BusRouteStop>,
     @OneToMany(mappedBy = "startStop")
-    val startBusRoutes: List<BusRouteStop>,
-)
+    val startBusRoutes: MutableList<BusRouteStop>,
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+        other as BusStop
+        return id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+}

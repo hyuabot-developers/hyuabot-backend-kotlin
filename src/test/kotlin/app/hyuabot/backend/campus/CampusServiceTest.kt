@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.util.Optional
@@ -127,7 +128,7 @@ class CampusServiceTest {
     fun testCreateCampus() {
         val newCampus = CreateCampusRequest(name = "서울")
         whenever(campusRepository.findByName("서울")).thenReturn(emptyList())
-        whenever(campusRepository.save(Campus(name = "서울"))).thenReturn(Campus(id = 1, name = "서울"))
+        whenever(campusRepository.save(argThat<Campus> { name == "서울" })).thenReturn(Campus(id = 1, name = "서울"))
 
         val createdCampus = campusService.createCampus(newCampus)
         assertEquals("서울", createdCampus.name)

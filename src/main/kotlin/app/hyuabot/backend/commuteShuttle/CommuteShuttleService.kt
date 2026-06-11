@@ -40,7 +40,7 @@ class CommuteShuttleService(
                 name = payload.name,
                 descriptionKorean = payload.descriptionKorean,
                 descriptionEnglish = payload.descriptionEnglish,
-                timetable = emptyList(),
+                timetable = mutableListOf(),
             ),
         )
     }
@@ -78,7 +78,7 @@ class CommuteShuttleService(
                 description = payload.description,
                 latitude = payload.latitude,
                 longitude = payload.longitude,
-                timetable = emptyList(),
+                timetable = mutableListOf(),
             ),
         )
     }

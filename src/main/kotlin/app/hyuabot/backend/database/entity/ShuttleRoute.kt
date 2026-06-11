@@ -7,10 +7,11 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 
 @Entity(name = "shuttle_route")
 @Table(name = "shuttle_route")
-data class ShuttleRoute(
+class ShuttleRoute(
     @Id
     @Column(name = "route_name", length = 15, nullable = false)
     val name: String,
@@ -25,13 +26,22 @@ data class ShuttleRoute(
     @Column(name = "end_stop", length = 15, nullable = false)
     var endStopID: String,
     @OneToMany(mappedBy = "route")
-    val timetable: List<ShuttleTimetable>,
+    val timetable: MutableList<ShuttleTimetable>,
     @OneToMany(mappedBy = "route")
-    val stop: List<ShuttleRouteStop>,
+    val stop: MutableList<ShuttleRouteStop>,
     @ManyToOne
     @JoinColumn(name = "start_stop", referencedColumnName = "stop_name", insertable = false, updatable = false)
     val startStop: ShuttleStop?,
     @ManyToOne
     @JoinColumn(name = "end_stop", referencedColumnName = "stop_name", insertable = false, updatable = false)
     val endStop: ShuttleStop?,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+        other as ShuttleRoute
+        return name == other.name
+    }
+
+    override fun hashCode(): Int = name.hashCode()
+}

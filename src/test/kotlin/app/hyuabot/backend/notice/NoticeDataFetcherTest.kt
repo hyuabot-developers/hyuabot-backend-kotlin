@@ -157,7 +157,15 @@ class NoticeDataFetcherTest {
                 anyOrNull(),
                 any(),
             ),
-        ).thenReturn(listOf(category.copy(notice = mutableListOf(notice1))))
+        ).thenReturn(
+            listOf(
+                NoticeCategory(
+                    id = category.id,
+                    name = category.name,
+                    notice = mutableListOf(notice1),
+                ),
+            ),
+        )
         val result =
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
@@ -200,7 +208,15 @@ class NoticeDataFetcherTest {
                 anyOrNull(),
                 any(),
             ),
-        ).thenReturn(listOf(category.copy(notice = mutableListOf(notice1))))
+        ).thenReturn(
+            listOf(
+                NoticeCategory(
+                    id = category.id,
+                    name = category.name,
+                    notice = mutableListOf(notice1),
+                ),
+            ),
+        )
         val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
         val result =
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(

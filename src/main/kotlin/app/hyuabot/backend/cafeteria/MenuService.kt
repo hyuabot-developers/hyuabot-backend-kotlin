@@ -6,8 +6,11 @@ import app.hyuabot.backend.cafeteria.exception.MenuNotFoundException
 import app.hyuabot.backend.database.entity.Menu
 import app.hyuabot.backend.database.repository.CafeteriaRepository
 import app.hyuabot.backend.database.repository.MenuRepository
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import java.time.LocalDate
+import app.hyuabot.backend.codegen.types.Menu as MenuView
 
 @Service
 class MenuService(
@@ -34,6 +37,21 @@ class MenuService(
             }
         }
 
+    // Daily-static menus shared across all users -> cache the GraphQL DTO (plain, serializes cleanly).
+    @Cacheable(cacheNames = ["cafeteriaMenu"], key = "#cafeteriaID + ':' + #date")
+    fun getMenuViewByDate(
+        cafeteriaID: Int,
+        date: LocalDate,
+    ): List<MenuView> =
+        menuRepository.findByRestaurantIDAndDate(cafeteriaID, date).map {
+            MenuView(
+                seq = it.seq!!,
+                type = it.type,
+                food = it.food,
+                price = it.price,
+            )
+        }
+
     fun getMenuById(
         seq: Int,
         menuSeq: Int,
@@ -41,6 +59,7 @@ class MenuService(
         menuRepository.findByRestaurantIDAndSeq(seq, menuSeq)
             ?: throw MenuNotFoundException()
 
+    @CacheEvict(cacheNames = ["cafeteriaMenu"], allEntries = true)
     fun createMenu(
         seq: Int,
         payload: MenuRequest,
@@ -60,6 +79,7 @@ class MenuService(
         )
     }
 
+    @CacheEvict(cacheNames = ["cafeteriaMenu"], allEntries = true)
     fun updateMenu(
         seq: Int,
         menuSeq: Int,
@@ -81,6 +101,7 @@ class MenuService(
         return menuRepository.save(menu)
     }
 
+    @CacheEvict(cacheNames = ["cafeteriaMenu"], allEntries = true)
     fun deleteMenuById(
         seq: Int,
         menuSeq: Int,

@@ -46,6 +46,9 @@ class SecurityConfig(
                         "/graphql/**",
                         "/graphiql/**",
                         "/error",
+                        "/actuator/health",
+                        "/actuator/health/**",
+                        "/actuator/prometheus",
                     ).permitAll()
                     .anyRequest()
                     .authenticated()

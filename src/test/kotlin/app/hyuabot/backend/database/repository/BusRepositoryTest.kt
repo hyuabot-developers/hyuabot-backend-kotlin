@@ -48,8 +48,8 @@ class BusRepositoryTest {
                 regionName = "경기",
                 latitude = 37.7749 + it * 0.0001,
                 longitude = 126.9783 + it * 0.0001,
-                busRoutes = listOf(),
-                startBusRoutes = listOf(),
+                busRoutes = mutableListOf(),
+                startBusRoutes = mutableListOf(),
             )
         }
 
@@ -69,7 +69,7 @@ class BusRepositoryTest {
             companyID = 1,
             companyName = "Test Bus Company",
             companyPhone = "",
-            stop = listOf(),
+            stop = mutableListOf(),
             startStop = stops[0],
             endStop = stops[9],
         )
@@ -85,8 +85,8 @@ class BusRepositoryTest {
                 route = route,
                 stop = busStop,
                 startStop = stops[0],
-                log = listOf(),
-                realtime = listOf(),
+                log = mutableListOf(),
+                realtime = mutableListOf(),
             )
         }
 

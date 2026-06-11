@@ -15,6 +15,7 @@ import app.hyuabot.backend.database.repository.CalendarEventRepository
 import app.hyuabot.backend.database.repository.CalendarVersionRepository
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -39,7 +40,7 @@ class CalendarService(
         return categoryRepository.save(
             CalendarCategory(
                 name = payload.name,
-                event = emptyList(),
+                event = mutableListOf(),
             ),
         )
     }
@@ -63,6 +64,7 @@ class CalendarService(
         }
     }
 
+    @Transactional
     fun deleteCalendarCategoryById(id: Int) {
         categoryRepository.findById(id).orElseThrow { CalendarCategoryNotFoundException() }.let { category ->
             // 해당 카테고리에 속한 일정도 모두 삭제
@@ -74,6 +76,7 @@ class CalendarService(
 
     fun getAllEvents(): List<CalendarEvent> = eventRepository.findAll().sortedBy { it.id }
 
+    @Transactional(readOnly = true)
     fun getEventByCategoryId(id: Int): List<CalendarEvent> {
         categoryRepository.findById(id).orElseThrow { CalendarCategoryNotFoundException() }.let { category ->
             return category.event.sortedBy { it.id }
@@ -163,8 +166,10 @@ class CalendarService(
             .filter { cat ->
                 category == null || cat.name.contains(category, ignoreCase = true)
             }.map {
-                it.copy(
-                    event = it.event.sortedBy { event -> event.id },
+                CalendarCategory(
+                    id = it.id,
+                    name = it.name,
+                    event = it.event.sortedBy { event -> event.id }.toMutableList(),
                 )
             }
     }

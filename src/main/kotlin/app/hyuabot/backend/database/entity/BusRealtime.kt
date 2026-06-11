@@ -10,14 +10,16 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.JoinColumns
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 import org.hibernate.annotations.Type
 import java.time.Duration
 import java.time.ZonedDateTime
+import java.util.Objects
 
 @Entity(name = "bus_realtime")
 @Table(name = "bus_realtime")
 @IdClass(BusRealtimeID::class)
-data class BusRealtime(
+class BusRealtime(
     @Id
     @Column(name = "route_id", columnDefinition = "integer", nullable = false)
     val routeID: Int,
@@ -28,20 +30,31 @@ data class BusRealtime(
     @Column(name = "arrival_seq", columnDefinition = "integer", nullable = false)
     val order: Int,
     @Column(name = "remaining_stop_count", columnDefinition = "integer", nullable = false)
-    val remainingStop: Int,
+    var remainingStop: Int,
     @Column(name = "remaining_seat_count", columnDefinition = "integer", nullable = false)
-    val remainingSeat: Int,
+    var remainingSeat: Int,
     @Type(value = PostgreSQLIntervalType::class)
     @Column(name = "remaining_time", columnDefinition = "interval", nullable = false)
-    val remainingTime: Duration,
+    var remainingTime: Duration,
     @Column(name = "low_plate", columnDefinition = "boolean", nullable = false)
-    val isLowFloor: Boolean,
+    var isLowFloor: Boolean,
     @Column(name = "last_updated_time", columnDefinition = "timestamptz", nullable = false)
-    val updatedAt: ZonedDateTime,
+    var updatedAt: ZonedDateTime,
     @ManyToOne
     @JoinColumns(
         JoinColumn(name = "route_id", referencedColumnName = "route_id", insertable = false, updatable = false),
         JoinColumn(name = "stop_id", referencedColumnName = "stop_id", insertable = false, updatable = false),
     )
     val routeStop: BusRouteStop?,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+        other as BusRealtime
+        return routeID == other.routeID &&
+            stopID == other.stopID &&
+            order == other.order
+    }
+
+    override fun hashCode(): Int = Objects.hash(routeID, stopID, order)
+}

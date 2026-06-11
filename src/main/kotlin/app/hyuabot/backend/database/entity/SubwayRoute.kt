@@ -5,15 +5,25 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 
 @Entity(name = "subway_route")
 @Table(name = "subway_route")
-data class SubwayRoute(
+class SubwayRoute(
     @Id
     @Column(name = "route_id", columnDefinition = "integer", nullable = false)
     val id: Int,
     @Column(name = "route_name", length = 30, nullable = false)
     var name: String,
     @OneToMany(mappedBy = "route")
-    val station: List<SubwayRouteStation>,
-)
+    val station: MutableList<SubwayRouteStation>,
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+        other as SubwayRoute
+        return id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+}

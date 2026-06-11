@@ -6,14 +6,16 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.IdClass
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 import org.hibernate.annotations.Immutable
 import java.time.LocalTime
+import java.util.Objects
 
 @Entity(name = "shuttle_timetable_view")
 @Table(name = "shuttle_timetable_grouped_view")
 @IdClass(ShuttleTimetableViewID::class)
 @Immutable
-data class ShuttleTimetableView(
+class ShuttleTimetableView(
     @Id
     @Column(name = "seq", columnDefinition = "integer", nullable = false)
     val seq: Int,
@@ -33,4 +35,15 @@ data class ShuttleTimetableView(
     @Id
     @Column(name = "destination_group", columnDefinition = "text", nullable = false)
     val destinationGroup: String,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+        other as ShuttleTimetableView
+        return seq == other.seq &&
+            stopName == other.stopName &&
+            destinationGroup == other.destinationGroup
+    }
+
+    override fun hashCode(): Int = Objects.hash(seq, stopName, destinationGroup)
+}

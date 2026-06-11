@@ -11,6 +11,7 @@ import com.netflix.graphql.dgs.DgsDataFetchingEnvironment
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
 import graphql.schema.DataFetchingEnvironment
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
 @DgsComponent
@@ -32,6 +33,7 @@ class CalendarDataFetcher(
     fun version(): String = calendarService.getCalendarVersion().name
 
     @DgsData(parentType = "AcademicCalendar")
+    @Transactional(readOnly = true)
     fun categories(env: DataFetchingEnvironment): List<AcademicCalendarCategory> {
         val input = env.graphQlContext.get<AcademicCalendarInput>("input")
         return calendarService

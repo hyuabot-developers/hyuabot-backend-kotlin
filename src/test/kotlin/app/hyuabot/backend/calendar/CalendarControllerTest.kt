@@ -68,12 +68,12 @@ class CalendarControllerTest {
                 CalendarCategory(
                     id = 1,
                     name = "General",
-                    event = emptyList(),
+                    event = mutableListOf(),
                 ),
                 CalendarCategory(
                     id = 2,
                     name = "Exam",
-                    event = emptyList(),
+                    event = mutableListOf(),
                 ),
             ),
         ).whenever(calendarService).getCalendarCategories()
@@ -94,7 +94,7 @@ class CalendarControllerTest {
             CalendarCategory(
                 id = 1,
                 name = "General",
-                event = emptyList(),
+                event = mutableListOf(),
             ),
         ).whenever(calendarService).createCalendarCategory(request)
         mockMvc
@@ -148,7 +148,7 @@ class CalendarControllerTest {
             CalendarCategory(
                 id = 1,
                 name = "General",
-                event = emptyList(),
+                event = mutableListOf(),
             ),
         ).whenever(calendarService).getCalendarCategoryById(1)
         mockMvc
@@ -189,7 +189,7 @@ class CalendarControllerTest {
             CalendarCategory(
                 id = 1,
                 name = "Updated Category",
-                event = emptyList(),
+                event = mutableListOf(),
             ),
         ).whenever(calendarService).updateCalendarCategoryById(1, request)
         mockMvc

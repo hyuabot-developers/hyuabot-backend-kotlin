@@ -1,7 +1,6 @@
 package app.hyuabot.backend.cafeteria
 
 import app.hyuabot.backend.database.entity.Cafeteria
-import app.hyuabot.backend.database.entity.Menu
 import app.hyuabot.backend.utility.ScalarRegistration
 import com.netflix.graphql.dgs.DgsQueryExecutor
 import com.netflix.graphql.dgs.test.EnableDgsTest
@@ -15,6 +14,7 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlin.test.assertEquals
+import app.hyuabot.backend.codegen.types.Menu as MenuView
 
 @EnableDgsTest
 @SpringJUnitConfig
@@ -51,24 +51,6 @@ class CafeteriaDataFetcherTest {
         campus = null,
     )
 
-    private fun createMenu(
-        seq: Int = 1,
-        cafeteriaID: Int = 1,
-        date: LocalDate = today,
-        type: String = "test",
-        food: String = "test menu",
-        price: String = "test price",
-    ): Menu =
-        Menu(
-            seq = seq,
-            restaurantID = cafeteriaID,
-            date = date,
-            type = type,
-            food = food,
-            price = price,
-            cafeteria = null,
-        )
-
     @Test
     @DisplayName("학식 식당 및 메뉴 조회 테스트")
     fun testCommuteShuttle() {
@@ -87,26 +69,24 @@ class CafeteriaDataFetcherTest {
             ),
         )
         whenever(
-            menuService.getMenuList(
+            menuService.getMenuViewByDate(
                 cafeteriaID = 1,
                 date = today,
-                type = null,
             ),
         ).thenReturn(
             listOf(
-                createMenu(seq = 1, cafeteriaID = 1, date = today),
-                createMenu(seq = 2, cafeteriaID = 1, date = today),
+                MenuView(seq = 1, type = "test", food = "test menu", price = "test price"),
+                MenuView(seq = 2, type = "test", food = "test menu", price = "test price"),
             ),
         )
         whenever(
-            menuService.getMenuList(
+            menuService.getMenuViewByDate(
                 cafeteriaID = 2,
                 date = today,
-                type = null,
             ),
         ).thenReturn(
             listOf(
-                createMenu(seq = 3, cafeteriaID = 2, date = today),
+                MenuView(seq = 3, type = "test", food = "test menu", price = "test price"),
             ),
         )
         val result =

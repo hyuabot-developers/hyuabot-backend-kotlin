@@ -1,5 +1,6 @@
 package app.hyuabot.backend.subway
 
+import app.hyuabot.backend.codegen.types.SubwayOriginTerminal
 import app.hyuabot.backend.database.entity.SubwayRealtime
 import app.hyuabot.backend.database.entity.SubwayRoute
 import app.hyuabot.backend.database.entity.SubwayRouteStation
@@ -35,13 +36,20 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.cache.Cache
+import org.springframework.cache.CacheManager
+import org.springframework.cache.support.SimpleValueWrapper
 import java.time.Duration
 import java.time.LocalTime
 import java.time.ZonedDateTime
 import java.util.Optional
 import kotlin.test.assertEquals
+import app.hyuabot.backend.codegen.types.SubwayTimetable as SubwayTimetableDto
 
 @ExtendWith(MockitoExtension::class)
 class SubwayServiceTest {
@@ -55,6 +63,8 @@ class SubwayServiceTest {
 
     @Mock private lateinit var realtimeRepository: SubwayRealtimeRepository
 
+    @Mock private lateinit var cacheManager: CacheManager
+
     @InjectMocks private lateinit var service: SubwayService
 
     @Test
@@ -65,12 +75,12 @@ class SubwayServiceTest {
                 SubwayRoute(
                     id = 1,
                     name = "1호선",
-                    station = listOf(),
+                    station = mutableListOf(),
                 ),
                 SubwayRoute(
                     id = 2,
                     name = "2호선",
-                    station = listOf(),
+                    station = mutableListOf(),
                 ),
             ),
         )
@@ -87,7 +97,7 @@ class SubwayServiceTest {
             SubwayRoute(
                 id = 3,
                 name = "3호선",
-                station = listOf(),
+                station = mutableListOf(),
             )
         whenever(routeRepository.findById(3)).thenReturn(Optional.empty())
         whenever(routeRepository.save(newRoute)).thenReturn(newRoute)
@@ -109,7 +119,7 @@ class SubwayServiceTest {
             SubwayRoute(
                 id = 1,
                 name = "1호선",
-                station = listOf(),
+                station = mutableListOf(),
             )
         whenever(routeRepository.findById(1)).thenReturn(Optional.of(existingRoute))
         assertThrows<DuplicateSubwayRouteException> {
@@ -129,7 +139,7 @@ class SubwayServiceTest {
             SubwayRoute(
                 id = 1,
                 name = "1호선",
-                station = listOf(),
+                station = mutableListOf(),
             )
         whenever(routeRepository.findById(1)).thenReturn(Optional.of(route))
         val foundRoute = service.getSubwayRouteById(1)
@@ -153,13 +163,13 @@ class SubwayServiceTest {
             SubwayRoute(
                 id = 1,
                 name = "1호선",
-                station = listOf(),
+                station = mutableListOf(),
             )
         val updatedRoute =
             SubwayRoute(
                 id = 1,
                 name = "1호선 - 수정됨",
-                station = listOf(),
+                station = mutableListOf(),
             )
         whenever(routeRepository.findById(1)).thenReturn(Optional.of(existingRoute))
         whenever(routeRepository.save(existingRoute)).thenReturn(updatedRoute)
@@ -192,7 +202,7 @@ class SubwayServiceTest {
                 id = 1,
                 name = "1호선",
                 station =
-                    listOf(
+                    mutableListOf(
                         SubwayRouteStation(
                             id = "K450",
                             routeID = 1,
@@ -201,8 +211,8 @@ class SubwayServiceTest {
                             cumulativeTime = Duration.ofMinutes(5),
                             route = null,
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                         SubwayRouteStation(
                             id = "K251",
@@ -345,13 +355,13 @@ class SubwayServiceTest {
                 cumulativeTime = Duration.ofMinutes(7),
                 route = null,
                 stationName = null,
-                realtime = emptyList(),
-                timetable = emptyList(),
+                realtime = mutableListOf(),
+                timetable = mutableListOf(),
             )
         whenever(stationRepository.findById("K300")).thenReturn(Optional.empty())
         whenever(nameRepository.findByName("신림")).thenReturn(null)
-        whenever(nameRepository.save(SubwayStation(name = "신림", emptyList()))).thenReturn(
-            SubwayStation(name = "신림", emptyList()),
+        whenever(nameRepository.save(SubwayStation(name = "신림", mutableListOf()))).thenReturn(
+            SubwayStation(name = "신림", mutableListOf()),
         )
         whenever(stationRepository.save(newStation)).thenReturn(newStation)
         val createdStation =
@@ -383,13 +393,13 @@ class SubwayServiceTest {
                 cumulativeTime = Duration.ofMinutes(8),
                 route = null,
                 stationName = null,
-                realtime = emptyList(),
-                timetable = emptyList(),
+                realtime = mutableListOf(),
+                timetable = mutableListOf(),
             )
         val existingName =
             SubwayStation(
                 name = "신림",
-                subwayLine = listOf(),
+                subwayLine = mutableListOf(),
             )
         whenever(stationRepository.findById("K301")).thenReturn(Optional.empty())
         whenever(nameRepository.findByName("신림")).thenReturn(existingName)
@@ -561,11 +571,11 @@ class SubwayServiceTest {
             )
         whenever(stationRepository.findById("K450")).thenReturn(Optional.of(existingStation))
         whenever(nameRepository.findByName("중앙역 - 수정됨")).thenReturn(null)
-        whenever(nameRepository.save(SubwayStation(name = "중앙역 - 수정됨", emptyList()))).thenReturn(
-            SubwayStation(name = "중앙역 - 수정됨", emptyList()),
+        whenever(nameRepository.save(SubwayStation(name = "중앙역 - 수정됨", mutableListOf()))).thenReturn(
+            SubwayStation(name = "중앙역 - 수정됨", mutableListOf()),
         )
         whenever(nameRepository.findByName("중앙")).thenReturn(
-            SubwayStation(name = "중앙", subwayLine = listOf()),
+            SubwayStation(name = "중앙", subwayLine = mutableListOf()),
         )
         whenever(stationRepository.save(existingStation)).thenReturn(updatedStation)
         val result =
@@ -614,10 +624,10 @@ class SubwayServiceTest {
             )
         whenever(stationRepository.findById("K450")).thenReturn(Optional.of(existingStation))
         whenever(nameRepository.findByName("중앙역 - 수정됨")).thenReturn(
-            SubwayStation(name = "중앙역 - 수정됨", subwayLine = listOf()),
+            SubwayStation(name = "중앙역 - 수정됨", subwayLine = mutableListOf()),
         )
         whenever(nameRepository.findByName("중앙")).thenReturn(
-            SubwayStation(name = "중앙", subwayLine = listOf()),
+            SubwayStation(name = "중앙", subwayLine = mutableListOf()),
         )
         whenever(stationRepository.save(existingStation)).thenReturn(updatedStation)
         val result =
@@ -702,7 +712,7 @@ class SubwayServiceTest {
         whenever(nameRepository.findByName("중앙")).thenReturn(
             SubwayStation(
                 name = "중앙",
-                subwayLine = listOf(),
+                subwayLine = mutableListOf(),
             ),
         )
         service.deleteStation("K450")
@@ -721,15 +731,15 @@ class SubwayServiceTest {
                 cumulativeTime = Duration.ofMinutes(5),
                 route = null,
                 stationName = null,
-                realtime = emptyList(),
-                timetable = emptyList(),
+                realtime = mutableListOf(),
+                timetable = mutableListOf(),
             )
         whenever(stationRepository.findById("K450")).thenReturn(Optional.of(existingStation))
         whenever(nameRepository.findByName("중앙")).thenReturn(
             SubwayStation(
                 name = "중앙",
                 subwayLine =
-                    listOf(
+                    mutableListOf(
                         SubwayRouteStation(
                             id = "K249",
                             routeID = 1071,
@@ -738,8 +748,8 @@ class SubwayServiceTest {
                             cumulativeTime = Duration.ofMinutes(5),
                             route = null,
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                     ),
             ),
@@ -1109,17 +1119,14 @@ class SubwayServiceTest {
         ).thenReturn(null)
         whenever(
             timetableRepository.save(
-                SubwayTimetable(
-                    stationID = "K450",
-                    startStationID = "K410",
-                    terminalStationID = "K456",
-                    departureTime = LocalTime.parse("11:00"),
-                    weekday = "weekdays",
-                    heading = "up",
-                    station = null,
-                    startStation = null,
-                    terminalStation = null,
-                ),
+                argThat<SubwayTimetable> {
+                    stationID == "K450" &&
+                        startStationID == "K410" &&
+                        terminalStationID == "K456" &&
+                        departureTime == LocalTime.parse("11:00") &&
+                        weekday == "weekdays" &&
+                        heading == "up"
+                },
             ),
         ).thenReturn(newTimetable)
         val createdTimetable =
@@ -1865,11 +1872,11 @@ class SubwayServiceTest {
                                 SubwayRoute(
                                     id = 1004,
                                     name = "4호선",
-                                    station = emptyList(),
+                                    station = mutableListOf(),
                                 ),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
             ),
@@ -1904,11 +1911,11 @@ class SubwayServiceTest {
                                 SubwayRoute(
                                     id = 1004,
                                     name = "4호선",
-                                    station = emptyList(),
+                                    station = mutableListOf(),
                                 ),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
             ),
@@ -1969,11 +1976,11 @@ class SubwayServiceTest {
                                 SubwayRoute(
                                     id = 1004,
                                     name = "4호선",
-                                    station = emptyList(),
+                                    station = mutableListOf(),
                                 ),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
             ),
@@ -2008,11 +2015,11 @@ class SubwayServiceTest {
                                 SubwayRoute(
                                     id = 1004,
                                     name = "4호선",
-                                    station = emptyList(),
+                                    station = mutableListOf(),
                                 ),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
             ),
@@ -2068,11 +2075,11 @@ class SubwayServiceTest {
                                 SubwayRoute(
                                     id = 1004,
                                     name = "4호선",
-                                    station = emptyList(),
+                                    station = mutableListOf(),
                                 ),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
             ),
@@ -2126,11 +2133,11 @@ class SubwayServiceTest {
                                 SubwayRoute(
                                     id = 1004,
                                     name = "4호선",
-                                    station = emptyList(),
+                                    station = mutableListOf(),
                                 ),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
                 SubwayRealtime(
@@ -2158,11 +2165,11 @@ class SubwayServiceTest {
                                 SubwayRoute(
                                     id = 1004,
                                     name = "4호선",
-                                    station = emptyList(),
+                                    station = mutableListOf(),
                                 ),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
             ),
@@ -2193,10 +2200,10 @@ class SubwayServiceTest {
                             name = "수원",
                             order = 40,
                             cumulativeTime = Duration.ofMinutes(10),
-                            route = SubwayRoute(id = 1004, name = "수인분당선", station = emptyList()),
+                            route = SubwayRoute(id = 1004, name = "수인분당선", station = mutableListOf()),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
                 SubwayTimetable(
@@ -2216,10 +2223,10 @@ class SubwayServiceTest {
                             name = "오이도",
                             order = 56,
                             cumulativeTime = Duration.ofMinutes(20),
-                            route = SubwayRoute(id = 1004, name = "수인분당선", station = emptyList()),
+                            route = SubwayRoute(id = 1004, name = "수인분당선", station = mutableListOf()),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
             ),
@@ -2283,11 +2290,11 @@ class SubwayServiceTest {
                                 SubwayRoute(
                                     id = 1004,
                                     name = "4호선",
-                                    station = emptyList(),
+                                    station = mutableListOf(),
                                 ),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
                 SubwayRealtime(
@@ -2315,11 +2322,11 @@ class SubwayServiceTest {
                                 SubwayRoute(
                                     id = 1004,
                                     name = "4호선",
-                                    station = emptyList(),
+                                    station = mutableListOf(),
                                 ),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
             ),
@@ -2350,10 +2357,10 @@ class SubwayServiceTest {
                             name = "수원",
                             order = 40,
                             cumulativeTime = Duration.ofMinutes(10),
-                            route = SubwayRoute(id = 1004, name = "수인분당선", station = emptyList()),
+                            route = SubwayRoute(id = 1004, name = "수인분당선", station = mutableListOf()),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
                 SubwayTimetable(
@@ -2373,10 +2380,10 @@ class SubwayServiceTest {
                             name = "오이도",
                             order = 56,
                             cumulativeTime = Duration.ofMinutes(20),
-                            route = SubwayRoute(id = 1004, name = "수인분당선", station = emptyList()),
+                            route = SubwayRoute(id = 1004, name = "수인분당선", station = mutableListOf()),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
             ),
@@ -2436,10 +2443,10 @@ class SubwayServiceTest {
                             name = "오이도",
                             order = 56,
                             cumulativeTime = Duration.ofMinutes(20),
-                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = mutableListOf()),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
                 SubwayRealtime(
@@ -2463,10 +2470,10 @@ class SubwayServiceTest {
                             name = "오이도",
                             order = 56,
                             cumulativeTime = Duration.ofMinutes(20),
-                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = mutableListOf()),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
             ),
@@ -2498,10 +2505,10 @@ class SubwayServiceTest {
                             name = "오이도",
                             order = 56,
                             cumulativeTime = Duration.ofMinutes(20),
-                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = mutableListOf()),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
             ),
@@ -2559,10 +2566,10 @@ class SubwayServiceTest {
                             name = "소요산",
                             order = 71,
                             cumulativeTime = Duration.ofMinutes(60),
-                            route = SubwayRoute(id = 1001, name = "1호선", station = emptyList()),
+                            route = SubwayRoute(id = 1001, name = "1호선", station = mutableListOf()),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
                 SubwayRealtime(
@@ -2586,10 +2593,10 @@ class SubwayServiceTest {
                             name = "소요산",
                             order = 71,
                             cumulativeTime = Duration.ofMinutes(60),
-                            route = SubwayRoute(id = 1001, name = "1호선", station = emptyList()),
+                            route = SubwayRoute(id = 1001, name = "1호선", station = mutableListOf()),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
                 SubwayRealtime(
@@ -2613,10 +2620,10 @@ class SubwayServiceTest {
                             name = "소요산",
                             order = 71,
                             cumulativeTime = Duration.ofMinutes(60),
-                            route = SubwayRoute(id = 1001, name = "1호선", station = emptyList()),
+                            route = SubwayRoute(id = 1001, name = "1호선", station = mutableListOf()),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
             ),
@@ -2628,10 +2635,10 @@ class SubwayServiceTest {
                 name = "소요산",
                 order = 71,
                 cumulativeTime = Duration.ofMinutes(60),
-                route = SubwayRoute(id = 1001, name = "1호선", station = emptyList()),
+                route = SubwayRoute(id = 1001, name = "1호선", station = mutableListOf()),
                 stationName = null,
-                realtime = emptyList(),
-                timetable = emptyList(),
+                realtime = mutableListOf(),
+                timetable = mutableListOf(),
             )
         val startStation =
             SubwayRouteStation(
@@ -2640,10 +2647,10 @@ class SubwayServiceTest {
                 name = "의정부",
                 order = 58,
                 cumulativeTime = Duration.ofMinutes(40),
-                route = SubwayRoute(id = 1001, name = "1호선", station = emptyList()),
+                route = SubwayRoute(id = 1001, name = "1호선", station = mutableListOf()),
                 stationName = null,
-                realtime = emptyList(),
-                timetable = emptyList(),
+                realtime = mutableListOf(),
+                timetable = mutableListOf(),
             )
         whenever(
             timetableRepository.findByStationIDAndHeadingIsInAndWeekdayAndDepartureTimeAfter(
@@ -2788,10 +2795,10 @@ class SubwayServiceTest {
                             name = "오이도",
                             order = 56,
                             cumulativeTime = Duration.ofMinutes(20),
-                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = mutableListOf()),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
             ),
@@ -2823,10 +2830,10 @@ class SubwayServiceTest {
                             name = "오이도",
                             order = 56,
                             cumulativeTime = Duration.ofMinutes(20),
-                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = mutableListOf()),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
             ),
@@ -2858,10 +2865,10 @@ class SubwayServiceTest {
                             name = "오이도",
                             order = 56,
                             cumulativeTime = Duration.ofMinutes(20),
-                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = mutableListOf()),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
                 SubwayTimetable(
@@ -2881,10 +2888,10 @@ class SubwayServiceTest {
                             name = "오이도",
                             order = 56,
                             cumulativeTime = Duration.ofMinutes(20),
-                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = mutableListOf()),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
             ),
@@ -2938,10 +2945,10 @@ class SubwayServiceTest {
                             name = "당고개",
                             order = 1,
                             cumulativeTime = Duration.ofMinutes(20),
-                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = mutableListOf()),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                     terminalStation =
                         SubwayRouteStation(
@@ -2950,10 +2957,10 @@ class SubwayServiceTest {
                             name = "오이도",
                             order = 56,
                             cumulativeTime = Duration.ofMinutes(20),
-                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = mutableListOf()),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
                 // 05:30 is a morning train (>= 04:00) and should be filtered out
@@ -2974,10 +2981,10 @@ class SubwayServiceTest {
                             name = "오이도",
                             order = 56,
                             cumulativeTime = Duration.ofMinutes(20),
-                            route = SubwayRoute(id = 1004, name = "4호선", station = emptyList()),
+                            route = SubwayRoute(id = 1004, name = "4호선", station = mutableListOf()),
                             stationName = null,
-                            realtime = emptyList(),
-                            timetable = emptyList(),
+                            realtime = mutableListOf(),
+                            timetable = mutableListOf(),
                         ),
                 ),
             ),
@@ -3013,5 +3020,156 @@ class SubwayServiceTest {
         val result = service.getArrival("K449", listOf("down"), "weekdays", null, currentTime)
 
         assertEquals(0, result[0].entries.size)
+    }
+
+    @Test
+    @DisplayName("지하철 역 DTO 조회 (캐시용) - 정상")
+    fun testGetStationViews() {
+        whenever(stationRepository.findByIdIn(listOf("K449"))).thenReturn(
+            listOf(
+                SubwayRouteStation(
+                    id = "K449",
+                    routeID = 1004,
+                    name = "한대앞",
+                    order = 49,
+                    cumulativeTime = Duration.ofMinutes(18),
+                    route = SubwayRoute(id = 1004, name = "4호선", station = mutableListOf()),
+                    stationName = null,
+                    realtime = null,
+                    timetable = null,
+                ),
+            ),
+        )
+        val result = service.getStationViews(listOf("K449"))
+        assertEquals(1, result.size)
+        assertEquals("K449", result[0].stationID)
+        assertEquals("한대앞", result[0].name)
+        assertEquals(49, result[0].order)
+        assertEquals(18, result[0].minutes)
+        assertEquals(1004, result[0].route.seq)
+        assertEquals("4호선", result[0].route.name)
+        assertEquals(0, result[0].realtime.size)
+        assertEquals(0, result[0].timetable.size)
+        assertEquals(0, result[0].arrival.size)
+    }
+
+    private fun stationEntity(
+        id: String,
+        name: String,
+        order: Int,
+    ) = SubwayRouteStation(
+        id = id,
+        routeID = 1004,
+        name = name,
+        order = order,
+        cumulativeTime = Duration.ofMinutes(0),
+        route = null,
+        stationName = null,
+        realtime = null,
+        timetable = null,
+    )
+
+    private fun timetableRow() =
+        SubwayTimetable(
+            seq = 1,
+            stationID = "K449",
+            startStationID = "K456",
+            terminalStationID = "K409",
+            departureTime = LocalTime.parse("09:00"),
+            weekday = "weekdays",
+            heading = "up",
+            station = null,
+            startStation = stationEntity("K456", "오이도", 48),
+            terminalStation = stationEntity("K409", "당고개", 1),
+        )
+
+    @Test
+    @DisplayName("지하철 시간표 DTO 배치 조회 - 빈 키")
+    fun testGetTimetableViewsEmpty() {
+        assertEquals(0, service.getTimetableViews(emptySet()).size)
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 DTO 배치 조회 - 캐시 미스 + 배치 쿼리")
+    fun testGetTimetableViewsCacheMiss() {
+        whenever(
+            timetableRepository.findByStationIdInAndHeadingInAndWeekdayIn(
+                stationIDList = listOf("K449"),
+                directions = listOf("up"),
+                weekdayList = listOf("weekdays"),
+            ),
+        ).thenReturn(listOf(timetableRow()))
+        val key = SubwayTimetableKey(stationID = "K449", directions = listOf("up"), weekdays = listOf("weekdays"))
+        val list = service.getTimetableViews(setOf(key)).getValue(key)
+        assertEquals(1, list.size)
+        assertEquals("K456", list[0].origin.stationID)
+        assertEquals("K409", list[0].terminal.stationID)
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 DTO 배치 조회 - 캐시 히트")
+    fun testGetTimetableViewsCacheHit() {
+        val key = SubwayTimetableKey(stationID = "K449", directions = listOf("up"), weekdays = listOf("weekdays"))
+        val cachedDto =
+            listOf(
+                SubwayTimetableDto(
+                    seq = 1,
+                    time = LocalTime.parse("09:00"),
+                    weekday = "weekdays",
+                    direction = "up",
+                    origin = SubwayOriginTerminal(stationID = "K456", name = "오이도"),
+                    terminal = SubwayOriginTerminal(stationID = "K409", name = "당고개"),
+                ),
+            )
+        val cache = mock<Cache>()
+        whenever(cacheManager.getCache("subwayTimetable")).thenReturn(cache)
+        whenever(cache.get("K449:[up]:[weekdays]")).thenReturn(SimpleValueWrapper(cachedDto))
+        assertEquals(cachedDto, service.getTimetableViews(setOf(key)).getValue(key))
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 DTO 배치 조회 - 미스 후 캐시 저장")
+    fun testGetTimetableViewsCachePut() {
+        val key = SubwayTimetableKey(stationID = "K449", directions = listOf("up"), weekdays = listOf("weekdays"))
+        val cache = mock<Cache>()
+        whenever(cacheManager.getCache("subwayTimetable")).thenReturn(cache)
+        whenever(cache.get("K449:[up]:[weekdays]")).thenReturn(null)
+        whenever(
+            timetableRepository.findByStationIdInAndHeadingInAndWeekdayIn(
+                stationIDList = listOf("K449"),
+                directions = listOf("up"),
+                weekdayList = listOf("weekdays"),
+            ),
+        ).thenReturn(listOf(timetableRow()))
+        assertEquals(1, service.getTimetableViews(setOf(key)).getValue(key).size)
+        verify(cache).put(any(), any())
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 DTO 배치 조회 - 행선 없으면 빈 목록")
+    fun testGetTimetableViewsEmptyDirections() {
+        val key = SubwayTimetableKey(stationID = "K449", directions = emptyList(), weekdays = listOf("weekdays"))
+        assertEquals(0, service.getTimetableViews(setOf(key)).getValue(key).size)
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 DTO 배치 조회 - 요일 없으면 빈 목록")
+    fun testGetTimetableViewsEmptyWeekdays() {
+        val key = SubwayTimetableKey(stationID = "K449", directions = listOf("up"), weekdays = emptyList())
+        assertEquals(0, service.getTimetableViews(setOf(key)).getValue(key).size)
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 DTO 배치 조회 - 키에 맞는 시간표 없음")
+    fun testGetTimetableViewsNoMatch() {
+        whenever(
+            timetableRepository.findByStationIdInAndHeadingInAndWeekdayIn(
+                stationIDList = listOf("K449"),
+                directions = listOf("up"),
+                weekdayList = listOf("weekdays"),
+            ),
+        ).thenReturn(emptyList())
+        val key = SubwayTimetableKey(stationID = "K449", directions = listOf("up"), weekdays = listOf("weekdays"))
+        assertEquals(0, service.getTimetableViews(setOf(key)).getValue(key).size)
     }
 }

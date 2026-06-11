@@ -38,7 +38,7 @@ class CommuteShuttleDataFetcherTest {
         name = name,
         descriptionKorean = descriptionKorean,
         descriptionEnglish = descriptionEnglish,
-        timetable = timetable,
+        timetable = timetable.toMutableList(),
     )
 
     private fun createCommuteShuttleStop(
@@ -51,7 +51,7 @@ class CommuteShuttleDataFetcherTest {
         description = description,
         latitude = latitude,
         longitude = longitude,
-        timetable = listOf(),
+        timetable = mutableListOf(),
     )
 
     private fun createCommuteShuttleTimetable(

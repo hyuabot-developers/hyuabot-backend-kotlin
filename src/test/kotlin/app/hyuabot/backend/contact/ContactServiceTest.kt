@@ -23,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.ZonedDateTime
@@ -122,14 +123,8 @@ class ContactServiceTest {
             ContactCategoryRequest(
                 name = "Support",
             )
-        val newCategory =
-            ContactCategory(
-                id = null,
-                name = payload.name,
-                contact = mutableListOf(),
-            )
         whenever(categoryRepository.findByName(payload.name)).thenReturn(null)
-        whenever(categoryRepository.save(newCategory)).thenReturn(
+        whenever(categoryRepository.save(argThat<ContactCategory> { name == payload.name })).thenReturn(
             ContactCategory(
                 id = 1,
                 name = payload.name,
@@ -412,13 +407,12 @@ class ContactServiceTest {
         )
         whenever(
             contactRepository.save(
-                Contact(
-                    campusID = payload.campusID,
-                    name = payload.name,
-                    phone = payload.phone,
-                    categoryID = payload.categoryID,
-                    category = null,
-                ),
+                argThat<Contact> {
+                    campusID == payload.campusID &&
+                        name == payload.name &&
+                        phone == payload.phone &&
+                        categoryID == payload.categoryID
+                },
             ),
         ).thenReturn(
             Contact(

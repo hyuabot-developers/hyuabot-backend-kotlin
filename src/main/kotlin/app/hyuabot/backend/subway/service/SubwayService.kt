@@ -30,10 +30,17 @@ import app.hyuabot.backend.subway.exception.SubwayStationNotFoundException
 import app.hyuabot.backend.subway.exception.SubwayTerminalStationNotFoundException
 import app.hyuabot.backend.subway.exception.SubwayTimetableNotFoundException
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
+import org.springframework.cache.CacheManager
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalTime
 import java.time.ZoneId
 import kotlin.collections.emptyList
+import app.hyuabot.backend.codegen.types.SubwayRoute as SubwayRouteDto
+import app.hyuabot.backend.codegen.types.SubwayStation as SubwayStationDto
+import app.hyuabot.backend.codegen.types.SubwayTimetable as SubwayTimetableDto
 
 @Service
 class SubwayService(
@@ -42,9 +49,11 @@ class SubwayService(
     private val routeRepository: SubwayRouteRepository,
     private val timetableRepository: SubwayTimetableRepository,
     private val realtimeRepository: SubwayRealtimeRepository,
+    private val cacheManager: CacheManager,
 ) {
     fun getSubwayRoutes() = routeRepository.findAll()
 
+    @CacheEvict(cacheNames = ["subwayStation", "subwayTimetable"], allEntries = true)
     fun createSubwayRoute(payload: CreateSubwayRouteRequest): SubwayRoute {
         routeRepository.findById(payload.id).orElse(null)?.let {
             throw DuplicateSubwayRouteException()
@@ -53,13 +62,14 @@ class SubwayService(
             SubwayRoute(
                 id = payload.id,
                 name = payload.name,
-                station = emptyList(),
+                station = mutableListOf(),
             ),
         )
     }
 
     fun getSubwayRouteById(id: Int): SubwayRoute = routeRepository.findById(id).orElseThrow { SubwayRouteNotFoundException() }
 
+    @CacheEvict(cacheNames = ["subwayStation", "subwayTimetable"], allEntries = true)
     fun updateSubwayRoute(
         id: Int,
         payload: UpdateSubwayRouteRequest,
@@ -71,6 +81,8 @@ class SubwayService(
         }
     }
 
+    @CacheEvict(cacheNames = ["subwayStation", "subwayTimetable"], allEntries = true)
+    @Transactional
     fun deleteSubwayRoute(id: Int) {
         val route = routeRepository.findById(id).orElseThrow { SubwayRouteNotFoundException() }
         timetableRepository.deleteAll(route.station.flatMap { it.timetable ?: emptyList() })
@@ -89,6 +101,28 @@ class SubwayService(
         return stationIDList.distinct().mapNotNull { stationsById[it] }
     }
 
+    // Static station/route reference for the subway query skeleton (realtime/timetable/arrival
+    // are filled by separate field resolvers). Cached as a DTO to avoid entity lazy-serialization.
+    @Cacheable(cacheNames = ["subwayStation"], key = "#stationIDList")
+    fun getStationViews(stationIDList: List<String>): List<SubwayStationDto> =
+        getStations(stationIDList).map { station ->
+            SubwayStationDto(
+                stationID = station.id,
+                name = station.name,
+                order = station.order,
+                minutes = station.cumulativeTime.toMinutes().toInt(),
+                route =
+                    SubwayRouteDto(
+                        seq = station.route!!.id,
+                        name = station.route!!.name,
+                    ),
+                realtime = emptyList(),
+                timetable = emptyList(),
+                arrival = emptyList(),
+            )
+        }
+
+    @CacheEvict(cacheNames = ["subwayStation", "subwayTimetable"], allEntries = true)
     fun createStation(payload: CreateSubwayStationRequest): SubwayRouteStation {
         if (!LocalDateTimeBuilder.checkLocalTimeFormat(payload.cumulativeTime)) {
             throw DurationNotValidException()
@@ -96,7 +130,7 @@ class SubwayService(
         stationRepository.findById(payload.id).orElse(null)?.let {
             throw DuplicateSubwayStationException()
         }
-        nameRepository.findByName(payload.name) ?: nameRepository.save(SubwayStation(name = payload.name, emptyList()))
+        nameRepository.findByName(payload.name) ?: nameRepository.save(SubwayStation(name = payload.name, mutableListOf()))
         return stationRepository.save(
             SubwayRouteStation(
                 id = payload.id,
@@ -106,8 +140,8 @@ class SubwayService(
                 cumulativeTime = LocalDateTimeBuilder.convertStringToDuration(payload.cumulativeTime),
                 route = null,
                 stationName = null,
-                realtime = emptyList(),
-                timetable = emptyList(),
+                realtime = mutableListOf(),
+                timetable = mutableListOf(),
             ),
         )
     }
@@ -122,6 +156,8 @@ class SubwayService(
         }
     }
 
+    @CacheEvict(cacheNames = ["subwayStation", "subwayTimetable"], allEntries = true)
+    @Transactional
     fun updateStation(
         id: String,
         payload: UpdateSubwayStationRequest,
@@ -139,11 +175,13 @@ class SubwayService(
         }
         if (oldStationName != payload.name) {
             cleanUpUselessStationName(oldStationName)
-            nameRepository.findByName(payload.name) ?: nameRepository.save(SubwayStation(name = payload.name, emptyList()))
+            nameRepository.findByName(payload.name) ?: nameRepository.save(SubwayStation(name = payload.name, mutableListOf()))
         }
         return stationRepository.save(station)
     }
 
+    @CacheEvict(cacheNames = ["subwayStation", "subwayTimetable"], allEntries = true)
+    @Transactional
     fun deleteStation(id: String) {
         val station = stationRepository.findById(id).orElseThrow { SubwayStationNotFoundException() }
         realtimeRepository.deleteAll(station.realtime ?: emptyList())
@@ -211,6 +249,57 @@ class SubwayService(
         }
     }
 
+    // Static timetable DTOs keyed by (station, directions, weekdays). Cross-request cached per key,
+    // but cache misses are resolved with a SINGLE batched repository query (no per-key N+1).
+    fun getTimetableViews(keys: Set<SubwayTimetableKey>): Map<SubwayTimetableKey, List<SubwayTimetableDto>> {
+        if (keys.isEmpty()) return emptyMap()
+        val cache = cacheManager.getCache("subwayTimetable")
+        val result = LinkedHashMap<SubwayTimetableKey, List<SubwayTimetableDto>>()
+        val misses = ArrayList<SubwayTimetableKey>()
+        keys.forEach { key ->
+            @Suppress("UNCHECKED_CAST")
+            val cached = cache?.get(timetableCacheKey(key))?.get() as List<SubwayTimetableDto>?
+            if (cached != null) result[key] = cached else misses.add(key)
+        }
+        if (misses.isNotEmpty()) {
+            val stationIDs = misses.map { it.stationID }.distinct()
+            val directions = misses.flatMap { it.directions }.distinct()
+            val weekdays = misses.flatMap { it.weekdays }.distinct()
+            val grouped: Map<Triple<String, String, String>, List<SubwayTimetable>> =
+                if (directions.isEmpty() || weekdays.isEmpty()) {
+                    emptyMap()
+                } else {
+                    timetableRepository
+                        .findByStationIdInAndHeadingInAndWeekdayIn(stationIDs, directions, weekdays)
+                        .groupBy { Triple(it.stationID, it.heading, it.weekday) }
+                }
+            misses.forEach { key ->
+                val dtos =
+                    key.directions.distinct().flatMap { direction ->
+                        key.weekdays.distinct().flatMap { weekday ->
+                            grouped[Triple(key.stationID, direction, weekday)].orEmpty().map { it.toTimetableDto() }
+                        }
+                    }
+                result[key] = dtos
+                cache?.put(timetableCacheKey(key), dtos)
+            }
+        }
+        return result
+    }
+
+    private fun timetableCacheKey(key: SubwayTimetableKey) = "${key.stationID}:${key.directions.sorted()}:${key.weekdays.sorted()}"
+
+    private fun SubwayTimetable.toTimetableDto() =
+        SubwayTimetableDto(
+            seq = seq!!,
+            time = departureTime,
+            weekday = weekday,
+            direction = heading,
+            origin = SubwayOriginTerminal(stationID = startStation!!.id, name = startStation!!.name),
+            terminal = SubwayOriginTerminal(stationID = terminalStation!!.id, name = terminalStation!!.name),
+        )
+
+    @CacheEvict(cacheNames = ["subwayTimetable"], allEntries = true)
     fun createTimetable(
         stationID: String,
         payload: SubwayTimetableRequest,
@@ -245,6 +334,7 @@ class SubwayService(
         )
     }
 
+    @CacheEvict(cacheNames = ["subwayTimetable"], allEntries = true)
     fun updateTimetable(
         stationID: String,
         seq: Int,
@@ -268,6 +358,7 @@ class SubwayService(
         }
     }
 
+    @CacheEvict(cacheNames = ["subwayTimetable"], allEntries = true)
     fun deleteTimetable(
         stationID: String,
         seq: Int,

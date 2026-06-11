@@ -67,22 +67,24 @@ class UserRepositoryTest {
     @Test
     @DisplayName("User 오브젝트 비교")
     fun testEqualsAndHashCode() {
+        // User 엔티티의 동일성은 자연키(userID) 기준이다.
+        // 같은 userID는 같은 엔티티로 간주되며, 가변 필드 값과 무관하다.
         val user1 = createUser()
         val user2 = createUser()
         assert(user1 == user2)
         assert(user1.hashCode() == user2.hashCode())
-        val user3 = createUser(active = false)
-        assert(user1 != user3)
-        val user4 = createUser(userID = "user456")
-        assert(user1 != user4)
-        val user5 = createUser(password = "otherPassword".toByteArray())
-        assert(user1 != user5)
-        val user6 = createUser(name = "Jane Doe")
-        assert(user1 != user6)
-        val user7 = createUser(email = "jane@example;com")
-        assert(user1 != user7)
-        val user8 = createUser(phone = "0987654321")
-        assert(user1 != user8)
+
+        // 같은 userID라면 다른 필드(active/password/name/email/phone)가 달라도 동일 엔티티
+        assert(user1 == createUser(active = false))
+        assert(user1 == createUser(password = "otherPassword".toByteArray()))
+        assert(user1 == createUser(name = "Jane Doe"))
+        assert(user1 == createUser(email = "jane@example.com"))
+        assert(user1 == createUser(phone = "0987654321"))
+
+        // userID가 다르면 다른 엔티티
+        val other = createUser(userID = "user456")
+        assert(user1 != other)
+        assert(user1.hashCode() != other.hashCode())
     }
 
     @Test

@@ -27,8 +27,8 @@ class BusStopService(
                 regionName = payload.regionName,
                 latitude = payload.latitude,
                 longitude = payload.longitude,
-                busRoutes = emptyList(),
-                startBusRoutes = emptyList(),
+                busRoutes = mutableListOf(),
+                startBusRoutes = mutableListOf(),
             ),
         )
     }
@@ -40,16 +40,13 @@ class BusStopService(
         payload: UpdateBusStopRequest,
     ): BusStop {
         val busStop = stopRepository.findById(id).orElseThrow { BusStopNotFoundException() }
-        val updatedBusStop =
-            busStop.copy(
-                name = payload.name,
-                districtCode = payload.districtCode,
-                mobileNumber = payload.mobileNumber,
-                regionName = payload.regionName,
-                latitude = payload.latitude,
-                longitude = payload.longitude,
-            )
-        return stopRepository.save(updatedBusStop)
+        busStop.name = payload.name
+        busStop.districtCode = payload.districtCode
+        busStop.mobileNumber = payload.mobileNumber
+        busStop.regionName = payload.regionName
+        busStop.latitude = payload.latitude
+        busStop.longitude = payload.longitude
+        return stopRepository.save(busStop)
     }
 
     fun deleteBusStopById(id: Int) {

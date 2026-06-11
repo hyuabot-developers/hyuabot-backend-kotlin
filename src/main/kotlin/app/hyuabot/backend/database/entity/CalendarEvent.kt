@@ -9,12 +9,13 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
+import org.hibernate.Hibernate
 import java.time.LocalDate
 
 @Entity(name = "calendar_event")
 @Table(name = "academic_calendar")
 @SequenceGenerator(name = "academic_calendar_academic_calendar_id_seq", allocationSize = 1)
-data class CalendarEvent(
+class CalendarEvent(
     @Id
     @Column(name = "academic_calendar_id", columnDefinition = "serial")
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "academic_calendar_academic_calendar_id_seq")
@@ -32,4 +33,13 @@ data class CalendarEvent(
     @ManyToOne
     @JoinColumn(name = "category_id", referencedColumnName = "category_id", insertable = false, updatable = false)
     val category: CalendarCategory?,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || Hibernate.getClass(this) != Hibernate.getClass(other)) return false
+        other as CalendarEvent
+        return id != null && id == other.id
+    }
+
+    override fun hashCode(): Int = Hibernate.getClass(this).hashCode()
+}

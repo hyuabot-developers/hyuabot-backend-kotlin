@@ -85,8 +85,8 @@ class BusControllerTest {
                 longitude = 127.074569,
                 mobileNumber = "00000",
                 regionName = "경기",
-                busRoutes = emptyList(),
-                startBusRoutes = emptyList(),
+                busRoutes = mutableListOf(),
+                startBusRoutes = mutableListOf(),
             )
         val TEST_STOP_2 =
             BusStop(
@@ -97,8 +97,8 @@ class BusControllerTest {
                 longitude = 127.050743,
                 mobileNumber = "00000",
                 regionName = "경기",
-                busRoutes = emptyList(),
-                startBusRoutes = emptyList(),
+                busRoutes = mutableListOf(),
+                startBusRoutes = mutableListOf(),
             )
         val TEST_ROUTE_1 =
             BusRoute(
@@ -116,7 +116,7 @@ class BusControllerTest {
                 companyID = 4100700,
                 companyName = "경원여객",
                 companyPhone = "031-492-2260",
-                stop = emptyList(),
+                stop = mutableListOf(),
                 startStop = TEST_STOP_1,
                 endStop = TEST_STOP_2,
             )
@@ -131,8 +131,8 @@ class BusControllerTest {
                 startStopID = TEST_STOP_1.id,
                 minuteFromStart = 0,
                 startStop = TEST_STOP_1,
-                log = emptyList(),
-                realtime = emptyList(),
+                log = mutableListOf(),
+                realtime = mutableListOf(),
             )
         val TEST_ROUTE_STOP_2 =
             BusRouteStop(
@@ -145,8 +145,8 @@ class BusControllerTest {
                 startStopID = TEST_STOP_1.id,
                 minuteFromStart = 10,
                 startStop = TEST_STOP_1,
-                log = emptyList(),
-                realtime = emptyList(),
+                log = mutableListOf(),
+                realtime = mutableListOf(),
             )
     }
 
@@ -199,7 +199,7 @@ class BusControllerTest {
                 companyID = 4100700,
                 companyName = "경원여객",
                 companyPhone = "031-492-2260",
-                stop = emptyList(),
+                stop = mutableListOf(),
                 startStop = TEST_STOP_1,
                 endStop = TEST_STOP_2,
             )
@@ -462,7 +462,7 @@ class BusControllerTest {
                 companyID = 4100700,
                 companyName = "경원여객",
                 companyPhone = "031-492-2260",
-                stop = emptyList(),
+                stop = mutableListOf(),
                 startStop = TEST_STOP_1,
                 endStop = TEST_STOP_2,
             )
@@ -749,8 +749,8 @@ class BusControllerTest {
                 startStopID = TEST_STOP_1.id,
                 minuteFromStart = 20,
                 startStop = TEST_STOP_1,
-                log = emptyList(),
-                realtime = emptyList(),
+                log = mutableListOf(),
+                realtime = mutableListOf(),
             )
         val payload =
             BusRouteStopRequest(
@@ -895,8 +895,8 @@ class BusControllerTest {
                 startStopID = TEST_STOP_1.id,
                 minuteFromStart = 30,
                 startStop = TEST_STOP_1,
-                log = emptyList(),
-                realtime = emptyList(),
+                log = mutableListOf(),
+                realtime = mutableListOf(),
             )
         val payload =
             BusRouteStopRequest(
@@ -1330,8 +1330,8 @@ class BusControllerTest {
                 mobileNumber = payload.mobileNumber,
                 districtCode = payload.districtCode,
                 regionName = payload.regionName,
-                busRoutes = emptyList(),
-                startBusRoutes = emptyList(),
+                busRoutes = mutableListOf(),
+                startBusRoutes = mutableListOf(),
             )
         whenever(stopService.updateBusStop(TEST_STOP_1.id, payload)).thenReturn(updatedStop)
         mockMvc
