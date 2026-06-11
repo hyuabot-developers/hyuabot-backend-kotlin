@@ -132,6 +132,7 @@ tasks.jacocoTestCoverageVerification {
                         "**/app/hyuabot/backend/HyuabotBackendKotlinApplication**",
                         "**/app/hyuabot/backend/database/key/**",
                         "**/app/hyuabot/backend/codegen/**",
+                        "**/app/hyuabot/backend/config/CacheConfig**",
                     )
                 }
             },
@@ -154,6 +155,7 @@ tasks.jacocoTestReport {
                         "**/app/hyuabot/backend/HyuabotBackendKotlinApplication**",
                         "**/app/hyuabot/backend/database/key/**",
                         "**/app/hyuabot/backend/codegen/**",
+                        "**/app/hyuabot/backend/config/CacheConfig**",
                     )
                 }
             },

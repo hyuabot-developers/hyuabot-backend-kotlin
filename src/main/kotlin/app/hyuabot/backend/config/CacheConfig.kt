@@ -1,11 +1,15 @@
 package app.hyuabot.backend.config
 
+import io.micrometer.core.instrument.FunctionCounter
+import io.micrometer.core.instrument.MeterRegistry
+import org.springframework.beans.factory.SmartInitializingSingleton
 import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.EnableCaching
 import org.springframework.cache.support.NoOpCacheManager
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
+import org.springframework.data.redis.cache.RedisCache
 import org.springframework.data.redis.cache.RedisCacheConfiguration
 import org.springframework.data.redis.cache.RedisCacheManager
 import org.springframework.data.redis.connection.RedisConnectionFactory
@@ -73,4 +77,37 @@ class CacheConfig {
             .withInitialCacheConfigurations(perCache)
             .build()
     }
+
+    // Spring Boot 4.x CacheMetricsAutoConfiguration may not bind RedisCacheManager metrics
+    // automatically. This bean explicitly registers cache_gets/puts/removals for each cache
+    // after all singletons are initialized, ensuring Prometheus sees the metrics regardless.
+    @Bean
+    @Profile("!nocache")
+    fun redisCacheMetricsBinder(
+        meterRegistry: MeterRegistry,
+        cacheManager: RedisCacheManager,
+    ): SmartInitializingSingleton =
+        SmartInitializingSingleton {
+            cacheManager.cacheNames.forEach { name ->
+                val cache = cacheManager.getCache(name) as? RedisCache ?: return@forEach
+                FunctionCounter
+                    .builder("cache.gets", cache) { it.statistics.hits.toDouble() }
+                    .tag("cache", name)
+                    .tag("result", "hit")
+                    .register(meterRegistry)
+                FunctionCounter
+                    .builder("cache.gets", cache) { it.statistics.misses.toDouble() }
+                    .tag("cache", name)
+                    .tag("result", "miss")
+                    .register(meterRegistry)
+                FunctionCounter
+                    .builder("cache.puts", cache) { it.statistics.puts.toDouble() }
+                    .tag("cache", name)
+                    .register(meterRegistry)
+                FunctionCounter
+                    .builder("cache.removals", cache) { it.statistics.deletes.toDouble() }
+                    .tag("cache", name)
+                    .register(meterRegistry)
+            }
+        }
 }
