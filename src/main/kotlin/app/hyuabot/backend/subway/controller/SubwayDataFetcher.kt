@@ -7,6 +7,7 @@ import app.hyuabot.backend.codegen.types.SubwayRealtime
 import app.hyuabot.backend.codegen.types.SubwayStation
 import app.hyuabot.backend.codegen.types.SubwayTimetable
 import app.hyuabot.backend.database.entity.SubwayRouteStation
+import app.hyuabot.backend.holiday.service.PublicHolidayService
 import app.hyuabot.backend.subway.domain.SubwayTimetableKey
 import app.hyuabot.backend.subway.service.SubwayService
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
@@ -15,11 +16,13 @@ import com.netflix.graphql.dgs.DgsData
 import com.netflix.graphql.dgs.DgsDataFetchingEnvironment
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
+import java.time.LocalDate
 import java.util.concurrent.CompletableFuture
 
 @DgsComponent
 class SubwayDataFetcher(
     private val subwayService: SubwayService,
+    private val publicHolidayService: PublicHolidayService,
 ) {
     @DgsQuery
     fun subway(
@@ -103,7 +106,8 @@ class SubwayDataFetcher(
                 "arrival query expects exactly one weekday, but got: $weekdays for station ${station.stationID}",
             )
         }
-        val weekday = weekdays.first()
+        val today = LocalDate.now()
+        val weekday = if (publicHolidayService.findPublicHoliday(today) != null) "weekends" else weekdays.first()
         val limitMap = dfe.graphQlContext.get<Map<String, Int>>("limitMap")
         return subwayService
             .getArrival(
