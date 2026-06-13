@@ -30,6 +30,7 @@ import app.hyuabot.backend.database.entity.BusRoute
 import app.hyuabot.backend.database.entity.BusRouteStop
 import app.hyuabot.backend.database.entity.BusStop
 import app.hyuabot.backend.database.entity.BusTimetable
+import app.hyuabot.backend.database.entity.PublicHoliday
 import app.hyuabot.backend.database.exception.LocalTimeNotValidException
 import app.hyuabot.backend.database.repository.BusDepartureLogRepository
 import app.hyuabot.backend.database.repository.BusRealtimeRepository
@@ -37,6 +38,7 @@ import app.hyuabot.backend.database.repository.BusRouteRepository
 import app.hyuabot.backend.database.repository.BusRouteStopRepository
 import app.hyuabot.backend.database.repository.BusStopRepository
 import app.hyuabot.backend.database.repository.BusTimetableRepository
+import app.hyuabot.backend.holiday.service.PublicHolidayService
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -78,6 +80,9 @@ class BusServiceTest {
 
     @Mock
     private lateinit var logRepository: BusDepartureLogRepository
+
+    @Mock
+    private lateinit var publicHolidayService: PublicHolidayService
 
     @InjectMocks
     private lateinit var routeService: BusRouteService
@@ -3391,6 +3396,7 @@ class BusServiceTest {
     @DisplayName("weekday 결정 - 평일")
     fun testResolveWeekday() {
         val monday = LocalDate.of(2025, 3, 3)
+        whenever(publicHolidayService.findPublicHoliday(monday)).thenReturn(null)
         assertEquals("weekdays", realtimeService.resolveWeekday(monday))
     }
 
@@ -3398,6 +3404,7 @@ class BusServiceTest {
     @DisplayName("weekday 결정 - 토요일")
     fun testResolveWeekdaySaturday() {
         val saturday = LocalDate.of(2025, 3, 1)
+        whenever(publicHolidayService.findPublicHoliday(saturday)).thenReturn(null)
         assertEquals("saturday", realtimeService.resolveWeekday(saturday))
     }
 
@@ -3405,7 +3412,18 @@ class BusServiceTest {
     @DisplayName("weekday 결정 - 일요일")
     fun testResolveWeekdaySunday() {
         val sunday = LocalDate.of(2025, 3, 2)
+        whenever(publicHolidayService.findPublicHoliday(sunday)).thenReturn(null)
         assertEquals("sunday", realtimeService.resolveWeekday(sunday))
+    }
+
+    @Test
+    @DisplayName("weekday 결정 - 공휴일 (평일)")
+    fun testResolveWeekdayPublicHoliday() {
+        val holiday = LocalDate.of(2025, 3, 3)
+        whenever(publicHolidayService.findPublicHoliday(holiday)).thenReturn(
+            PublicHoliday(seq = 1, date = holiday, name = "삼일절", calendarType = "solar"),
+        )
+        assertEquals("sunday", realtimeService.resolveWeekday(holiday))
     }
 
     @Test
