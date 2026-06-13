@@ -57,9 +57,11 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.Optional
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @ExtendWith(MockitoExtension::class)
 class BusServiceTest {
@@ -2949,6 +2951,16 @@ class BusServiceTest {
 
         assertEquals(1, result.size)
         assertEquals(0, result[216000068 to 216000999]?.size)
+    }
+
+    @Test
+    @DisplayName("currentTime - 서울 시간대 현재 시각 반환")
+    fun testCurrentTime() {
+        val before = LocalDateTime.now(ZoneId.of("Asia/Seoul")).minusSeconds(1)
+        val result = realtimeService.currentTime()
+        val after = LocalDateTime.now(ZoneId.of("Asia/Seoul")).plusSeconds(1)
+        assertTrue(result.isAfter(before))
+        assertTrue(result.isBefore(after))
     }
 
     @Test
