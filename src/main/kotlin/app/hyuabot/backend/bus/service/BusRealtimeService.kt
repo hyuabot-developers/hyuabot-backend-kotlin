@@ -5,6 +5,7 @@ import app.hyuabot.backend.codegen.types.BusArrival
 import app.hyuabot.backend.database.entity.BusRealtime
 import app.hyuabot.backend.database.repository.BusRealtimeRepository
 import app.hyuabot.backend.database.repository.BusTimetableRepository
+import app.hyuabot.backend.holiday.service.PublicHolidayService
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.time.DayOfWeek
@@ -17,15 +18,18 @@ import java.time.ZoneId
 class BusRealtimeService(
     private val realtimeRepository: BusRealtimeRepository,
     private val timetableRepository: BusTimetableRepository,
+    private val publicHolidayService: PublicHolidayService,
 ) {
     private val serviceStartTime: LocalTime = LocalTime.of(4, 0)
 
-    internal fun resolveWeekday(date: LocalDate): String =
-        when (date.dayOfWeek) {
+    internal fun resolveWeekday(date: LocalDate): String {
+        if (publicHolidayService.findPublicHoliday(date) != null) return "sunday"
+        return when (date.dayOfWeek) {
             DayOfWeek.SATURDAY -> "saturday"
             DayOfWeek.SUNDAY -> "sunday"
             else -> "weekdays"
         }
+    }
 
     private fun toServiceMinutes(time: LocalTime): Int {
         val seconds = time.toSecondOfDay()
