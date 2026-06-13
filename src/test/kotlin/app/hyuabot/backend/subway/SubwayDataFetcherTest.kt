@@ -3,9 +3,11 @@ package app.hyuabot.backend.subway
 import app.hyuabot.backend.codegen.types.SubwayArrival
 import app.hyuabot.backend.codegen.types.SubwayArrivalGroup
 import app.hyuabot.backend.codegen.types.SubwayOriginTerminal
+import app.hyuabot.backend.database.entity.PublicHoliday
 import app.hyuabot.backend.database.entity.SubwayRealtime
 import app.hyuabot.backend.database.entity.SubwayRoute
 import app.hyuabot.backend.database.entity.SubwayRouteStation
+import app.hyuabot.backend.holiday.service.PublicHolidayService
 import app.hyuabot.backend.subway.controller.SubwayDataFetcher
 import app.hyuabot.backend.subway.controller.SubwayTimetableDataLoader
 import app.hyuabot.backend.subway.domain.SubwayTimetableKey
@@ -22,6 +24,7 @@ import org.springframework.context.annotation.Import
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZonedDateTime
 import kotlin.test.Test
@@ -37,6 +40,8 @@ class SubwayDataFetcherTest {
     @Autowired private lateinit var dgsQueryExecutor: DgsQueryExecutor
 
     @MockitoBean private lateinit var subwayService: SubwayService
+
+    @MockitoBean private lateinit var publicHolidayService: PublicHolidayService
 
     private fun createRoute(
         id: Int = 1004,
@@ -390,6 +395,97 @@ class SubwayDataFetcherTest {
         val station = result[0] as Map<*, *>
         val arrival = station["arrival"] as List<*>
         assertEquals(0, arrival.size)
+    }
+
+    @Test
+    @DisplayName("전철 도착 정보 조회 - 공휴일에 weekends로 오버라이드")
+    fun testSubwayArrivalOnPublicHoliday() {
+        whenever(publicHolidayService.findPublicHoliday(any())).thenReturn(
+            PublicHoliday(
+                seq = 1,
+                date = LocalDate.now(),
+                name = "임시공휴일",
+                calendarType = "solar",
+            ),
+        )
+        whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
+        whenever(
+            subwayService.getArrival(
+                station.id,
+                directions = listOf("up"),
+                weekday = "weekends",
+            ),
+        ).thenReturn(emptyList())
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    subway(input: {
+                        keys: [{
+                            stationID: "K449",
+                            direction: ["up"],
+                            weekdays: ["weekdays"],
+                            limit: 10
+                        }],
+                    }) {
+                        stationID
+                        arrival {
+                            direction
+                            entries {
+                                minutes
+                            }
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.subway",
+            )
+        assertNotNull(result)
+        assertEquals(1, result.size)
+        assertEquals("K449", result[0]["stationID"])
+    }
+
+    @Test
+    @DisplayName("전철 도착 정보 조회 - 공휴일 아닌 경우 weekday 그대로 사용")
+    fun testSubwayArrivalOnNonHoliday() {
+        whenever(publicHolidayService.findPublicHoliday(any())).thenReturn(null)
+        whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
+        whenever(
+            subwayService.getArrival(
+                station.id,
+                directions = listOf("up"),
+                weekday = "weekdays",
+            ),
+        ).thenReturn(emptyList())
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    subway(input: {
+                        keys: [{
+                            stationID: "K449",
+                            direction: ["up"],
+                            weekdays: ["weekdays"],
+                            limit: 10
+                        }],
+                    }) {
+                        stationID
+                        arrival {
+                            direction
+                            entries {
+                                minutes
+                            }
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.subway",
+            )
+        assertNotNull(result)
+        assertEquals(1, result.size)
+        assertEquals("K449", result[0]["stationID"])
     }
 
     @Test
