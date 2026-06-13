@@ -201,7 +201,8 @@ class PublicHolidayControllerTest {
     fun testUpdatePublicHoliday() {
         val updated = PublicHoliday(seq = 1, date = LocalDate.parse("2025-03-02"), name = "삼일절 대체공휴일", calendarType = "solar")
         doReturn(updated).whenever(service).updatePublicHoliday(
-            1, PublicHolidayRequest(date = "2025-03-02", name = "삼일절 대체공휴일", calendarType = "solar"),
+            1,
+            PublicHolidayRequest(date = "2025-03-02", name = "삼일절 대체공휴일", calendarType = "solar"),
         )
         mockMvc
             .perform(
@@ -225,7 +226,8 @@ class PublicHolidayControllerTest {
     @WithCustomMockUser(username = "test_user")
     fun testUpdatePublicHolidayInvalidDateFormat() {
         doThrow(LocalDateNotValidException()).whenever(service).updatePublicHoliday(
-            1, PublicHolidayRequest(date = "2025/03/02", name = "테스트", calendarType = "solar"),
+            1,
+            PublicHolidayRequest(date = "2025/03/02", name = "테스트", calendarType = "solar"),
         )
         mockMvc
             .perform(
@@ -246,7 +248,8 @@ class PublicHolidayControllerTest {
     @WithCustomMockUser(username = "test_user")
     fun testUpdatePublicHolidayNotFound() {
         doThrow(PublicHolidayNotFoundException()).whenever(service).updatePublicHoliday(
-            999, PublicHolidayRequest(date = "2025-03-01", name = "테스트", calendarType = "solar"),
+            999,
+            PublicHolidayRequest(date = "2025-03-01", name = "테스트", calendarType = "solar"),
         )
         mockMvc
             .perform(
@@ -267,7 +270,8 @@ class PublicHolidayControllerTest {
     @WithCustomMockUser(username = "test_user")
     fun testUpdatePublicHolidayDuplicateDate() {
         doThrow(DuplicatePublicHolidayException()).whenever(service).updatePublicHoliday(
-            1, PublicHolidayRequest(date = "2025-03-01", name = "테스트", calendarType = "solar"),
+            1,
+            PublicHolidayRequest(date = "2025-03-01", name = "테스트", calendarType = "solar"),
         )
         mockMvc
             .perform(
@@ -288,7 +292,8 @@ class PublicHolidayControllerTest {
     @WithCustomMockUser(username = "test_user")
     fun testUpdatePublicHolidayOtherError() {
         doThrow(RuntimeException("Unexpected Error")).whenever(service).updatePublicHoliday(
-            1, PublicHolidayRequest(date = "2025-03-01", name = "테스트", calendarType = "solar"),
+            1,
+            PublicHolidayRequest(date = "2025-03-01", name = "테스트", calendarType = "solar"),
         )
         mockMvc
             .perform(

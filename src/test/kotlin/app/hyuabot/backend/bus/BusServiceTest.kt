@@ -23,8 +23,6 @@ import app.hyuabot.backend.bus.service.BusRealtimeService
 import app.hyuabot.backend.bus.service.BusRouteService
 import app.hyuabot.backend.bus.service.BusStopService
 import app.hyuabot.backend.bus.service.BusTimetableService
-import app.hyuabot.backend.database.entity.PublicHoliday
-import app.hyuabot.backend.holiday.service.PublicHolidayService
 import app.hyuabot.backend.codegen.types.BusRouteStopInput
 import app.hyuabot.backend.database.entity.BusDepartureLog
 import app.hyuabot.backend.database.entity.BusRealtime
@@ -32,6 +30,7 @@ import app.hyuabot.backend.database.entity.BusRoute
 import app.hyuabot.backend.database.entity.BusRouteStop
 import app.hyuabot.backend.database.entity.BusStop
 import app.hyuabot.backend.database.entity.BusTimetable
+import app.hyuabot.backend.database.entity.PublicHoliday
 import app.hyuabot.backend.database.exception.LocalTimeNotValidException
 import app.hyuabot.backend.database.repository.BusDepartureLogRepository
 import app.hyuabot.backend.database.repository.BusRealtimeRepository
@@ -39,6 +38,7 @@ import app.hyuabot.backend.database.repository.BusRouteRepository
 import app.hyuabot.backend.database.repository.BusRouteStopRepository
 import app.hyuabot.backend.database.repository.BusStopRepository
 import app.hyuabot.backend.database.repository.BusTimetableRepository
+import app.hyuabot.backend.holiday.service.PublicHolidayService
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows

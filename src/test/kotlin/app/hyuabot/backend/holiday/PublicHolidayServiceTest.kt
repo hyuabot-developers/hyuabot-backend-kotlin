@@ -117,9 +117,11 @@ class PublicHolidayServiceTest {
             repository.findBySeqNotAndDateAndCalendarType(seq = 1, date = LocalDate.of(2025, 1, 2), calendarType = "solar"),
         ).thenReturn(null)
         whenever(repository.save(existing)).thenReturn(updated)
-        val result = service.updatePublicHoliday(
-            1, PublicHolidayRequest(date = "2025-01-02", name = "신정 대체공휴일", calendarType = "solar"),
-        )
+        val result =
+            service.updatePublicHoliday(
+                1,
+                PublicHolidayRequest(date = "2025-01-02", name = "신정 대체공휴일", calendarType = "solar"),
+            )
         assertEquals(1, result.seq)
         assertEquals("2025-01-02", result.date.toString())
         assertEquals("신정 대체공휴일", result.name)
