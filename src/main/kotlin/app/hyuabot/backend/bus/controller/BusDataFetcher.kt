@@ -216,6 +216,7 @@ class BusDataFetcher(
                 routeID = routeStop.route.seq,
                 stopID = routeStop.stop.seq,
                 startStopID = routeStop.startStop.seq,
+                minuteFromStart = routeStop.minutes,
                 limit = limitMap[routeStop.route.seq to routeStop.stop.seq],
             )
         val dataLoader = dfe.getDataLoader<BusArrivalKey, List<BusArrival>>("busArrivalDataLoader")!!

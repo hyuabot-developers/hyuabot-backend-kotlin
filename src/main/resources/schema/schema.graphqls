@@ -282,6 +282,7 @@ type BusArrival {
     lowFloor: Boolean
     isRealtime: Boolean!
     time: LocalTime
+    arrivalTime: LocalTime
 }
 
 # 전철 정보를 반환하는 쿼리입니다.

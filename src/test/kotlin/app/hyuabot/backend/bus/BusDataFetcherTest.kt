@@ -501,6 +501,7 @@ class BusDataFetcherTest {
                     routeID = route.id,
                     stopID = stop.id,
                     startStopID = startStop.id,
+                    minuteFromStart = 1,
                     limit = null,
                 ) to
                     listOf(
@@ -557,6 +558,7 @@ class BusDataFetcherTest {
                     routeID = route.id,
                     stopID = stop.id,
                     startStopID = startStop.id,
+                    minuteFromStart = 1,
                     limit = 2,
                 ) to
                     listOf(
@@ -597,6 +599,7 @@ class BusDataFetcherTest {
                     routeID = route.id,
                     stopID = stop.id,
                     startStopID = startStop.id,
+                    minuteFromStart = 1,
                     limit = null,
                 ) to emptyList(),
             ),
