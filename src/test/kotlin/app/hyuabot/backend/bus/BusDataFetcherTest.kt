@@ -500,6 +500,7 @@ class BusDataFetcherTest {
                 BusArrivalKey(
                     routeID = route.id,
                     stopID = stop.id,
+                    startStopID = startStop.id,
                     limit = null,
                 ) to
                     listOf(
@@ -555,6 +556,7 @@ class BusDataFetcherTest {
                 BusArrivalKey(
                     routeID = route.id,
                     stopID = stop.id,
+                    startStopID = startStop.id,
                     limit = 2,
                 ) to
                     listOf(
@@ -594,6 +596,7 @@ class BusDataFetcherTest {
                 BusArrivalKey(
                     routeID = route.id,
                     stopID = stop.id,
+                    startStopID = startStop.id,
                     limit = null,
                 ) to emptyList(),
             ),
