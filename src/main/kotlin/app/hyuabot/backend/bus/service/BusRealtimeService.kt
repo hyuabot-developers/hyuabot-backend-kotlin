@@ -113,19 +113,29 @@ class BusRealtimeService(
                     sort,
                 ).groupBy { it.routeID to it.startStopID }
         return keys.associateWith { key ->
-            val realtimeArrivals =
-                (realtimeGrouped[key.routeID to key.stopID] ?: emptyList())
-                    .map {
-                        BusArrival(
-                            stops = it.remainingStop,
-                            seats = it.remainingSeat,
-                            minutes = it.remainingTime.toMinutes().toInt(),
-                            lowFloor = it.isLowFloor,
-                            isRealtime = true,
-                        )
-                    }.sortedBy { it.minutes }
-            val lastRealtimeMinutes = realtimeArrivals.maxOfOrNull { it.minutes!! } ?: -10
+            val rawRealtimes = realtimeGrouped[key.routeID to key.stopID] ?: emptyList()
+            val sortedRealtimes = rawRealtimes.sortedBy { it.remainingTime.toMinutes().toInt() }
+            val lastRealtimeMinutes =
+                if (sortedRealtimes.isEmpty()) {
+                    -10
+                } else {
+                    sortedRealtimes
+                        .last()
+                        .remainingTime
+                        .toMinutes()
+                        .toInt()
+                }
             val cutoffMinutes = lastRealtimeMinutes + 10
+            val realtimeArrivals =
+                sortedRealtimes.map {
+                    BusArrival(
+                        stops = it.remainingStop,
+                        seats = it.remainingSeat,
+                        minutes = it.remainingTime.toMinutes().toInt(),
+                        lowFloor = it.isLowFloor,
+                        isRealtime = true,
+                    )
+                }
             val rawLogTimes =
                 (logGrouped[key.routeID to key.stopID] ?: emptyList())
                     .map { it.departureTime }

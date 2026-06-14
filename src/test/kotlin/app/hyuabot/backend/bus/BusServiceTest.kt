@@ -3642,4 +3642,173 @@ class BusServiceTest {
         assertEquals(LocalTime.parse("23:30:00"), arrivals[1].time)
         assertEquals(LocalTime.parse("00:30:00"), arrivals[2].time)
     }
+
+    @Test
+    @DisplayName("출발 시간 클러스터링 - 단일 항목")
+    fun testClusterDepartureTimesSingleItem() {
+        val result = realtimeService.clusterDepartureTimes(listOf(LocalTime.parse("08:00:00")))
+        assertEquals(1, result.size)
+        assertEquals(LocalTime.parse("08:00:00"), result[0])
+    }
+
+    @Test
+    @DisplayName("출발 시간 클러스터링 - 임계값 이내 (1개 클러스터로 병합)")
+    fun testClusterDepartureTimesWithinThreshold() {
+        val result =
+            realtimeService.clusterDepartureTimes(
+                listOf(LocalTime.parse("08:00:00"), LocalTime.parse("08:01:00")),
+            )
+        assertEquals(1, result.size)
+        assertEquals(LocalTime.parse("08:00:30"), result[0])
+    }
+
+    @Test
+    @DisplayName("출발 시간 클러스터링 - 임계값 초과 (2개 클러스터로 분리)")
+    fun testClusterDepartureTimesMultipleClusters() {
+        val result =
+            realtimeService.clusterDepartureTimes(
+                listOf(LocalTime.parse("08:00:00"), LocalTime.parse("09:00:00")),
+            )
+        assertEquals(2, result.size)
+        assertEquals(LocalTime.parse("08:00:00"), result[0])
+        assertEquals(LocalTime.parse("09:00:00"), result[1])
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 도착 로그가 cutoff 이내로 필터링됨 (시간표 fallback 사용)")
+    fun testGetArrivalBatchLogFilteredByCutoff() {
+        val fixedNow = LocalDateTime.of(2025, 3, 3, 7, 0)
+        val spyService = spy(realtimeService)
+        doReturn(fixedNow).whenever(spyService).currentTime()
+
+        val key =
+            BusArrivalKey(
+                routeID = 216000068,
+                stopID = 216000138,
+                startStopID = 216000358,
+                minuteFromStart = 0,
+                limit = null,
+            )
+        whenever(
+            realtimeRepository.findByRouteIDInAndStopIDIn(any(), any()),
+        ).thenReturn(
+            listOf(
+                BusRealtime(
+                    routeID = 216000068,
+                    stopID = 216000138,
+                    order = 1,
+                    remainingTime = Duration.ofMinutes(20),
+                    remainingStop = 3,
+                    remainingSeat = 30,
+                    isLowFloor = false,
+                    updatedAt = ZonedDateTime.now(),
+                    routeStop = null,
+                ),
+            ),
+        )
+        // cutoffMinutes = 20 + 10 = 30; log at 07:25 is only 25 min away → filtered out
+        whenever(
+            logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any()),
+        ).thenReturn(
+            listOf(
+                BusDepartureLog(
+                    seq = 1,
+                    routeID = 216000068,
+                    stopID = 216000138,
+                    departureDate = LocalDate.of(2025, 2, 24),
+                    departureTime = LocalTime.parse("07:25:00"),
+                    vehicleID = "1000001",
+                    routeStop = null,
+                ),
+            ),
+        )
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("08:00:00"),
+                ),
+            ),
+        )
+
+        val result = spyService.getArrivalBatch(setOf(key))
+
+        val arrivals = result[key]!!
+        // realtime(20min) + timetable fallback (log filtered, arrivalTime=08:00 which is 60min > 30min cutoff)
+        assertEquals(2, arrivals.size)
+        assertEquals(true, arrivals[0].isRealtime)
+        assertEquals(false, arrivals[1].isRealtime)
+        assertEquals(LocalTime.parse("08:00:00"), arrivals[1].time)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 도착 로그 기반 (시간표 fallback 미사용)")
+    fun testGetArrivalBatchWithLogs() {
+        val fixedNow = LocalDateTime.of(2025, 3, 3, 7, 0)
+        val spyService = spy(realtimeService)
+        doReturn(fixedNow).whenever(spyService).currentTime()
+
+        val key =
+            BusArrivalKey(
+                routeID = 216000068,
+                stopID = 216000138,
+                startStopID = 216000358,
+                minuteFromStart = 10,
+                limit = null,
+            )
+        whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
+        whenever(
+            logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any()),
+        ).thenReturn(
+            listOf(
+                BusDepartureLog(
+                    seq = 1,
+                    routeID = 216000068,
+                    stopID = 216000138,
+                    departureDate = LocalDate.of(2025, 2, 24),
+                    departureTime = LocalTime.parse("08:00:00"),
+                    vehicleID = "1000001",
+                    routeStop = null,
+                ),
+            ),
+        )
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("07:30:00"),
+                ),
+            ),
+        )
+
+        val result = spyService.getArrivalBatch(setOf(key))
+
+        val arrivals = result[key]!!
+        assertEquals(1, arrivals.size)
+        assertEquals(false, arrivals[0].isRealtime)
+        assertEquals(LocalTime.parse("07:50:00"), arrivals[0].time)
+        assertEquals(LocalTime.parse("08:00:00"), arrivals[0].arrivalTime)
+    }
 }
