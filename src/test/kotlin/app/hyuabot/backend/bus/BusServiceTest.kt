@@ -3793,12 +3793,21 @@ class BusServiceTest {
             ),
         ).thenReturn(
             listOf(
+                // 07:30 is 20min from estimated 07:50 → becomes best
                 BusTimetable(
                     seq = 1,
                     routeID = 216000068,
                     startStopID = 216000358,
                     weekday = "weekdays",
                     departureTime = LocalTime.parse("07:30:00"),
+                ),
+                // 08:30 is 40min from estimated 07:50 → not selected (covers if-false branch)
+                BusTimetable(
+                    seq = 2,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("08:30:00"),
                 ),
             ),
         )
@@ -3808,6 +3817,58 @@ class BusServiceTest {
         val arrivals = result[key]!!
         assertEquals(1, arrivals.size)
         assertEquals(false, arrivals[0].isRealtime)
+        // time = nearest timetable entry (07:30) instead of estimated (08:00 - 10min = 07:50)
+        assertEquals(LocalTime.parse("07:30:00"), arrivals[0].time)
+        assertEquals(LocalTime.parse("08:00:00"), arrivals[0].arrivalTime)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 도착 로그 기반, 시간표 없음 (추정 종점 시각 사용)")
+    fun testGetArrivalBatchWithLogsAndNoTimetable() {
+        val fixedNow = LocalDateTime.of(2025, 3, 3, 7, 0)
+        val spyService = spy(realtimeService)
+        doReturn(fixedNow).whenever(spyService).currentTime()
+
+        val key =
+            BusArrivalKey(
+                routeID = 216000068,
+                stopID = 216000138,
+                startStopID = 216000358,
+                minuteFromStart = 10,
+                limit = null,
+            )
+        whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
+        whenever(
+            logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any()),
+        ).thenReturn(
+            listOf(
+                BusDepartureLog(
+                    seq = 1,
+                    routeID = 216000068,
+                    stopID = 216000138,
+                    departureDate = LocalDate.of(2025, 2, 24),
+                    departureTime = LocalTime.parse("08:00:00"),
+                    vehicleID = "1000001",
+                    routeStop = null,
+                ),
+            ),
+        )
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(emptyList())
+
+        val result = spyService.getArrivalBatch(setOf(key))
+
+        val arrivals = result[key]!!
+        assertEquals(1, arrivals.size)
+        assertEquals(false, arrivals[0].isRealtime)
+        // no timetable → falls back to estimated terminal time (08:00 - 10min = 07:50)
         assertEquals(LocalTime.parse("07:50:00"), arrivals[0].time)
         assertEquals(LocalTime.parse("08:00:00"), arrivals[0].arrivalTime)
     }

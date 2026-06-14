@@ -14,6 +14,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
+import kotlin.math.abs
 
 @Service
 class BusRealtimeService(
@@ -143,7 +144,17 @@ class BusRealtimeService(
                 clusterDepartureTimes(rawLogTimes)
                     .filter { time -> (toServiceSeconds(time) - toServiceSeconds(currentTime)) / 60 > cutoffMinutes }
                     .map { logTime ->
-                        val terminalTime = logTime.minusMinutes(key.minuteFromStart.toLong())
+                        val estimatedTerminalTime = logTime.minusMinutes(key.minuteFromStart.toLong())
+                        val timetableEntries = timetableGrouped[key.routeID to key.startStopID] ?: emptyList()
+                        var terminalTime = estimatedTerminalTime
+                        var bestDiff = Int.MAX_VALUE
+                        for (entry in timetableEntries) {
+                            val diff = abs(toServiceSeconds(entry.departureTime) - toServiceSeconds(estimatedTerminalTime))
+                            if (diff < bestDiff) {
+                                bestDiff = diff
+                                terminalTime = entry.departureTime
+                            }
+                        }
                         BusArrival(isRealtime = false, time = terminalTime, arrivalTime = logTime)
                     }.sortedBy { toServiceSeconds(it.time!!) }
             val scheduledArrivals =
