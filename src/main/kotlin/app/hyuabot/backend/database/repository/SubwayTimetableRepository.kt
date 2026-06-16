@@ -3,6 +3,7 @@ package app.hyuabot.backend.database.repository
 import app.hyuabot.backend.database.entity.SubwayTimetable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalTime
 
 interface SubwayTimetableRepository : JpaRepository<SubwayTimetable, Int> {
@@ -87,4 +88,29 @@ interface SubwayTimetableRepository : JpaRepository<SubwayTimetable, Int> {
         weekday: String,
         departureTime: LocalTime,
     ): SubwayTimetable?
+
+    @Transactional
+    fun deleteAllBySeqIn(seqList: List<Int>)
+
+    @Transactional
+    fun deleteAllByStationIDIn(stationIDs: List<String>)
+
+    @Transactional
+    fun deleteAllByStationIDInAndHeading(
+        stationIDs: List<String>,
+        heading: String,
+    )
+
+    @Transactional
+    fun deleteAllByStationIDInAndWeekday(
+        stationIDs: List<String>,
+        weekday: String,
+    )
+
+    @Transactional
+    fun deleteAllByStationIDInAndHeadingAndWeekday(
+        stationIDs: List<String>,
+        heading: String,
+        weekday: String,
+    )
 }
