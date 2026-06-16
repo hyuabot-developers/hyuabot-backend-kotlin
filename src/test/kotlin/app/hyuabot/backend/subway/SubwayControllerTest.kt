@@ -7,6 +7,8 @@ import app.hyuabot.backend.database.entity.SubwayTimetable
 import app.hyuabot.backend.database.exception.DurationNotValidException
 import app.hyuabot.backend.database.exception.LocalTimeNotValidException
 import app.hyuabot.backend.security.WithCustomMockUser
+import app.hyuabot.backend.subway.domain.BulkSubwayTimetableCreateRequest
+import app.hyuabot.backend.subway.domain.BulkSubwayTimetableDeleteRequest
 import app.hyuabot.backend.subway.domain.CreateSubwayRouteRequest
 import app.hyuabot.backend.subway.domain.CreateSubwayStationRequest
 import app.hyuabot.backend.subway.domain.SubwayTimetableRequest
@@ -1487,5 +1489,257 @@ class SubwayControllerTest {
             .andExpect(jsonPath("$.result[1].isExpress").value(false))
             .andExpect(jsonPath("$.result[1].isLast").value(true))
             .andExpect(jsonPath("$.result[1].status").value(100))
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 삭제 - seqList로 삭제")
+    @WithCustomMockUser(username = "test_user")
+    fun testBulkDeleteSubwayTimetableBySeqList() {
+        val payload = BulkSubwayTimetableDeleteRequest(seqList = listOf(1, 2, 3))
+        mockMvc
+            .perform(
+                delete("/api/v1/subway/timetable")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(payload)),
+            ).andExpect(status().isNoContent)
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 삭제 - stationIDs로 삭제")
+    @WithCustomMockUser(username = "test_user")
+    fun testBulkDeleteSubwayTimetableByStationIDs() {
+        val payload = BulkSubwayTimetableDeleteRequest(stationIDs = listOf("K450", "K451"))
+        mockMvc
+            .perform(
+                delete("/api/v1/subway/timetable")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(payload)),
+            ).andExpect(status().isNoContent)
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 삭제 - stationIDs + direction + weekday")
+    @WithCustomMockUser(username = "test_user")
+    fun testBulkDeleteSubwayTimetableByStationIDsAndDirectionAndWeekday() {
+        val payload =
+            BulkSubwayTimetableDeleteRequest(
+                stationIDs = listOf("K450"),
+                direction = "up",
+                weekday = "weekdays",
+            )
+        mockMvc
+            .perform(
+                delete("/api/v1/subway/timetable")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(payload)),
+            ).andExpect(status().isNoContent)
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 삭제 - seqList/stationIDs 둘 다 null")
+    @WithCustomMockUser(username = "test_user")
+    fun testBulkDeleteSubwayTimetableInvalidRequest() {
+        val payload = BulkSubwayTimetableDeleteRequest()
+        doThrow(IllegalArgumentException()).whenever(service).deleteTimetablesBulk(payload)
+        mockMvc
+            .perform(
+                delete("/api/v1/subway/timetable")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(payload)),
+            ).andExpect(status().isBadRequest)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.message").value("INVALID_REQUEST"))
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 삭제 - 기타 예외")
+    @WithCustomMockUser(username = "test_user")
+    fun testBulkDeleteSubwayTimetableOtherException() {
+        val payload = BulkSubwayTimetableDeleteRequest(seqList = listOf(1))
+        doThrow(RuntimeException()).whenever(service).deleteTimetablesBulk(payload)
+        mockMvc
+            .perform(
+                delete("/api/v1/subway/timetable")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(payload)),
+            ).andExpect(status().isInternalServerError)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 생성")
+    @WithCustomMockUser(username = "test_user")
+    fun testBulkCreateSubwayTimetable() {
+        val payloads =
+            listOf(
+                BulkSubwayTimetableCreateRequest(
+                    stationID = "K450",
+                    startStationID = "K410",
+                    terminalStationID = "K456",
+                    departureTime = "09:00:00",
+                    weekday = "weekdays",
+                    direction = "up",
+                ),
+            )
+        doReturn(
+            listOf(
+                SubwayTimetable(
+                    seq = 1,
+                    stationID = "K450",
+                    startStationID = "K410",
+                    terminalStationID = "K456",
+                    departureTime = LocalTime.parse("09:00"),
+                    weekday = "weekdays",
+                    heading = "up",
+                    station = null,
+                    startStation = null,
+                    terminalStation = null,
+                ),
+            ),
+        ).whenever(service).createTimetablesBulk(payloads)
+        mockMvc
+            .perform(
+                post("/api/v1/subway/timetable/bulk")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(payloads)),
+            ).andExpect(status().isCreated)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.result").isArray)
+            .andExpect(jsonPath("$.result[0].seq").value(1))
+            .andExpect(jsonPath("$.result[0].stationID").value("K450"))
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 생성 - 역 없음")
+    @WithCustomMockUser(username = "test_user")
+    fun testBulkCreateSubwayTimetableStationNotFound() {
+        val payloads =
+            listOf(
+                BulkSubwayTimetableCreateRequest(
+                    stationID = "K999",
+                    startStationID = "K410",
+                    terminalStationID = "K456",
+                    departureTime = "09:00:00",
+                    weekday = "weekdays",
+                    direction = "up",
+                ),
+            )
+        doThrow(SubwayStationNotFoundException()).whenever(service).createTimetablesBulk(payloads)
+        mockMvc
+            .perform(
+                post("/api/v1/subway/timetable/bulk")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(payloads)),
+            ).andExpect(status().isNotFound)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.message").value("SUBWAY_STATION_NOT_FOUND"))
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 생성 - 출발역 없음")
+    @WithCustomMockUser(username = "test_user")
+    fun testBulkCreateSubwayTimetableStartStationNotFound() {
+        val payloads =
+            listOf(
+                BulkSubwayTimetableCreateRequest(
+                    stationID = "K450",
+                    startStationID = "K999",
+                    terminalStationID = "K456",
+                    departureTime = "09:00:00",
+                    weekday = "weekdays",
+                    direction = "up",
+                ),
+            )
+        doThrow(SubwayStartStationNotFoundException()).whenever(service).createTimetablesBulk(payloads)
+        mockMvc
+            .perform(
+                post("/api/v1/subway/timetable/bulk")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(payloads)),
+            ).andExpect(status().isBadRequest)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.message").value("SUBWAY_START_STATION_NOT_FOUND"))
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 생성 - 종착역 없음")
+    @WithCustomMockUser(username = "test_user")
+    fun testBulkCreateSubwayTimetableTerminalStationNotFound() {
+        val payloads =
+            listOf(
+                BulkSubwayTimetableCreateRequest(
+                    stationID = "K450",
+                    startStationID = "K410",
+                    terminalStationID = "K999",
+                    departureTime = "09:00:00",
+                    weekday = "weekdays",
+                    direction = "up",
+                ),
+            )
+        doThrow(SubwayTerminalStationNotFoundException()).whenever(service).createTimetablesBulk(payloads)
+        mockMvc
+            .perform(
+                post("/api/v1/subway/timetable/bulk")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(payloads)),
+            ).andExpect(status().isBadRequest)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.message").value("SUBWAY_TERMINAL_STATION_NOT_FOUND"))
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 생성 - 잘못된 시간 형식")
+    @WithCustomMockUser(username = "test_user")
+    fun testBulkCreateSubwayTimetableInvalidTimeFormat() {
+        val payloads =
+            listOf(
+                BulkSubwayTimetableCreateRequest(
+                    stationID = "K450",
+                    startStationID = "K410",
+                    terminalStationID = "K456",
+                    departureTime = "invalid",
+                    weekday = "weekdays",
+                    direction = "up",
+                ),
+            )
+        doThrow(
+            app.hyuabot.backend.database.exception
+                .LocalTimeNotValidException(),
+        ).whenever(service).createTimetablesBulk(payloads)
+        mockMvc
+            .perform(
+                post("/api/v1/subway/timetable/bulk")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(payloads)),
+            ).andExpect(status().isBadRequest)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.message").value("INVALID_TIME_FORMAT"))
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 생성 - 기타 예외")
+    @WithCustomMockUser(username = "test_user")
+    fun testBulkCreateSubwayTimetableOtherException() {
+        val payloads =
+            listOf(
+                BulkSubwayTimetableCreateRequest(
+                    stationID = "K450",
+                    startStationID = "K410",
+                    terminalStationID = "K456",
+                    departureTime = "09:00:00",
+                    weekday = "weekdays",
+                    direction = "up",
+                ),
+            )
+        doThrow(RuntimeException()).whenever(service).createTimetablesBulk(payloads)
+        mockMvc
+            .perform(
+                post("/api/v1/subway/timetable/bulk")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(payloads)),
+            ).andExpect(status().isInternalServerError)
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
     }
 }

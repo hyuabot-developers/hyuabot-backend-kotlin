@@ -13,6 +13,8 @@ import app.hyuabot.backend.database.repository.SubwayRouteRepository
 import app.hyuabot.backend.database.repository.SubwayStationNameRepository
 import app.hyuabot.backend.database.repository.SubwayStationRepository
 import app.hyuabot.backend.database.repository.SubwayTimetableRepository
+import app.hyuabot.backend.subway.domain.BulkSubwayTimetableCreateRequest
+import app.hyuabot.backend.subway.domain.BulkSubwayTimetableDeleteRequest
 import app.hyuabot.backend.subway.domain.CreateSubwayRouteRequest
 import app.hyuabot.backend.subway.domain.CreateSubwayStationRequest
 import app.hyuabot.backend.subway.domain.SubwayTimetableKey
@@ -38,6 +40,7 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -3171,5 +3174,237 @@ class SubwayServiceTest {
         ).thenReturn(emptyList())
         val key = SubwayTimetableKey(stationID = "K449", directions = listOf("up"), weekdays = listOf("weekdays"))
         assertEquals(0, service.getTimetableViews(setOf(key)).getValue(key).size)
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 삭제 - seqList")
+    fun testDeleteTimetablesBulkBySeqList() {
+        val request = BulkSubwayTimetableDeleteRequest(seqList = listOf(1, 2, 3))
+        doNothing().whenever(timetableRepository).deleteAllBySeqIn(listOf(1, 2, 3))
+        service.deleteTimetablesBulk(request)
+        verify(timetableRepository).deleteAllBySeqIn(listOf(1, 2, 3))
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 삭제 - stationIDs만")
+    fun testDeleteTimetablesBulkByStationIDs() {
+        val request = BulkSubwayTimetableDeleteRequest(stationIDs = listOf("K450", "K451"))
+        doNothing().whenever(timetableRepository).deleteAllByStationIDIn(listOf("K450", "K451"))
+        service.deleteTimetablesBulk(request)
+        verify(timetableRepository).deleteAllByStationIDIn(listOf("K450", "K451"))
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 삭제 - stationIDs + direction")
+    fun testDeleteTimetablesBulkByStationIDsAndDirection() {
+        val request = BulkSubwayTimetableDeleteRequest(stationIDs = listOf("K450"), direction = "up")
+        doNothing().whenever(timetableRepository).deleteAllByStationIDInAndHeading(listOf("K450"), "up")
+        service.deleteTimetablesBulk(request)
+        verify(timetableRepository).deleteAllByStationIDInAndHeading(listOf("K450"), "up")
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 삭제 - stationIDs + weekday")
+    fun testDeleteTimetablesBulkByStationIDsAndWeekday() {
+        val request = BulkSubwayTimetableDeleteRequest(stationIDs = listOf("K450"), weekday = "weekdays")
+        doNothing().whenever(timetableRepository).deleteAllByStationIDInAndWeekday(listOf("K450"), "weekdays")
+        service.deleteTimetablesBulk(request)
+        verify(timetableRepository).deleteAllByStationIDInAndWeekday(listOf("K450"), "weekdays")
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 삭제 - stationIDs + direction + weekday")
+    fun testDeleteTimetablesBulkByStationIDsAndDirectionAndWeekday() {
+        val request = BulkSubwayTimetableDeleteRequest(stationIDs = listOf("K450"), direction = "up", weekday = "weekdays")
+        doNothing().whenever(timetableRepository).deleteAllByStationIDInAndHeadingAndWeekday(listOf("K450"), "up", "weekdays")
+        service.deleteTimetablesBulk(request)
+        verify(timetableRepository).deleteAllByStationIDInAndHeadingAndWeekday(listOf("K450"), "up", "weekdays")
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 삭제 - seqList/stationIDs 둘 다 null")
+    fun testDeleteTimetablesBulkInvalidRequest() {
+        val request = BulkSubwayTimetableDeleteRequest()
+        assertThrows<IllegalArgumentException> { service.deleteTimetablesBulk(request) }
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 생성")
+    fun testCreateTimetablesBulk() {
+        val payloads =
+            listOf(
+                BulkSubwayTimetableCreateRequest(
+                    stationID = "K450",
+                    startStationID = "K410",
+                    terminalStationID = "K456",
+                    departureTime = "09:00:00",
+                    weekday = "weekdays",
+                    direction = "up",
+                ),
+            )
+        val station =
+            SubwayRouteStation(
+                id = "K450",
+                routeID = 1,
+                name = "한양대",
+                order = 1,
+                cumulativeTime = Duration.ZERO,
+                route = null,
+                stationName = null,
+                realtime = mutableListOf(),
+                timetable = mutableListOf(),
+            )
+        val startStation =
+            SubwayRouteStation(
+                id = "K410",
+                routeID = 1,
+                name = "오이도",
+                order = 2,
+                cumulativeTime = Duration.ZERO,
+                route = null,
+                stationName = null,
+                realtime = mutableListOf(),
+                timetable = mutableListOf(),
+            )
+        val terminalStation =
+            SubwayRouteStation(
+                id = "K456",
+                routeID = 1,
+                name = "소사",
+                order = 3,
+                cumulativeTime = Duration.ZERO,
+                route = null,
+                stationName = null,
+                realtime = mutableListOf(),
+                timetable = mutableListOf(),
+            )
+        whenever(stationRepository.findByIdIn(any())).thenReturn(listOf(station, startStation, terminalStation))
+        whenever(timetableRepository.saveAll(any<List<SubwayTimetable>>())).thenReturn(
+            listOf(
+                SubwayTimetable(
+                    seq = 1,
+                    stationID = "K450",
+                    startStationID = "K410",
+                    terminalStationID = "K456",
+                    departureTime = LocalTime.parse("09:00"),
+                    weekday = "weekdays",
+                    heading = "up",
+                    station = null,
+                    startStation = null,
+                    terminalStation = null,
+                ),
+            ),
+        )
+        val result = service.createTimetablesBulk(payloads)
+        assertEquals(1, result.size)
+        assertEquals("K450", result[0].stationID)
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 생성 - 잘못된 시간 형식")
+    fun testCreateTimetablesBulkInvalidTimeFormat() {
+        val payloads =
+            listOf(
+                BulkSubwayTimetableCreateRequest(
+                    stationID = "K450",
+                    startStationID = "K410",
+                    terminalStationID = "K456",
+                    departureTime = "invalid",
+                    weekday = "weekdays",
+                    direction = "up",
+                ),
+            )
+        whenever(stationRepository.findByIdIn(any())).thenReturn(emptyList())
+        assertThrows<LocalTimeNotValidException> { service.createTimetablesBulk(payloads) }
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 생성 - 역 없음")
+    fun testCreateTimetablesBulkStationNotFound() {
+        val payloads =
+            listOf(
+                BulkSubwayTimetableCreateRequest(
+                    stationID = "K999",
+                    startStationID = "K410",
+                    terminalStationID = "K456",
+                    departureTime = "09:00:00",
+                    weekday = "weekdays",
+                    direction = "up",
+                ),
+            )
+        whenever(stationRepository.findByIdIn(any())).thenReturn(emptyList())
+        assertThrows<SubwayStationNotFoundException> { service.createTimetablesBulk(payloads) }
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 생성 - 출발역 없음")
+    fun testCreateTimetablesBulkStartStationNotFound() {
+        val payloads =
+            listOf(
+                BulkSubwayTimetableCreateRequest(
+                    stationID = "K450",
+                    startStationID = "K999",
+                    terminalStationID = "K456",
+                    departureTime = "09:00:00",
+                    weekday = "weekdays",
+                    direction = "up",
+                ),
+            )
+        val station =
+            SubwayRouteStation(
+                id = "K450",
+                routeID = 1,
+                name = "한양대",
+                order = 1,
+                cumulativeTime = Duration.ZERO,
+                route = null,
+                stationName = null,
+                realtime = mutableListOf(),
+                timetable = mutableListOf(),
+            )
+        whenever(stationRepository.findByIdIn(any())).thenReturn(listOf(station))
+        assertThrows<SubwayStartStationNotFoundException> { service.createTimetablesBulk(payloads) }
+    }
+
+    @Test
+    @DisplayName("지하철 시간표 일괄 생성 - 종착역 없음")
+    fun testCreateTimetablesBulkTerminalStationNotFound() {
+        val payloads =
+            listOf(
+                BulkSubwayTimetableCreateRequest(
+                    stationID = "K450",
+                    startStationID = "K410",
+                    terminalStationID = "K999",
+                    departureTime = "09:00:00",
+                    weekday = "weekdays",
+                    direction = "up",
+                ),
+            )
+        val station =
+            SubwayRouteStation(
+                id = "K450",
+                routeID = 1,
+                name = "한양대",
+                order = 1,
+                cumulativeTime = Duration.ZERO,
+                route = null,
+                stationName = null,
+                realtime = mutableListOf(),
+                timetable = mutableListOf(),
+            )
+        val startStation =
+            SubwayRouteStation(
+                id = "K410",
+                routeID = 1,
+                name = "오이도",
+                order = 2,
+                cumulativeTime = Duration.ZERO,
+                route = null,
+                stationName = null,
+                realtime = mutableListOf(),
+                timetable = mutableListOf(),
+            )
+        whenever(stationRepository.findByIdIn(any())).thenReturn(listOf(station, startStation))
+        assertThrows<SubwayTerminalStationNotFoundException> { service.createTimetablesBulk(payloads) }
     }
 }

@@ -15,6 +15,8 @@ import app.hyuabot.backend.database.repository.SubwayRouteRepository
 import app.hyuabot.backend.database.repository.SubwayStationNameRepository
 import app.hyuabot.backend.database.repository.SubwayStationRepository
 import app.hyuabot.backend.database.repository.SubwayTimetableRepository
+import app.hyuabot.backend.subway.domain.BulkSubwayTimetableCreateRequest
+import app.hyuabot.backend.subway.domain.BulkSubwayTimetableDeleteRequest
 import app.hyuabot.backend.subway.domain.CreateSubwayRouteRequest
 import app.hyuabot.backend.subway.domain.CreateSubwayStationRequest
 import app.hyuabot.backend.subway.domain.SubwayTimetableKey
@@ -369,6 +371,61 @@ class SubwayService(
             throw SubwayTimetableNotFoundException()
         }
         timetableRepository.delete(timetable)
+    }
+
+    @CacheEvict(cacheNames = ["subwayTimetable"], allEntries = true)
+    @Transactional
+    fun deleteTimetablesBulk(request: BulkSubwayTimetableDeleteRequest) {
+        when {
+            request.seqList != null -> timetableRepository.deleteAllBySeqIn(request.seqList)
+            request.stationIDs != null ->
+                when {
+                    request.direction != null && request.weekday != null ->
+                        timetableRepository.deleteAllByStationIDInAndHeadingAndWeekday(
+                            request.stationIDs,
+                            request.direction,
+                            request.weekday,
+                        )
+                    request.direction != null ->
+                        timetableRepository.deleteAllByStationIDInAndHeading(request.stationIDs, request.direction)
+                    request.weekday != null ->
+                        timetableRepository.deleteAllByStationIDInAndWeekday(request.stationIDs, request.weekday)
+                    else -> timetableRepository.deleteAllByStationIDIn(request.stationIDs)
+                }
+            else -> throw IllegalArgumentException("seqList 또는 stationIDs 중 하나는 필수입니다.")
+        }
+    }
+
+    @CacheEvict(cacheNames = ["subwayTimetable"], allEntries = true)
+    @Transactional
+    fun createTimetablesBulk(payloads: List<BulkSubwayTimetableCreateRequest>): List<SubwayTimetable> {
+        val allStationIDs =
+            (
+                payloads.map { it.stationID } +
+                    payloads.map { it.startStationID } +
+                    payloads.map { it.terminalStationID }
+            ).distinct()
+        val stationsById = stationRepository.findByIdIn(allStationIDs).associateBy { it.id }
+
+        val entities =
+            payloads.map { payload ->
+                if (!LocalDateTimeBuilder.checkLocalTimeFormat(payload.departureTime)) throw LocalTimeNotValidException()
+                stationsById[payload.stationID] ?: throw SubwayStationNotFoundException()
+                stationsById[payload.startStationID] ?: throw SubwayStartStationNotFoundException()
+                stationsById[payload.terminalStationID] ?: throw SubwayTerminalStationNotFoundException()
+                SubwayTimetable(
+                    stationID = payload.stationID,
+                    startStationID = payload.startStationID,
+                    terminalStationID = payload.terminalStationID,
+                    departureTime = LocalTime.parse(payload.departureTime),
+                    weekday = payload.weekday,
+                    heading = payload.direction,
+                    station = null,
+                    startStation = null,
+                    terminalStation = null,
+                )
+            }
+        return timetableRepository.saveAll(entities)
     }
 
     fun getRealtimeList() = realtimeRepository.findAll()
