@@ -18,6 +18,7 @@ import com.netflix.graphql.dgs.test.EnableDgsTest
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.assertNotNull
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Import
@@ -486,6 +487,71 @@ class SubwayDataFetcherTest {
         assertNotNull(result)
         assertEquals(1, result.size)
         assertEquals("K449", result[0]["stationID"])
+    }
+
+    @Test
+    @DisplayName("전철 도착 정보 조회 - 토요일 요일 필터를 weekends로 정규화")
+    fun testSubwayArrivalNormalizesSaturday() {
+        whenever(publicHolidayService.findPublicHoliday(any())).thenReturn(null)
+        whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
+        whenever(
+            subwayService.getArrival(
+                eq(station.id),
+                directions = eq(listOf("up")),
+                weekday = eq("weekends"),
+                limit = eq(10),
+                currentTime = any(),
+            ),
+        ).thenReturn(
+            listOf(
+                SubwayArrivalGroup(
+                    direction = "up",
+                    entries =
+                        listOf(
+                            SubwayArrival(
+                                minutes = 4,
+                                terminal = SubwayOriginTerminal(stationID = terminalStation.id, name = terminalStation.name),
+                                isRealtime = true,
+                                location = "고잔",
+                                stops = 2,
+                            ),
+                        ),
+                ),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    subway(input: {
+                        keys: [{
+                            stationID: "K449",
+                            direction: ["up"],
+                            weekdays: ["saturday"],
+                            limit: 10
+                        }],
+                    }) {
+                        stationID
+                        arrival {
+                            direction
+                            entries {
+                                minutes
+                                location
+                            }
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.subway",
+            )
+
+        val arrival = result[0]["arrival"] as List<*>
+        val group = arrival[0] as Map<*, *>
+        val entries = group["entries"] as List<*>
+        val entry = entries[0] as Map<*, *>
+        assertEquals(4, entry["minutes"])
+        assertEquals("고잔", entry["location"])
     }
 
     @Test

@@ -36,7 +36,7 @@ class SubwayDataFetcher(
                     it.stationID
                 }.mapValues { (_, keys) ->
                     val directions = keys.flatMap { it.direction }.distinct()
-                    val weekdays = keys.flatMap { it.weekdays }.distinct()
+                    val weekdays = keys.flatMap { it.weekdays }.map(::normalizeSubwayWeekday).distinct()
                     directions to weekdays
                 }
         dfe.graphQlContext.put("filterMap", filterMap)
@@ -123,4 +123,10 @@ class SubwayDataFetcher(
             stationID = id,
             name = name,
         )
+
+    private fun normalizeSubwayWeekday(weekday: String): String =
+        when (weekday) {
+            "saturday", "sunday" -> "weekends"
+            else -> weekday
+        }
 }
