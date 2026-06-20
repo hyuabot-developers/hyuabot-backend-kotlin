@@ -19,6 +19,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.assertNotNull
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.isNull
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Import
@@ -200,7 +201,7 @@ class SubwayDataFetcherTest {
     @DisplayName("전철 도착 정보 조회 (정상, 역 정보 + 실시간 정보 + 시간표 + 도착 정보)")
     fun testSubwayFullInfo() {
         whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
-        whenever(subwayService.getRealtimeList(station.id, directions = listOf("up"))).thenReturn(
+        whenever(subwayService.getRealtimeList(station.id, directions = listOf("up", "1"))).thenReturn(
             listOf(
                 createRealtime(
                     terminalStation = terminalStation,
@@ -214,9 +215,11 @@ class SubwayDataFetcherTest {
         )
         whenever(
             subwayService.getArrival(
-                station.id,
-                directions = listOf("up"),
-                weekday = "weekdays",
+                eq(station.id),
+                directions = eq(listOf("up")),
+                weekday = eq("weekdays"),
+                limit = isNull(),
+                currentTime = any(),
             ),
         ).thenReturn(
             listOf(
@@ -251,6 +254,15 @@ class SubwayDataFetcherTest {
                 ),
             ),
         )
+        whenever(
+            subwayService.getArrival(
+                eq(station.id),
+                directions = eq(listOf("1")),
+                weekday = eq("weekdays"),
+                limit = isNull(),
+                currentTime = any(),
+            ),
+        ).thenReturn(emptyList())
 
         val result =
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
@@ -412,9 +424,20 @@ class SubwayDataFetcherTest {
         whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
         whenever(
             subwayService.getArrival(
-                station.id,
-                directions = listOf("up"),
-                weekday = "weekends",
+                eq(station.id),
+                directions = eq(listOf("up")),
+                weekday = eq("weekends"),
+                limit = isNull(),
+                currentTime = any(),
+            ),
+        ).thenReturn(emptyList())
+        whenever(
+            subwayService.getArrival(
+                eq(station.id),
+                directions = eq(listOf("1")),
+                weekday = eq("weekends"),
+                limit = isNull(),
+                currentTime = any(),
             ),
         ).thenReturn(emptyList())
 
@@ -454,9 +477,20 @@ class SubwayDataFetcherTest {
         whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
         whenever(
             subwayService.getArrival(
-                station.id,
-                directions = listOf("up"),
-                weekday = "weekdays",
+                eq(station.id),
+                directions = eq(listOf("up")),
+                weekday = eq("weekdays"),
+                limit = isNull(),
+                currentTime = any(),
+            ),
+        ).thenReturn(emptyList())
+        whenever(
+            subwayService.getArrival(
+                eq(station.id),
+                directions = eq(listOf("1")),
+                weekday = eq("weekdays"),
+                limit = isNull(),
+                currentTime = any(),
             ),
         ).thenReturn(emptyList())
 
@@ -499,7 +533,16 @@ class SubwayDataFetcherTest {
                 eq(station.id),
                 directions = eq(listOf("up")),
                 weekday = eq("weekends"),
-                limit = eq(10),
+                limit = isNull(),
+                currentTime = any(),
+            ),
+        ).thenReturn(emptyList())
+        whenever(
+            subwayService.getArrival(
+                eq(station.id),
+                directions = eq(listOf("1")),
+                weekday = eq("weekends"),
+                limit = isNull(),
                 currentTime = any(),
             ),
         ).thenReturn(
@@ -552,6 +595,203 @@ class SubwayDataFetcherTest {
         val entry = entries[0] as Map<*, *>
         assertEquals(4, entry["minutes"])
         assertEquals("고잔", entry["location"])
+    }
+
+    @Test
+    @DisplayName("전철 도착 정보 조회 - 숫자 행선 필터를 기존 응답 행선으로 정규화")
+    fun testSubwayArrivalNormalizesNumericDirection() {
+        whenever(publicHolidayService.findPublicHoliday(any())).thenReturn(null)
+        whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
+        whenever(
+            subwayService.getArrival(
+                eq(station.id),
+                directions = eq(listOf("up")),
+                weekday = eq("weekdays"),
+                limit = isNull(),
+                currentTime = any(),
+            ),
+        ).thenReturn(emptyList())
+        whenever(
+            subwayService.getArrival(
+                eq(station.id),
+                directions = eq(listOf("1")),
+                weekday = eq("weekdays"),
+                limit = isNull(),
+                currentTime = any(),
+            ),
+        ).thenReturn(
+            listOf(
+                SubwayArrivalGroup(
+                    direction = "1",
+                    entries =
+                        listOf(
+                            SubwayArrival(
+                                minutes = 8,
+                                terminal = SubwayOriginTerminal(stationID = terminalStation.id, name = terminalStation.name),
+                                isRealtime = true,
+                                location = "대야미",
+                                stops = 3,
+                            ),
+                        ),
+                ),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    subway(input: {
+                        keys: [{
+                            stationID: "K449",
+                            direction: ["1"],
+                            weekdays: ["weekdays"],
+                            limit: 10
+                        }],
+                    }) {
+                        stationID
+                        arrival {
+                            direction
+                            entries {
+                                minutes
+                                location
+                            }
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.subway",
+            )
+
+        val arrival = result[0]["arrival"] as List<*>
+        val group = arrival[0] as Map<*, *>
+        val entries = group["entries"] as List<*>
+        val entry = entries[0] as Map<*, *>
+        assertEquals("up", group["direction"])
+        assertEquals(8, entry["minutes"])
+        assertEquals("대야미", entry["location"])
+    }
+
+    @Test
+    @DisplayName("전철 도착 정보 조회 - 숫자 하행과 일요일 필터를 정규화하고 limit 없음")
+    fun testSubwayArrivalNormalizesNumericDownDirectionAndSundayWithoutLimit() {
+        whenever(publicHolidayService.findPublicHoliday(any())).thenReturn(null)
+        whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
+        whenever(
+            subwayService.getArrival(
+                eq(station.id),
+                directions = eq(listOf("down")),
+                weekday = eq("weekends"),
+                limit = isNull(),
+                currentTime = any(),
+            ),
+        ).thenReturn(
+            listOf(
+                SubwayArrivalGroup(
+                    direction = "down",
+                    entries =
+                        listOf(
+                            SubwayArrival(
+                                minutes = 12,
+                                terminal = SubwayOriginTerminal(stationID = startStation.id, name = startStation.name),
+                                isRealtime = true,
+                                location = "정왕",
+                                stops = 5,
+                            ),
+                        ),
+                ),
+            ),
+        )
+        whenever(
+            subwayService.getArrival(
+                eq(station.id),
+                directions = eq(listOf("0")),
+                weekday = eq("weekends"),
+                limit = isNull(),
+                currentTime = any(),
+            ),
+        ).thenReturn(emptyList())
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    subway(input: {
+                        keys: [{
+                            stationID: "K449",
+                            direction: ["0"],
+                            weekdays: ["sunday"],
+                            limit: null
+                        }],
+                    }) {
+                        stationID
+                        arrival {
+                            direction
+                            entries {
+                                minutes
+                                location
+                            }
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.subway",
+            )
+
+        val arrival = result[0]["arrival"] as List<*>
+        val group = arrival[0] as Map<*, *>
+        val entries = group["entries"] as List<*>
+        val entry = entries[0] as Map<*, *>
+        assertEquals("down", group["direction"])
+        assertEquals(12, entry["minutes"])
+        assertEquals("정왕", entry["location"])
+    }
+
+    @Test
+    @DisplayName("전철 도착 정보 조회 - 알 수 없는 행선 필터는 그대로 전달")
+    fun testSubwayArrivalKeepsUnknownDirection() {
+        whenever(publicHolidayService.findPublicHoliday(any())).thenReturn(null)
+        whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
+        whenever(
+            subwayService.getArrival(
+                eq(station.id),
+                directions = eq(listOf("side")),
+                weekday = eq("weekdays"),
+                limit = isNull(),
+                currentTime = any(),
+            ),
+        ).thenReturn(emptyList())
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    subway(input: {
+                        keys: [{
+                            stationID: "K449",
+                            direction: ["side"],
+                            weekdays: ["weekdays"],
+                            limit: null
+                        }],
+                    }) {
+                        stationID
+                        arrival {
+                            direction
+                            entries {
+                                minutes
+                            }
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.subway",
+            )
+
+        val arrival = result[0]["arrival"] as List<*>
+        val group = arrival[0] as Map<*, *>
+        val entries = group["entries"] as List<*>
+        assertEquals("side", group["direction"])
+        assertEquals(0, entries.size)
     }
 
     @Test

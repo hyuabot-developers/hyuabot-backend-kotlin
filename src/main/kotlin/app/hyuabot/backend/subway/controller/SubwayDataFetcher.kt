@@ -35,7 +35,7 @@ class SubwayDataFetcher(
                 .groupBy {
                     it.stationID
                 }.mapValues { (_, keys) ->
-                    val directions = keys.flatMap { it.direction }.distinct()
+                    val directions = keys.flatMap { it.direction }.map(::normalizeSubwayDirection).distinct()
                     val weekdays = keys.flatMap { it.weekdays }.map(::normalizeSubwayWeekday).distinct()
                     directions to weekdays
                 }
@@ -59,13 +59,19 @@ class SubwayDataFetcher(
         val station = dfe.getSource<SubwayStation>()!!
         val filterMap = dfe.graphQlContext.get<Map<String, Pair<List<String>, List<String>>>>("filterMap")
         val (directions, _) = filterMap[station.stationID]!!
-        return subwayService.getRealtimeList(station.stationID, directions = directions).map {
+        val entries =
+            subwayService.getRealtimeList(
+                station.stationID,
+                directions = directions.flatMap(::subwayDirectionAliases).distinct(),
+            )
+
+        return entries.map {
             SubwayRealtime(
                 order = it.order,
                 location = it.location,
                 stops = it.remainingStop,
                 minutes = it.remainingTime.toMinutes().toInt(),
-                direction = it.heading,
+                direction = normalizeSubwayDirection(it.heading),
                 terminal = it.terminalStation!!.toSubwayStation(),
                 trainNumber = it.trainNumber,
                 isExpress = it.isExpress,
@@ -109,13 +115,33 @@ class SubwayDataFetcher(
         val today = LocalDate.now()
         val weekday = if (publicHolidayService.findPublicHoliday(today) != null) "weekends" else weekdays.first()
         val limitMap = dfe.graphQlContext.get<Map<String, Int>>("limitMap")
-        return subwayService
-            .getArrival(
-                stationID = station.stationID,
-                directions = directions,
-                weekday = weekday,
-                limit = limitMap[station.stationID],
+        val limit = limitMap[station.stationID]
+        return directions.map { direction ->
+            val entries =
+                subwayDirectionAliases(direction)
+                    .flatMap { alias ->
+                        subwayService.getArrival(
+                            stationID = station.stationID,
+                            directions = listOf(alias),
+                            weekday = weekday,
+                            limit = null,
+                        )
+                    }.flatMap { it.entries }
+                    .distinctBy {
+                        listOf(
+                            it.isRealtime,
+                            it.trainNumber,
+                            it.minutes,
+                            it.location,
+                            it.terminal.stationID,
+                        )
+                    }.sortedBy { it.minutes }
+                    .let { if (limit != null) it.take(limit) else it }
+            SubwayArrivalGroup(
+                direction = direction,
+                entries = entries,
             )
+        }
     }
 
     private fun SubwayRouteStation.toSubwayStation() =
@@ -128,5 +154,19 @@ class SubwayDataFetcher(
         when (weekday) {
             "saturday", "sunday" -> "weekends"
             else -> weekday
+        }
+
+    private fun normalizeSubwayDirection(direction: String): String =
+        when (direction) {
+            "1" -> "up"
+            "0" -> "down"
+            else -> direction
+        }
+
+    private fun subwayDirectionAliases(direction: String): List<String> =
+        when (normalizeSubwayDirection(direction)) {
+            "up" -> listOf("up", "1")
+            "down" -> listOf("down", "0")
+            else -> listOf(direction)
         }
 }
