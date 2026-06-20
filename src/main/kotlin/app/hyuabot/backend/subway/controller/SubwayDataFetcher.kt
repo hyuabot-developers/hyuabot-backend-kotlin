@@ -158,15 +158,15 @@ class SubwayDataFetcher(
 
     private fun normalizeSubwayDirection(direction: String): String =
         when (direction) {
-            "1" -> "up"
-            "0" -> "down"
+            "0" -> "up"
+            "1" -> "down"
             else -> direction
         }
 
     private fun subwayDirectionAliases(direction: String): List<String> =
         when (normalizeSubwayDirection(direction)) {
-            "up" -> listOf("up", "1")
-            "down" -> listOf("down", "0")
+            "up" -> listOf("up", "0")
+            "down" -> listOf("down", "1")
             else -> listOf(direction)
         }
 }

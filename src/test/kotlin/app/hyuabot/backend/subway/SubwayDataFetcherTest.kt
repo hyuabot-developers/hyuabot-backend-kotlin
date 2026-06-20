@@ -201,7 +201,7 @@ class SubwayDataFetcherTest {
     @DisplayName("전철 도착 정보 조회 (정상, 역 정보 + 실시간 정보 + 시간표 + 도착 정보)")
     fun testSubwayFullInfo() {
         whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
-        whenever(subwayService.getRealtimeList(station.id, directions = listOf("up", "1"))).thenReturn(
+        whenever(subwayService.getRealtimeList(station.id, directions = listOf("up", "0"))).thenReturn(
             listOf(
                 createRealtime(
                     terminalStation = terminalStation,
@@ -257,7 +257,7 @@ class SubwayDataFetcherTest {
         whenever(
             subwayService.getArrival(
                 eq(station.id),
-                directions = eq(listOf("1")),
+                directions = eq(listOf("0")),
                 weekday = eq("weekdays"),
                 limit = isNull(),
                 currentTime = any(),
@@ -434,7 +434,7 @@ class SubwayDataFetcherTest {
         whenever(
             subwayService.getArrival(
                 eq(station.id),
-                directions = eq(listOf("1")),
+                directions = eq(listOf("0")),
                 weekday = eq("weekends"),
                 limit = isNull(),
                 currentTime = any(),
@@ -487,7 +487,7 @@ class SubwayDataFetcherTest {
         whenever(
             subwayService.getArrival(
                 eq(station.id),
-                directions = eq(listOf("1")),
+                directions = eq(listOf("0")),
                 weekday = eq("weekdays"),
                 limit = isNull(),
                 currentTime = any(),
@@ -540,7 +540,7 @@ class SubwayDataFetcherTest {
         whenever(
             subwayService.getArrival(
                 eq(station.id),
-                directions = eq(listOf("1")),
+                directions = eq(listOf("0")),
                 weekday = eq("weekends"),
                 limit = isNull(),
                 currentTime = any(),
@@ -614,7 +614,7 @@ class SubwayDataFetcherTest {
         whenever(
             subwayService.getArrival(
                 eq(station.id),
-                directions = eq(listOf("1")),
+                directions = eq(listOf("0")),
                 weekday = eq("weekdays"),
                 limit = isNull(),
                 currentTime = any(),
@@ -622,7 +622,7 @@ class SubwayDataFetcherTest {
         ).thenReturn(
             listOf(
                 SubwayArrivalGroup(
-                    direction = "1",
+                    direction = "0",
                     entries =
                         listOf(
                             SubwayArrival(
@@ -644,7 +644,7 @@ class SubwayDataFetcherTest {
                     subway(input: {
                         keys: [{
                             stationID: "K449",
-                            direction: ["1"],
+                            direction: ["0"],
                             weekdays: ["weekdays"],
                             limit: 10
                         }],
@@ -705,7 +705,7 @@ class SubwayDataFetcherTest {
         whenever(
             subwayService.getArrival(
                 eq(station.id),
-                directions = eq(listOf("0")),
+                directions = eq(listOf("1")),
                 weekday = eq("weekends"),
                 limit = isNull(),
                 currentTime = any(),
@@ -719,7 +719,7 @@ class SubwayDataFetcherTest {
                     subway(input: {
                         keys: [{
                             stationID: "K449",
-                            direction: ["0"],
+                            direction: ["1"],
                             weekdays: ["sunday"],
                             limit: null
                         }],
