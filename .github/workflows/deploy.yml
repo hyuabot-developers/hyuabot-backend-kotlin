@@ -119,7 +119,7 @@ jobs:
           TRANSFER_HOST="${SSH_HOST#*@}"
           TRANSFER_TARGET="ubuntu@$TRANSFER_HOST"
           if ssh -o BatchMode=yes -o ConnectTimeout=10 "$TRANSFER_TARGET" "mkdir -p '$TRANSFER_DIR'" &&
-             rsync -az --timeout=30 -e "ssh -o BatchMode=yes -o ConnectTimeout=10" build/libs/app.jar "$TRANSFER_TARGET:$TRANSFER_DIR/app.jar"; then
+             scp -o BatchMode=yes -o ConnectTimeout=10 build/libs/app.jar "$TRANSFER_TARGET:$TRANSFER_DIR/app.jar"; then
             echo "transferred=true" >> "$GITHUB_OUTPUT"
           else
             echo "Direct transfer failed; falling back to artifact transfer."
