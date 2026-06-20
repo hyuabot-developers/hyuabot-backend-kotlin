@@ -1,5 +1,6 @@
 package app.hyuabot.backend.subway.controller
 
+import app.hyuabot.backend.codegen.types.SubwayArrival
 import app.hyuabot.backend.codegen.types.SubwayArrivalGroup
 import app.hyuabot.backend.codegen.types.SubwayInput
 import app.hyuabot.backend.codegen.types.SubwayOriginTerminal
@@ -118,15 +119,13 @@ class SubwayDataFetcher(
         val limit = limitMap[station.stationID]
         return directions.map { direction ->
             val entries =
-                subwayDirectionAliases(direction)
-                    .flatMap { alias ->
-                        subwayService.getArrival(
-                            stationID = station.stationID,
-                            directions = listOf(alias),
-                            weekday = weekday,
-                            limit = null,
-                        )
-                    }.flatMap { it.entries }
+                subwayService
+                    .getArrival(
+                        stationID = station.stationID,
+                        directions = subwayDirectionAliases(direction),
+                        weekday = weekday,
+                        limit = null,
+                    ).flatMap { it.entries }
                     .distinctBy {
                         listOf(
                             it.isRealtime,
@@ -135,7 +134,8 @@ class SubwayDataFetcher(
                             it.location,
                             it.terminal.stationID,
                         )
-                    }.sortedBy { it.minutes }
+                    }.filterTimetableAfterRealtime()
+                    .sortedWith(compareBy<SubwayArrival> { !it.isRealtime }.thenBy { it.minutes })
                     .let { if (limit != null) it.take(limit) else it }
             SubwayArrivalGroup(
                 direction = direction,
@@ -169,4 +169,13 @@ class SubwayDataFetcher(
             "down" -> listOf("down", "1")
             else -> listOf(direction)
         }
+
+    private fun List<SubwayArrival>.filterTimetableAfterRealtime(): List<SubwayArrival> {
+        val lastRealtimeMinutes = filter { it.isRealtime }.maxOfOrNull { it.minutes } ?: return this
+        return filter { it.isRealtime || it.minutes >= lastRealtimeMinutes + MIN_TIMETABLE_GAP_MINUTES }
+    }
+
+    companion object {
+        private const val MIN_TIMETABLE_GAP_MINUTES = 5
+    }
 }

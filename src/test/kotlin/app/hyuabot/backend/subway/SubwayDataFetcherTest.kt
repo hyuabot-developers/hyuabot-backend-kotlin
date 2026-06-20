@@ -216,7 +216,7 @@ class SubwayDataFetcherTest {
         whenever(
             subwayService.getArrival(
                 eq(station.id),
-                directions = eq(listOf("up")),
+                directions = eq(listOf("up", "0")),
                 weekday = eq("weekdays"),
                 limit = isNull(),
                 currentTime = any(),
@@ -254,16 +254,6 @@ class SubwayDataFetcherTest {
                 ),
             ),
         )
-        whenever(
-            subwayService.getArrival(
-                eq(station.id),
-                directions = eq(listOf("0")),
-                weekday = eq("weekdays"),
-                limit = isNull(),
-                currentTime = any(),
-            ),
-        ).thenReturn(emptyList())
-
         val result =
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
@@ -425,16 +415,7 @@ class SubwayDataFetcherTest {
         whenever(
             subwayService.getArrival(
                 eq(station.id),
-                directions = eq(listOf("up")),
-                weekday = eq("weekends"),
-                limit = isNull(),
-                currentTime = any(),
-            ),
-        ).thenReturn(emptyList())
-        whenever(
-            subwayService.getArrival(
-                eq(station.id),
-                directions = eq(listOf("0")),
+                directions = eq(listOf("up", "0")),
                 weekday = eq("weekends"),
                 limit = isNull(),
                 currentTime = any(),
@@ -478,16 +459,7 @@ class SubwayDataFetcherTest {
         whenever(
             subwayService.getArrival(
                 eq(station.id),
-                directions = eq(listOf("up")),
-                weekday = eq("weekdays"),
-                limit = isNull(),
-                currentTime = any(),
-            ),
-        ).thenReturn(emptyList())
-        whenever(
-            subwayService.getArrival(
-                eq(station.id),
-                directions = eq(listOf("0")),
+                directions = eq(listOf("up", "0")),
                 weekday = eq("weekdays"),
                 limit = isNull(),
                 currentTime = any(),
@@ -531,16 +503,7 @@ class SubwayDataFetcherTest {
         whenever(
             subwayService.getArrival(
                 eq(station.id),
-                directions = eq(listOf("up")),
-                weekday = eq("weekends"),
-                limit = isNull(),
-                currentTime = any(),
-            ),
-        ).thenReturn(emptyList())
-        whenever(
-            subwayService.getArrival(
-                eq(station.id),
-                directions = eq(listOf("0")),
+                directions = eq(listOf("up", "0")),
                 weekday = eq("weekends"),
                 limit = isNull(),
                 currentTime = any(),
@@ -605,16 +568,7 @@ class SubwayDataFetcherTest {
         whenever(
             subwayService.getArrival(
                 eq(station.id),
-                directions = eq(listOf("up")),
-                weekday = eq("weekdays"),
-                limit = isNull(),
-                currentTime = any(),
-            ),
-        ).thenReturn(emptyList())
-        whenever(
-            subwayService.getArrival(
-                eq(station.id),
-                directions = eq(listOf("0")),
+                directions = eq(listOf("up", "0")),
                 weekday = eq("weekdays"),
                 limit = isNull(),
                 currentTime = any(),
@@ -680,7 +634,7 @@ class SubwayDataFetcherTest {
         whenever(
             subwayService.getArrival(
                 eq(station.id),
-                directions = eq(listOf("down")),
+                directions = eq(listOf("down", "1")),
                 weekday = eq("weekends"),
                 limit = isNull(),
                 currentTime = any(),
@@ -702,15 +656,6 @@ class SubwayDataFetcherTest {
                 ),
             ),
         )
-        whenever(
-            subwayService.getArrival(
-                eq(station.id),
-                directions = eq(listOf("1")),
-                weekday = eq("weekends"),
-                limit = isNull(),
-                currentTime = any(),
-            ),
-        ).thenReturn(emptyList())
 
         val result =
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
@@ -792,6 +737,107 @@ class SubwayDataFetcherTest {
         val entries = group["entries"] as List<*>
         assertEquals("side", group["direction"])
         assertEquals(0, entries.size)
+    }
+
+    @Test
+    @DisplayName("전철 도착 정보 조회 - 실시간 이후 최소 간격을 두고 시간표를 붙임")
+    fun testSubwayArrivalAddsTimetableAfterRealtimeGap() {
+        whenever(publicHolidayService.findPublicHoliday(any())).thenReturn(null)
+        whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
+        whenever(
+            subwayService.getArrival(
+                eq(station.id),
+                directions = eq(listOf("up", "0")),
+                weekday = eq("weekdays"),
+                limit = isNull(),
+                currentTime = any(),
+            ),
+        ).thenReturn(
+            listOf(
+                SubwayArrivalGroup(
+                    direction = "up",
+                    entries =
+                        listOf(
+                            SubwayArrival(
+                                minutes = 6,
+                                terminal = SubwayOriginTerminal(stationID = terminalStation.id, name = terminalStation.name),
+                                isRealtime = false,
+                            ),
+                            SubwayArrival(
+                                minutes = 16,
+                                terminal = SubwayOriginTerminal(stationID = terminalStation.id, name = terminalStation.name),
+                                isRealtime = false,
+                            ),
+                            SubwayArrival(
+                                minutes = 20,
+                                terminal = SubwayOriginTerminal(stationID = terminalStation.id, name = terminalStation.name),
+                                isRealtime = false,
+                            ),
+                            SubwayArrival(
+                                minutes = 21,
+                                terminal = SubwayOriginTerminal(stationID = terminalStation.id, name = terminalStation.name),
+                                isRealtime = false,
+                            ),
+                        ),
+                ),
+                SubwayArrivalGroup(
+                    direction = "0",
+                    entries =
+                        listOf(
+                            SubwayArrival(
+                                minutes = 7,
+                                terminal = SubwayOriginTerminal(stationID = terminalStation.id, name = terminalStation.name),
+                                isRealtime = true,
+                                location = "초지",
+                            ),
+                            SubwayArrival(
+                                minutes = 16,
+                                terminal = SubwayOriginTerminal(stationID = terminalStation.id, name = terminalStation.name),
+                                isRealtime = true,
+                                location = "정왕",
+                            ),
+                        ),
+                ),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    subway(input: {
+                        keys: [{
+                            stationID: "K449",
+                            direction: ["up"],
+                            weekdays: ["weekdays"],
+                            limit: 10
+                        }],
+                    }) {
+                        arrival {
+                            entries {
+                                minutes
+                                isRealtime
+                            }
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.subway",
+            )
+
+        val arrival = result[0]["arrival"] as List<*>
+        val group = arrival[0] as Map<*, *>
+        val entries = group["entries"] as List<*>
+        val first = entries[0] as Map<*, *>
+        val second = entries[1] as Map<*, *>
+        val third = entries[2] as Map<*, *>
+        assertEquals(3, entries.size)
+        assertEquals(7, first["minutes"])
+        assertEquals(true, first["isRealtime"])
+        assertEquals(16, second["minutes"])
+        assertEquals(true, second["isRealtime"])
+        assertEquals(21, third["minutes"])
+        assertEquals(false, third["isRealtime"])
     }
 
     @Test
