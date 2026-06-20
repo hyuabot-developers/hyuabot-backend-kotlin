@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 FROM eclipse-temurin:21 AS build
 
 WORKDIR /app
@@ -9,7 +10,7 @@ COPY settings.gradle.kts /app/
 # Copy source code
 COPY src /app/src
 # Build the application
-RUN ./gradlew build -x test
+RUN --mount=type=cache,target=/root/.gradle,sharing=locked ./gradlew --no-daemon build -x test
 # Build stage
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app

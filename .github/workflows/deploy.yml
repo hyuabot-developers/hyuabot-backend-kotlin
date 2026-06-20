@@ -6,6 +6,12 @@ on:
     types:
       - closed
   workflow_dispatch:
+    inputs:
+      no-cache:
+        description: Build Docker image without using cache
+        required: false
+        default: false
+        type: boolean
 jobs:
   deploy:
     if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
@@ -51,7 +57,9 @@ jobs:
           file: ./Dockerfile
           load: true
           tags: ${{ env.IMAGE_NAME }}
-          no-cache: true
+          no-cache: ${{ github.event_name == 'workflow_dispatch' && inputs['no-cache'] }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: Push docker image
         run: |
           docker push ${{ env.IMAGE_NAME }}
