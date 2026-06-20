@@ -107,22 +107,17 @@ jobs:
       - name: Transfer application jar to Oracle runner
         id: transfer
         env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          ORACLE_TRANSFER_TARGET: ${{ secrets.ORACLE_TRANSFER_TARGET }}
+          SSH_HOST: ${{ secrets.SSH_HOST || secrets.ORACLE_TRANSFER_TARGET }}
           TRANSFER_DIR: /tmp/hyuabot-deploy/${{ github.run_id }}
         run: |
-          if [ -n "$SSH_HOST" ]; then
-            TRANSFER_TARGET="ubuntu@$SSH_HOST"
-          else
-            TRANSFER_TARGET="$ORACLE_TRANSFER_TARGET"
-          fi
-
-          if [ -z "$TRANSFER_TARGET" ]; then
-            echo "SSH_HOST or ORACLE_TRANSFER_TARGET is not set; falling back to artifact transfer."
+          if [ -z "$SSH_HOST" ]; then
+            echo "SSH_HOST is not set; falling back to artifact transfer."
             echo "transferred=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
+          TRANSFER_HOST="${SSH_HOST#*@}"
+          TRANSFER_TARGET="ubuntu@$TRANSFER_HOST"
           if ssh -o BatchMode=yes -o ConnectTimeout=10 "$TRANSFER_TARGET" "mkdir -p '$TRANSFER_DIR'" &&
              rsync -az --timeout=30 -e "ssh -o BatchMode=yes -o ConnectTimeout=10" build/libs/app.jar "$TRANSFER_TARGET:$TRANSFER_DIR/app.jar"; then
             echo "transferred=true" >> "$GITHUB_OUTPUT"
