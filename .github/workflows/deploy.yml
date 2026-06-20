@@ -24,7 +24,7 @@ jobs:
         env:
           RUNNER_ADMIN_TOKEN: ${{ secrets.RUNNER_ADMIN_TOKEN || github.token }}
           ORG: ${{ github.repository_owner }}
-          RUNNER_NAME: Jeongin-MBP
+          TARGET_RUNNER_NAME: Jeongin-MBP
         run: |
           python3 - <<'PY'
           import json
@@ -33,7 +33,7 @@ jobs:
 
           token = os.environ.get("RUNNER_ADMIN_TOKEN", "")
           org = os.environ["ORG"]
-          runner_name = os.environ["RUNNER_NAME"]
+          runner_name = os.environ["TARGET_RUNNER_NAME"]
           use_mac = "false"
 
           if token:
@@ -64,6 +64,7 @@ jobs:
     needs: select-build-runner
     if: needs.select-build-runner.outputs.use_mac == 'true'
     runs-on: ["self-hosted", "ARM64", "macOS"]
+    environment: production
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
@@ -110,6 +111,7 @@ jobs:
     needs: select-build-runner
     if: needs.select-build-runner.outputs.use_mac != 'true'
     runs-on: ["self-hosted", "ARM64", "1st"]
+    environment: production
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
@@ -191,7 +193,7 @@ jobs:
           docker image rm ${{ env.IMAGE_NAME }} || true
           docker image prune -f
   restart:
-    if: github.event_name == 'workflow_dispatch'
+    if: always() && github.event_name == 'workflow_dispatch' && needs.deploy.result == 'success'
     needs: deploy
     runs-on: ["self-hosted", "ARM64", "1st"]
     environment: production
