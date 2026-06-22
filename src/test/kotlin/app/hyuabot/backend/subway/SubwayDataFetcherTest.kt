@@ -841,6 +841,144 @@ class SubwayDataFetcherTest {
     }
 
     @Test
+    @DisplayName("전철 도착 정보 조회 - 실시간 없이 시간표만 있으면 그대로 반환")
+    fun testSubwayArrivalKeepsTimetableWhenRealtimeIsEmpty() {
+        whenever(publicHolidayService.findPublicHoliday(any())).thenReturn(null)
+        whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
+        whenever(
+            subwayService.getArrival(
+                eq(station.id),
+                directions = eq(listOf("up", "0")),
+                weekday = eq("weekdays"),
+                limit = isNull(),
+                currentTime = any(),
+            ),
+        ).thenReturn(
+            listOf(
+                SubwayArrivalGroup(
+                    direction = "up",
+                    entries =
+                        listOf(
+                            SubwayArrival(
+                                minutes = 6,
+                                terminal = SubwayOriginTerminal(stationID = terminalStation.id, name = terminalStation.name),
+                                isRealtime = false,
+                            ),
+                            SubwayArrival(
+                                minutes = 16,
+                                terminal = SubwayOriginTerminal(stationID = terminalStation.id, name = terminalStation.name),
+                                isRealtime = false,
+                            ),
+                        ),
+                ),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    subway(input: {
+                        keys: [{
+                            stationID: "K449",
+                            direction: ["up"],
+                            weekdays: ["weekdays"],
+                            limit: 10
+                        }],
+                    }) {
+                        arrival {
+                            entries {
+                                minutes
+                                isRealtime
+                            }
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.subway",
+            )
+
+        val arrival = result[0]["arrival"] as List<*>
+        val group = arrival[0] as Map<*, *>
+        val entries = group["entries"] as List<*>
+        val first = entries[0] as Map<*, *>
+        val second = entries[1] as Map<*, *>
+        assertEquals(2, entries.size)
+        assertEquals(6, first["minutes"])
+        assertEquals(false, first["isRealtime"])
+        assertEquals(16, second["minutes"])
+        assertEquals(false, second["isRealtime"])
+    }
+
+    @Test
+    @DisplayName("전철 도착 정보 필터 - 실시간이 없으면 원본 목록 반환")
+    fun testFilterKeepsTimetableWhenRealtimeIsEmpty() {
+        val fetcher = SubwayDataFetcher(subwayService, publicHolidayService)
+        val method =
+            SubwayDataFetcher::class.java.getDeclaredMethod(
+                "filterTimetableAfterRealtime",
+                List::class.java,
+            )
+        method.isAccessible = true
+        val entries =
+            listOf(
+                SubwayArrival(
+                    minutes = 6,
+                    terminal = SubwayOriginTerminal(stationID = terminalStation.id, name = terminalStation.name),
+                    isRealtime = false,
+                ),
+                SubwayArrival(
+                    minutes = 16,
+                    terminal = SubwayOriginTerminal(stationID = terminalStation.id, name = terminalStation.name),
+                    isRealtime = false,
+                ),
+            )
+
+        assertEquals(entries, method.invoke(fetcher, entries))
+    }
+
+    @Test
+    @DisplayName("전철 도착 정보 필터 - 첫 실시간 값이 최대여도 시간표 간격 적용")
+    fun testFilterUsesFirstRealtimeWhenItIsMaximum() {
+        val fetcher = SubwayDataFetcher(subwayService, publicHolidayService)
+        val method =
+            SubwayDataFetcher::class.java.getDeclaredMethod(
+                "filterTimetableAfterRealtime",
+                List::class.java,
+            )
+        method.isAccessible = true
+        val entries =
+            listOf(
+                SubwayArrival(
+                    minutes = 16,
+                    terminal = SubwayOriginTerminal(stationID = terminalStation.id, name = terminalStation.name),
+                    isRealtime = true,
+                    location = "정왕",
+                ),
+                SubwayArrival(
+                    minutes = 7,
+                    terminal = SubwayOriginTerminal(stationID = terminalStation.id, name = terminalStation.name),
+                    isRealtime = true,
+                    location = "초지",
+                ),
+                SubwayArrival(
+                    minutes = 20,
+                    terminal = SubwayOriginTerminal(stationID = terminalStation.id, name = terminalStation.name),
+                    isRealtime = false,
+                ),
+                SubwayArrival(
+                    minutes = 21,
+                    terminal = SubwayOriginTerminal(stationID = terminalStation.id, name = terminalStation.name),
+                    isRealtime = false,
+                ),
+            )
+
+        val result = method.invoke(fetcher, entries) as List<*>
+
+        assertEquals(listOf(entries[0], entries[1], entries[3]), result)
+    }
+
+    @Test
     @DisplayName("전철 도착 정보 조회 (여러 요일 필터링)")
     fun testSubwayMultipleWeekdayFilter() {
         whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
