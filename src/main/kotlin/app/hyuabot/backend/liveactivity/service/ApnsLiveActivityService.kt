@@ -94,10 +94,12 @@ class ApnsLiveActivityService(
                 .build()
 
         val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-        if (response.statusCode() !in 200..299) {
+        if (!isSuccessfulStatus(response.statusCode())) {
             logger.warn("APNs Live Activity push failed: status={} body={}", response.statusCode(), response.body())
         }
     }
+
+    private fun isSuccessfulStatus(statusCode: Int): Boolean = statusCode in 200..299
 
     private fun isConfigured(): Boolean = enabled && teamId.isNotBlank() && keyId.isNotBlank() && privateKeyPem.isNotBlank()
 

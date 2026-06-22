@@ -6,30 +6,39 @@ import com.sun.net.httpserver.HttpServer
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import tools.jackson.databind.json.JsonMapper
+import java.lang.reflect.InvocationTargetException
 import java.net.InetSocketAddress
 import java.security.KeyPairGenerator
 import java.time.Instant
 import java.util.Base64
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class ApnsLiveActivityServiceTest {
     @Test
     @DisplayName("Disabled APNs sender skips network calls")
     fun disabledSender() {
-        val service =
-            ApnsLiveActivityService(
-                objectMapper = JsonMapper.builder().build(),
-                enabled = false,
-                teamId = "",
-                keyId = "",
-                bundleId = "net.jaram.hyuabot",
-                privateKeyPem = "",
-                configuredBaseUrl = "http://127.0.0.1:1",
-            )
+        val service = service(enabled = false, teamId = "", keyId = "", privateKeyPem = "")
 
         service.sendUpdate("token", "development", state(), Instant.parse("2026-06-21T00:10:00Z"))
         service.sendEnd("token", "development", state())
+    }
+
+    @Test
+    @DisplayName("APNs sender skips network calls when required credentials are blank")
+    fun blankCredentialSender() {
+        val services =
+            listOf(
+                service(teamId = ""),
+                service(keyId = ""),
+                service(privateKeyPem = ""),
+            )
+
+        services.forEach {
+            it.sendUpdate("token", "development", state(), Instant.parse("2026-06-21T00:10:00Z"))
+            it.sendEnd("token", "development", state())
+        }
     }
 
     @Test
@@ -110,6 +119,45 @@ class ApnsLiveActivityServiceTest {
     }
 
     @Test
+    @DisplayName("APNs status code success range is bounded")
+    fun statusCodeSuccessRange() {
+        val service = configuredService("http://127.0.0.1:1")
+        val method =
+            ApnsLiveActivityService::class.java.getDeclaredMethod(
+                "isSuccessfulStatus",
+                Int::class.javaPrimitiveType,
+            )
+        method.isAccessible = true
+
+        assertEquals(false, method.invoke(service, 199))
+        assertEquals(true, method.invoke(service, 200))
+        assertEquals(true, method.invoke(service, 299))
+        assertEquals(false, method.invoke(service, 300))
+    }
+
+    @Test
+    @DisplayName("DER parser rejects invalid sequence and integer markers")
+    fun invalidDerParser() {
+        val service = configuredService("http://127.0.0.1:1")
+        val method =
+            ApnsLiveActivityService::class.java.getDeclaredMethod(
+                "derToJose",
+                ByteArray::class.java,
+            )
+        method.isAccessible = true
+
+        listOf(
+            byteArrayOf(0x31, 0),
+            byteArrayOf(0x30, 0x06, 0x03),
+            byteArrayOf(0x30, 0x06, 0x02, 0x01, 0x01, 0x03),
+        ).forEach {
+            assertFailsWith<InvocationTargetException> {
+                method.invoke(service, it)
+            }
+        }
+    }
+
+    @Test
     @DisplayName("APNs endpoint is selected from token environment")
     fun endpointFromEnvironment() {
         val service = configuredService("")
@@ -126,15 +174,23 @@ class ApnsLiveActivityServiceTest {
         assertEquals("https://api.push.apple.com", method.invoke(service, "unknown"))
     }
 
-    private fun configuredService(baseUrl: String): ApnsLiveActivityService =
+    private fun configuredService(baseUrl: String): ApnsLiveActivityService = service(configuredBaseUrl = baseUrl)
+
+    private fun service(
+        enabled: Boolean = true,
+        teamId: String = "TEAMID",
+        keyId: String = "KEYID",
+        privateKeyPem: String = privateKeyPem(),
+        configuredBaseUrl: String = "http://127.0.0.1:1",
+    ): ApnsLiveActivityService =
         ApnsLiveActivityService(
             objectMapper = JsonMapper.builder().build(),
-            enabled = true,
-            teamId = "TEAMID",
-            keyId = "KEYID",
+            enabled = enabled,
+            teamId = teamId,
+            keyId = keyId,
             bundleId = "net.jaram.hyuabot",
-            privateKeyPem = privateKeyPem(),
-            configuredBaseUrl = baseUrl,
+            privateKeyPem = privateKeyPem,
+            configuredBaseUrl = configuredBaseUrl,
         )
 
     private fun privateKeyPem(): String {
