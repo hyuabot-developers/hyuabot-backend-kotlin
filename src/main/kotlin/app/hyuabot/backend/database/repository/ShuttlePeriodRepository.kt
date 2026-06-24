@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import java.time.ZonedDateTime
 
 interface ShuttlePeriodRepository : JpaRepository<ShuttlePeriod, Int> {
-    fun findByStartBeforeAndEndAfter(
+    fun findFirstByStartBeforeAndEndAfterOrderByStartDesc(
         start: ZonedDateTime,
         end: ZonedDateTime,
     ): ShuttlePeriod?
