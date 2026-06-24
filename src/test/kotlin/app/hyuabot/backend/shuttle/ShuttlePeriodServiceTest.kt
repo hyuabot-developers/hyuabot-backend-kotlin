@@ -293,8 +293,8 @@ class ShuttlePeriodServiceTest {
     fun findShuttlePeriodTest() {
         val date = LocalDate.parse("2025-09-01")
         whenever(
-            shuttlePeriodRepository.findByStartBeforeAndEndAfter(
-                ZonedDateTime.of(date, LocalTime.MIN, LocalDateTimeBuilder.serviceTimezone),
+            shuttlePeriodRepository.findFirstByStartBeforeAndEndAfterOrderByStartDesc(
+                ZonedDateTime.of(date, LocalTime.MAX, LocalDateTimeBuilder.serviceTimezone),
                 ZonedDateTime.of(date, LocalTime.MIN, LocalDateTimeBuilder.serviceTimezone),
             ),
         ).thenReturn(
@@ -311,5 +311,30 @@ class ShuttlePeriodServiceTest {
         assertEquals("semester", result?.type)
         assertEquals(ZonedDateTime.parse("2025-09-01T00:00:00.000+09:00"), result?.start)
         assertEquals(ZonedDateTime.parse("2025-12-23T23:59:59.999+09:00"), result?.end)
+    }
+
+    @Test
+    @DisplayName("셔틀버스 운행 기간 검색 테스트 (기간이 자정에 시작하는 전환일)")
+    fun findShuttlePeriodMidnightTransitionDateTest() {
+        val date = LocalDate.parse("2026-06-24")
+        whenever(
+            shuttlePeriodRepository.findFirstByStartBeforeAndEndAfterOrderByStartDesc(
+                ZonedDateTime.of(date, LocalTime.MAX, LocalDateTimeBuilder.serviceTimezone),
+                ZonedDateTime.of(date, LocalTime.MIN, LocalDateTimeBuilder.serviceTimezone),
+            ),
+        ).thenReturn(
+            ShuttlePeriod(
+                seq = 11,
+                start = ZonedDateTime.parse("2026-06-24T00:00:00.000+09:00"),
+                end = ZonedDateTime.parse("2026-07-14T23:59:00.999+09:00"),
+                type = "vacation_session",
+                periodType = null,
+            ),
+        )
+
+        val result = shuttlePeriodService.findShuttlePeriod(date)
+
+        assertEquals(11, result?.seq)
+        assertEquals("vacation_session", result?.type)
     }
 }

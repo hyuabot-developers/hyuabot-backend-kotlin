@@ -104,8 +104,8 @@ class ShuttlePeriodService(
     }
 
     fun findShuttlePeriod(dateTime: LocalDate): ShuttlePeriod? =
-        shuttlePeriodRepository.findByStartBeforeAndEndAfter(
-            ZonedDateTime.of(dateTime, LocalTime.MIN, LocalDateTimeBuilder.serviceTimezone),
+        shuttlePeriodRepository.findFirstByStartBeforeAndEndAfterOrderByStartDesc(
+            ZonedDateTime.of(dateTime, LocalTime.MAX, LocalDateTimeBuilder.serviceTimezone),
             ZonedDateTime.of(dateTime, LocalTime.MIN, LocalDateTimeBuilder.serviceTimezone),
         )
 }

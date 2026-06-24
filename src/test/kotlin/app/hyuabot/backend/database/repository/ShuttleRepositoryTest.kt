@@ -237,7 +237,7 @@ class ShuttleRepositoryTest {
     @DisplayName("현재 시간 기준으로 학기/계절학기/방학 기간 조회")
     fun testCurrentPeriods() {
         val currentTime = ZonedDateTime.parse("2025-03-15T12:00:00+09:00")
-        val currentPeriods = periodRepository.findByStartBeforeAndEndAfter(currentTime, currentTime)
+        val currentPeriods = periodRepository.findFirstByStartBeforeAndEndAfterOrderByStartDesc(currentTime, currentTime)
         assert(currentPeriods != null)
         currentPeriods?.let {
             assert(it.seq != null)
