@@ -3,6 +3,7 @@ package app.hyuabot.backend.shuttle.service
 import app.hyuabot.backend.database.entity.ShuttleHoliday
 import app.hyuabot.backend.database.exception.LocalDateNotValidException
 import app.hyuabot.backend.database.repository.ShuttleHolidayRepository
+import app.hyuabot.backend.shuttle.domain.ShuttleHolidayOccurrence
 import app.hyuabot.backend.shuttle.domain.ShuttleHolidayRequest
 import app.hyuabot.backend.shuttle.exception.DuplicateShuttleHolidayException
 import app.hyuabot.backend.shuttle.exception.ShuttleHolidayNotFoundException
@@ -79,5 +80,22 @@ class ShuttleHolidayService(
             date,
             LocalDate.parse(lunarDate.lunarIsoFormat, dateFormatter),
         )
+    }
+
+    fun findShuttleHolidayOccurrences(
+        start: LocalDate,
+        end: LocalDate,
+    ): List<ShuttleHolidayOccurrence> {
+        require(!start.isAfter(end)) { "Start date must be before or equal to end date" }
+        return generateSequence(start) { date -> date.plusDays(1) }
+            .takeWhile { date -> !date.isAfter(end) }
+            .mapNotNull { date ->
+                findShuttleHoliday(date)?.let { holiday ->
+                    ShuttleHolidayOccurrence(
+                        date = date,
+                        holiday = holiday,
+                    )
+                }
+            }.toList()
     }
 }

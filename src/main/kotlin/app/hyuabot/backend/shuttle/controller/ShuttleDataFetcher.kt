@@ -7,6 +7,7 @@ import app.hyuabot.backend.codegen.types.ShuttleInput
 import app.hyuabot.backend.codegen.types.ShuttleLimitInput
 import app.hyuabot.backend.codegen.types.ShuttlePeriod
 import app.hyuabot.backend.codegen.types.ShuttleRoute
+import app.hyuabot.backend.codegen.types.ShuttleServiceNotice
 import app.hyuabot.backend.codegen.types.ShuttleStop
 import app.hyuabot.backend.codegen.types.ShuttleTimetable
 import app.hyuabot.backend.codegen.types.ShuttleTimetableEntry
@@ -56,6 +57,7 @@ class ShuttleDataFetcher(
         return Shuttle(
             period = null,
             holiday = null,
+            serviceNotices = emptyList(),
             stops = emptyList(),
         )
     }
@@ -85,6 +87,47 @@ class ShuttleDataFetcher(
                 calendar = it.calendarType,
             )
         }
+    }
+
+    @DgsData(parentType = "Shuttle")
+    fun serviceNotices(
+        @InputArgument start: LocalDate,
+        @InputArgument end: LocalDate,
+    ): List<ShuttleServiceNotice> {
+        require(!start.isAfter(end)) { "Start date must be before or equal to end date" }
+        val periodNotices =
+            periodService.findShuttlePeriodsStartingBetween(start, end).map {
+                ShuttleServiceNotice(
+                    id = "period:${it.seq}:${it.start.toLocalDate()}",
+                    kind = "period",
+                    date = it.start.toLocalDate(),
+                    period =
+                        ShuttlePeriod(
+                            seq = it.seq!!,
+                            start = it.start.withZoneSameInstant(LocalDateTimeBuilder.serviceTimezone),
+                            end = it.end.withZoneSameInstant(LocalDateTimeBuilder.serviceTimezone),
+                            type = it.type,
+                        ),
+                    holiday = null,
+                )
+            }
+        val holidayNotices =
+            holidayService.findShuttleHolidayOccurrences(start, end).map {
+                ShuttleServiceNotice(
+                    id = "holiday:${it.holiday.seq}:${it.date}",
+                    kind = "holiday",
+                    date = it.date,
+                    period = null,
+                    holiday =
+                        ShuttleHoliday(
+                            seq = it.holiday.seq!!,
+                            date = it.holiday.date,
+                            type = it.holiday.type,
+                            calendar = it.holiday.calendarType,
+                        ),
+                )
+            }
+        return (periodNotices + holidayNotices).sortedWith(compareBy({ it.date }, { it.id }))
     }
 
     @DgsData(parentType = "Shuttle")

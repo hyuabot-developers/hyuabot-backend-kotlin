@@ -108,4 +108,15 @@ class ShuttlePeriodService(
             ZonedDateTime.of(dateTime, LocalTime.MAX, LocalDateTimeBuilder.serviceTimezone),
             ZonedDateTime.of(dateTime, LocalTime.MIN, LocalDateTimeBuilder.serviceTimezone),
         )
+
+    fun findShuttlePeriodsStartingBetween(
+        start: LocalDate,
+        end: LocalDate,
+    ): List<ShuttlePeriod> {
+        require(!start.isAfter(end)) { "Start date must be before or equal to end date" }
+        return shuttlePeriodRepository.findByStartBetweenOrderByStartAsc(
+            ZonedDateTime.of(start, LocalTime.MIN, LocalDateTimeBuilder.serviceTimezone),
+            ZonedDateTime.of(end, LocalTime.MAX, LocalDateTimeBuilder.serviceTimezone),
+        )
+    }
 }

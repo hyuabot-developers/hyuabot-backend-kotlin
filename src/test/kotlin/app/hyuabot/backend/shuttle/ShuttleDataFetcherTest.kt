@@ -7,6 +7,7 @@ import app.hyuabot.backend.database.entity.ShuttleStop
 import app.hyuabot.backend.shuttle.controller.ShuttleDataFetcher
 import app.hyuabot.backend.shuttle.controller.ShuttleTimetableDataLoader
 import app.hyuabot.backend.shuttle.domain.ShuttleArrivalItem
+import app.hyuabot.backend.shuttle.domain.ShuttleHolidayOccurrence
 import app.hyuabot.backend.shuttle.domain.ShuttleTimetableKey
 import app.hyuabot.backend.shuttle.domain.ShuttleTimetableResult
 import app.hyuabot.backend.shuttle.domain.ShuttleTimetableViewItem
@@ -313,6 +314,89 @@ class ShuttleDataFetcherTest {
                 }
             }
         }
+    }
+
+    @Test
+    @DisplayName("셔틀버스 운행 변경 알림 후보 조회")
+    fun testShuttleServiceNotices() {
+        val start = today
+        val end = today.plusDays(7)
+        whenever(periodService.findShuttlePeriodsStartingBetween(start, end)).thenReturn(
+            listOf(
+                createPeriod(
+                    seq = 2,
+                    type = "vacation",
+                    start = ZonedDateTime.parse("2026-03-26T00:00:00.000+09:00"),
+                    end = ZonedDateTime.parse("2026-04-30T23:59:59.999+09:00"),
+                ),
+            ),
+        )
+        whenever(holidayService.findShuttleHolidayOccurrences(start, end)).thenReturn(
+            listOf(
+                ShuttleHolidayOccurrence(
+                    date = today.plusDays(1),
+                    holiday =
+                        createHoliday(
+                            seq = 3,
+                            date = LocalDate.parse("2026-03-26"),
+                            type = "halt",
+                        ),
+                ),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    shuttle(input: { date: "${dateFormatter.format(today)}" }) {
+                        serviceNotices(start: "${dateFormatter.format(start)}", end: "${dateFormatter.format(end)}") {
+                            id
+                            kind
+                            date
+                            period { seq, type, start, end }
+                            holiday { seq, date, type, calendar }
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.shuttle.serviceNotices",
+            )
+
+        assertEquals(2, result.size)
+        assertEquals("holiday:3:2026-03-26", result[0]["id"])
+        assertEquals("holiday", result[0]["kind"])
+        assertEquals("2026-03-26", result[0]["date"])
+        val holiday = result[0]["holiday"] as Map<*, *>
+        assertEquals(3, holiday["seq"])
+        assertEquals("halt", holiday["type"])
+        assertEquals("solar", holiday["calendar"])
+
+        assertEquals("period:2:2026-03-26", result[1]["id"])
+        assertEquals("period", result[1]["kind"])
+        assertEquals("2026-03-26", result[1]["date"])
+        val period = result[1]["period"] as Map<*, *>
+        assertEquals(2, period["seq"])
+        assertEquals("vacation", period["type"])
+    }
+
+    @Test
+    @DisplayName("셔틀버스 운행 변경 알림 후보 조회 - 잘못된 범위")
+    fun testShuttleServiceNoticesInvalidRange() {
+        val result =
+            dgsQueryExecutor.execute(
+                """
+                {
+                    shuttle(input: { date: "${dateFormatter.format(today)}" }) {
+                        serviceNotices(start: "2026-04-01", end: "2026-03-01") {
+                            id
+                        }
+                    }
+                }
+                """.trimIndent(),
+            )
+
+        assert(result.errors.isNotEmpty())
     }
 
     @Test

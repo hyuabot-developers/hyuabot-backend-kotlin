@@ -320,4 +320,51 @@ class ShuttleHolidayServiceTest {
         assertEquals("solar", result?.calendarType)
         assertEquals("New Year's Day", result?.type)
     }
+
+    @Test
+    @DisplayName("셔틀 공휴일 발생일 범위 검색")
+    fun testFindShuttleHolidayOccurrences() {
+        val start = LocalDate.of(2026, 3, 1)
+        val end = LocalDate.of(2026, 3, 3)
+        val dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        listOf(start, start.plusDays(1), start.plusDays(2)).forEach { date ->
+            val lunarDate = KoreanLunarCalendar.getInstance()
+            lunarDate.setSolarDate(date.year, date.monthValue, date.dayOfMonth)
+            whenever(
+                repository.findBySolarDateOrLunarDate(
+                    date,
+                    LocalDate.parse(lunarDate.lunarIsoFormat, dateFormat),
+                ),
+            ).thenReturn(
+                if (date == start.plusDays(1)) {
+                    ShuttleHoliday(
+                        seq = 2,
+                        date = date,
+                        calendarType = "solar",
+                        type = "halt",
+                    )
+                } else {
+                    null
+                },
+            )
+        }
+
+        val result = service.findShuttleHolidayOccurrences(start, end)
+
+        assertEquals(1, result.size)
+        assertEquals(start.plusDays(1), result[0].date)
+        assertEquals(2, result[0].holiday.seq)
+        assertEquals("halt", result[0].holiday.type)
+    }
+
+    @Test
+    @DisplayName("셔틀 공휴일 발생일 범위 검색 - 잘못된 범위")
+    fun testFindShuttleHolidayOccurrencesInvalidRange() {
+        assertThrows<IllegalArgumentException> {
+            service.findShuttleHolidayOccurrences(
+                LocalDate.of(2026, 3, 3),
+                LocalDate.of(2026, 3, 1),
+            )
+        }
+    }
 }
