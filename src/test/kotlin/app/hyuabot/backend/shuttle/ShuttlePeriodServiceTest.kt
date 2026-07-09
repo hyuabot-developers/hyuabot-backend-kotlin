@@ -337,4 +337,43 @@ class ShuttlePeriodServiceTest {
         assertEquals(11, result?.seq)
         assertEquals("vacation_session", result?.type)
     }
+
+    @Test
+    @DisplayName("셔틀버스 운행 기간 시작일 범위 검색 테스트")
+    fun findShuttlePeriodsStartingBetweenTest() {
+        val start = LocalDate.parse("2026-03-01")
+        val end = LocalDate.parse("2026-03-31")
+        val expected =
+            listOf(
+                ShuttlePeriod(
+                    seq = 2,
+                    start = ZonedDateTime.parse("2026-03-02T00:00:00.000+09:00"),
+                    end = ZonedDateTime.parse("2026-06-23T23:59:59.999+09:00"),
+                    type = "semester",
+                    periodType = null,
+                ),
+            )
+
+        whenever(
+            shuttlePeriodRepository.findByStartBetweenOrderByStartAsc(
+                ZonedDateTime.of(start, LocalTime.MIN, LocalDateTimeBuilder.serviceTimezone),
+                ZonedDateTime.of(end, LocalTime.MAX, LocalDateTimeBuilder.serviceTimezone),
+            ),
+        ).thenReturn(expected)
+
+        val result = shuttlePeriodService.findShuttlePeriodsStartingBetween(start, end)
+
+        assertEquals(expected, result)
+    }
+
+    @Test
+    @DisplayName("셔틀버스 운행 기간 시작일 범위 검색 테스트 (잘못된 범위)")
+    fun findShuttlePeriodsStartingBetweenInvalidRangeTest() {
+        assertThrows<IllegalArgumentException> {
+            shuttlePeriodService.findShuttlePeriodsStartingBetween(
+                LocalDate.parse("2026-04-01"),
+                LocalDate.parse("2026-03-01"),
+            )
+        }
+    }
 }

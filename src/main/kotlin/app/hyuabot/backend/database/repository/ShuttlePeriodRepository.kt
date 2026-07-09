@@ -9,4 +9,9 @@ interface ShuttlePeriodRepository : JpaRepository<ShuttlePeriod, Int> {
         start: ZonedDateTime,
         end: ZonedDateTime,
     ): ShuttlePeriod?
+
+    fun findByStartBetweenOrderByStartAsc(
+        start: ZonedDateTime,
+        end: ZonedDateTime,
+    ): List<ShuttlePeriod>
 }
