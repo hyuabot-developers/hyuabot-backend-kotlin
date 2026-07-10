@@ -97,10 +97,11 @@ class ShuttleDataFetcher(
         require(!start.isAfter(end)) { "Start date must be before or equal to end date" }
         val periodNotices =
             periodService.findShuttlePeriodsStartingBetween(start, end).map {
+                val serviceDate = it.start.withZoneSameInstant(LocalDateTimeBuilder.serviceTimezone).toLocalDate()
                 ShuttleServiceNotice(
-                    id = "period:${it.seq}:${it.start.toLocalDate()}",
+                    id = "period:${it.seq}:$serviceDate",
                     kind = "period",
-                    date = it.start.toLocalDate(),
+                    date = serviceDate,
                     period =
                         ShuttlePeriod(
                             seq = it.seq!!,

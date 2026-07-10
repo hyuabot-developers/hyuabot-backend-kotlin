@@ -6,6 +6,7 @@ import app.hyuabot.backend.readingRoom.domain.CreateReadingRoomRequest
 import app.hyuabot.backend.readingRoom.domain.UpdateReadingRoomRequest
 import app.hyuabot.backend.readingRoom.exception.DuplicateReadingRoomException
 import app.hyuabot.backend.readingRoom.exception.ReadingRoomNotFoundException
+import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.stereotype.Service
 import java.time.ZonedDateTime
 
@@ -38,7 +39,7 @@ class ReadingRoomService(
                 active = payload.total,
                 occupied = 0,
                 available = payload.total,
-                updatedAt = ZonedDateTime.now(),
+                updatedAt = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone),
                 campus = null,
             ),
         )

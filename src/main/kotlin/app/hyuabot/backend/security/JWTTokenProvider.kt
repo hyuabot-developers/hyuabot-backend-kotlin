@@ -3,6 +3,7 @@ package app.hyuabot.backend.security
 import app.hyuabot.backend.database.entity.RefreshToken
 import app.hyuabot.backend.database.entity.User
 import app.hyuabot.backend.database.repository.RefreshTokenRepository
+import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.io.Decoders
@@ -38,7 +39,7 @@ class JWTTokenProvider(
                 "access_token:$accessToken",
                 "logout",
                 Duration.between(
-                    ZonedDateTime.now(),
+                    ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone),
                     it.expiredAt,
                 ),
             )
@@ -79,8 +80,8 @@ class JWTTokenProvider(
         if (previousRefreshToken != null) {
             previousRefreshToken.apply {
                 this.refreshToken = refreshToken
-                this.expiredAt = ZonedDateTime.now().plusDays(refreshExpirationDays)
-                this.updatedAt = ZonedDateTime.now()
+                this.expiredAt = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone).plusDays(refreshExpirationDays)
+                this.updatedAt = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone)
             }
             refreshTokenRepository.save(previousRefreshToken)
         } else {
@@ -89,9 +90,9 @@ class JWTTokenProvider(
                     uuid = UUID.randomUUID(),
                     userID = userID,
                     refreshToken = refreshToken,
-                    expiredAt = ZonedDateTime.now().plusMinutes(expirationMinutes),
-                    createdAt = ZonedDateTime.now(),
-                    updatedAt = ZonedDateTime.now(),
+                    expiredAt = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone).plusMinutes(expirationMinutes),
+                    createdAt = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone),
+                    updatedAt = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone),
                     user = null,
                 ),
             )

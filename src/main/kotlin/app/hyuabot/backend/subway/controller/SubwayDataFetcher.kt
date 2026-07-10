@@ -113,7 +113,7 @@ class SubwayDataFetcher(
                 "arrival query expects exactly one weekday, but got: $weekdays for station ${station.stationID}",
             )
         }
-        val today = LocalDate.now()
+        val today = LocalDate.now(LocalDateTimeBuilder.serviceTimezone)
         val weekday = if (publicHolidayService.findPublicHoliday(today) != null) "weekends" else weekdays.first()
         val limitMap = dfe.graphQlContext.get<Map<String, Int>>("limitMap")
         val limit = limitMap[station.stationID]
