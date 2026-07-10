@@ -23,7 +23,7 @@ class NoticeDataFetcher(
                 category = input?.category,
                 language = input?.language,
                 since = input?.timestamp,
-                currentTime = ZonedDateTime.now(),
+                currentTime = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone),
             ).map {
                 NoticeCategory(
                     seq = it.id!!,

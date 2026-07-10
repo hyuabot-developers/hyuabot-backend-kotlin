@@ -12,7 +12,6 @@ import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
 import graphql.schema.GraphQLScalarType
 import graphql.schema.idl.RuntimeWiring
-import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -33,7 +32,7 @@ class ScalarRegistration {
             .description("DateTime Scalar (KST)")
             .coercing(
                 object : Coercing<ZonedDateTime, String> {
-                    private val zone = ZoneId.of("Asia/Seoul")
+                    private val zone = LocalDateTimeBuilder.serviceTimezone
                     private val formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 
                     override fun serialize(

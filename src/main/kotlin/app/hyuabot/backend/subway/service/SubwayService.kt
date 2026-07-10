@@ -38,7 +38,6 @@ import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalTime
-import java.time.ZoneId
 import kotlin.collections.emptyList
 import app.hyuabot.backend.codegen.types.SubwayRoute as SubwayRouteDto
 import app.hyuabot.backend.codegen.types.SubwayStation as SubwayStationDto
@@ -451,7 +450,7 @@ class SubwayService(
         directions: List<String>,
         weekday: String,
         limit: Int? = null,
-        currentTime: LocalTime = LocalTime.now(ZoneId.of("Asia/Seoul")),
+        currentTime: LocalTime = LocalTime.now(LocalDateTimeBuilder.serviceTimezone),
     ): List<SubwayArrivalGroup> {
         if (directions.isEmpty()) return emptyList()
         val realtimeGroups =

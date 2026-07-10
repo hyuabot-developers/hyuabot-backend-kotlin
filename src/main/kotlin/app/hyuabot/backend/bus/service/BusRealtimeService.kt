@@ -7,13 +7,13 @@ import app.hyuabot.backend.database.repository.BusDepartureLogRepository
 import app.hyuabot.backend.database.repository.BusRealtimeRepository
 import app.hyuabot.backend.database.repository.BusTimetableRepository
 import app.hyuabot.backend.holiday.service.PublicHolidayService
+import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.ZoneId
 import kotlin.math.abs
 
 @Service
@@ -64,7 +64,7 @@ class BusRealtimeService(
         }
     }
 
-    internal fun currentTime(): LocalDateTime = LocalDateTime.now(ZoneId.of("Asia/Seoul"))
+    internal fun currentTime(): LocalDateTime = LocalDateTime.now(LocalDateTimeBuilder.serviceTimezone)
 
     fun getBusRealtimeList(): List<BusRealtime> = realtimeRepository.findAll()
 
