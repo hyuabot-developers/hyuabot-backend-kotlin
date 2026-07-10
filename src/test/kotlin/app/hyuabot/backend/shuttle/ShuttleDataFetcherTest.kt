@@ -326,7 +326,7 @@ class ShuttleDataFetcherTest {
                 createPeriod(
                     seq = 2,
                     type = "vacation",
-                    start = ZonedDateTime.parse("2026-03-26T00:00:00.000+09:00"),
+                    start = ZonedDateTime.parse("2026-03-25T15:00:00.000Z"),
                     end = ZonedDateTime.parse("2026-04-30T23:59:59.999+09:00"),
                 ),
             ),
