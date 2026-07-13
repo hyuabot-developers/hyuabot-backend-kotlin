@@ -42,6 +42,7 @@ class SecurityConfig(
                         "/api/v1/user",
                         "/api/v1/user/token",
                         "/api/v1/live-activity/**",
+                        "/api/v1/analytics/watch/events",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
                         "/graphql/**",
