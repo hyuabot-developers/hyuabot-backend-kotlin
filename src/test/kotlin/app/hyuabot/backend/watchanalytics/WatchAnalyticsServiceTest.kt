@@ -97,6 +97,12 @@ class WatchAnalyticsServiceTest {
             service.record(validRequest(event = "other"))
         }
         assertThrows<IllegalArgumentException> {
+            service.record(validRequest(entryPoint = "widget"))
+        }
+        assertThrows<IllegalArgumentException> {
+            service.record(validRequest(event = "watch_stop_selected", stopId = "other"))
+        }
+        assertThrows<IllegalArgumentException> {
             service.record(validRequest(appVersion = "invalid version"))
         }
     }
@@ -112,6 +118,21 @@ class WatchAnalyticsServiceTest {
         assertEquals("analytics:watch:active:watchos:2026-07-13", watchOsKeys.first())
         assertEquals("analytics:watch:active:watchos:2026-06-16", watchOsKeys.last())
         assertEquals(56, allKeys.size)
+    }
+
+    @Test
+    fun `reports rolling active installations through the platform gauge`() {
+        val gauge =
+            meterRegistry
+                .get("hyuabot.watch.active.installations")
+                .tag("platform", "watchos")
+                .tag("window", "28d")
+                .gauge()
+
+        assertEquals(0.0, gauge.value())
+        verify(hyperLogLogOperations).size(
+            *service.activeInstallationKeys("watchos", LocalDate.of(2026, 7, 13)).toTypedArray(),
+        )
     }
 
     private fun validRequest(
