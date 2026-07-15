@@ -1,5 +1,6 @@
 package app.hyuabot.backend.auth.domain
 
+import app.hyuabot.backend.security.AdminPermission
 import io.swagger.v3.oas.annotations.media.Schema
 
 data class UserResponse(
@@ -13,4 +14,6 @@ data class UserResponse(
     val phone: String,
     @get:Schema(description = "사용자 활성화 상태", example = "true")
     val active: Boolean,
+    @get:Schema(description = "현재 사용자에게 적용되는 관리 권한")
+    val permissions: List<AdminPermission>,
 )

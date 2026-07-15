@@ -6,6 +6,7 @@ import app.hyuabot.backend.auth.domain.UserResponse
 import app.hyuabot.backend.auth.exception.DuplicateEmailException
 import app.hyuabot.backend.auth.exception.DuplicateUserIDException
 import app.hyuabot.backend.security.JWTUser
+import app.hyuabot.backend.security.effectivePermissions
 import app.hyuabot.backend.utility.ResponseBuilder
 import io.jsonwebtoken.ExpiredJwtException
 import io.swagger.v3.oas.annotations.Operation
@@ -289,6 +290,8 @@ class AuthController {
             )
         } catch (_: ExpiredJwtException) {
             return ResponseBuilder.response(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
+        } catch (_: BadCredentialsException) {
+            return ResponseBuilder.response(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED")
         } catch (e: Exception) {
             logger.error("Token refresh failed: ${e.message}", e)
             return ResponseBuilder.response(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR")
@@ -445,6 +448,7 @@ class AuthController {
                         email = user.email,
                         phone = user.phone,
                         active = user.active,
+                        permissions = user.permissions.effectivePermissions().sortedBy { it.ordinal },
                     ),
                 )
             }

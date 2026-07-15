@@ -8,8 +8,10 @@ import app.hyuabot.backend.database.entity.User
 import app.hyuabot.backend.database.repository.RefreshTokenRepository
 import app.hyuabot.backend.database.repository.UserRepository
 import app.hyuabot.backend.security.JWTTokenProvider
+import app.hyuabot.backend.security.JWTUser
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.transaction.Transactional
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -63,7 +65,11 @@ class AuthService(
 
     fun refreshToken(refreshToken: String): String {
         val authentication = tokenProvider.getAuthentication(refreshToken)
-        return tokenProvider.createRefreshToken(authentication)
+        val userID = (authentication.principal as JWTUser).username
+        if (refreshTokenRepository.findByUserID(userID)?.refreshToken != refreshToken) {
+            throw BadCredentialsException("INVALID_REFRESH_TOKEN")
+        }
+        return tokenProvider.createAccessToken(authentication)
     }
 
     fun getUserInfo(userID: String): User =

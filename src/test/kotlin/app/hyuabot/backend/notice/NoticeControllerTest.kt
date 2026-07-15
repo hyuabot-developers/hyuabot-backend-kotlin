@@ -8,6 +8,7 @@ import app.hyuabot.backend.notice.domain.NoticeRequest
 import app.hyuabot.backend.notice.exception.DuplicateCategoryException
 import app.hyuabot.backend.notice.exception.NoticeCategoryNotFoundException
 import app.hyuabot.backend.notice.exception.NoticeNotFoundException
+import app.hyuabot.backend.security.AdminPermission
 import app.hyuabot.backend.security.WithCustomMockUser
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.junit.jupiter.api.DisplayName
@@ -19,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.bean.override.mockito.MockitoBean
@@ -472,7 +474,7 @@ class NoticeControllerTest {
             UsernamePasswordAuthenticationToken(
                 "notJWTUser",
                 null,
-                mutableListOf(),
+                mutableListOf(SimpleGrantedAuthority(AdminPermission.NOTICE.name)),
             )
         mockMvc
             .perform(

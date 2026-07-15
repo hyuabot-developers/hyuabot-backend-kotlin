@@ -26,6 +26,7 @@ class JWTTokenProvider(
     @param:Value("\${jwt.expiration.refresh}") private val refreshExpirationDays: Long,
     private val refreshTokenRepository: RefreshTokenRepository,
     private val redisTemplate: RedisTemplate<String, String>,
+    private val userDetailsService: JWTUserDetailsService,
 ) {
     private val key by lazy { Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret)) }
 
@@ -90,7 +91,7 @@ class JWTTokenProvider(
                     uuid = UUID.randomUUID(),
                     userID = userID,
                     refreshToken = refreshToken,
-                    expiredAt = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone).plusMinutes(expirationMinutes),
+                    expiredAt = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone).plusDays(refreshExpirationDays),
                     createdAt = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone),
                     updatedAt = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone),
                     user = null,
@@ -117,11 +118,7 @@ class JWTTokenProvider(
 
     // Claims 에서 Authentication 객체 생성
     private fun getAuthentication(claims: Claims): Authentication {
-        val principal: UserDetails =
-            JWTUser(
-                username = claims.subject,
-                password = "",
-            )
+        val principal: UserDetails = userDetailsService.loadUserByUsername(claims.subject)
         return UsernamePasswordAuthenticationToken(principal, "", principal.authorities)
     }
 }

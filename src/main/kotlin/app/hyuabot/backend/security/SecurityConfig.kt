@@ -3,10 +3,13 @@ package app.hyuabot.backend.security
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.http.HttpStatus
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.web.AuthenticationEntryPoint
 import org.springframework.security.web.SecurityFilterChain
+import org.springframework.security.web.access.AccessDeniedHandler
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
@@ -36,7 +39,14 @@ class SecurityConfig(
                 source.registerCorsConfiguration("/**", configuration)
                 it.configurationSource(source)
             }.sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) } // 세션 관리 정책을 Stateless로 설정
-            .authorizeHttpRequests { requests ->
+            .exceptionHandling { exceptions ->
+                exceptions
+                    .authenticationEntryPoint(
+                        AuthenticationEntryPoint { _, response, _ -> response.sendError(HttpStatus.UNAUTHORIZED.value()) },
+                    ).accessDeniedHandler(
+                        AccessDeniedHandler { _, response, _ -> response.sendError(HttpStatus.FORBIDDEN.value()) },
+                    )
+            }.authorizeHttpRequests { requests ->
                 requests // 인증 API, Swagger UI, GraphQL 클라이언트 API는 인증 없이 접근 가능
                     .requestMatchers(
                         "/api/v1/user",
@@ -52,8 +62,37 @@ class SecurityConfig(
                         "/actuator/health/**",
                         "/actuator/prometheus",
                     ).permitAll()
-                    .anyRequest()
+                    .requestMatchers("/api/v1/admin/**")
+                    .hasAuthority(AdminPermission.SUPER_ADMIN.name)
+                    .requestMatchers("/api/v1/building/**")
+                    .hasAuthority(AdminPermission.SUPER_ADMIN.name)
+                    .requestMatchers("/api/v1/shuttle/**", "/api/v1/commute-shuttle/**")
+                    .hasAuthority(AdminPermission.SHUTTLE.name)
+                    .requestMatchers("/api/v1/bus/**")
+                    .hasAuthority(AdminPermission.BUS.name)
+                    .requestMatchers("/api/v1/subway/**")
+                    .hasAuthority(AdminPermission.SUBWAY.name)
+                    .requestMatchers("/api/v1/holiday/**")
+                    .hasAnyAuthority(AdminPermission.BUS.name, AdminPermission.SUBWAY.name)
+                    .requestMatchers("/api/v1/cafeteria/**")
+                    .hasAuthority(AdminPermission.CAFETERIA.name)
+                    .requestMatchers("/api/v1/reading-room/**")
+                    .hasAuthority(AdminPermission.READING_ROOM.name)
+                    .requestMatchers("/api/v1/contact/**")
+                    .hasAuthority(AdminPermission.CONTACT.name)
+                    .requestMatchers("/api/v1/calendar/**")
+                    .hasAuthority(AdminPermission.CALENDAR.name)
+                    .requestMatchers("/api/v1/notice/**")
+                    .hasAuthority(AdminPermission.NOTICE.name)
+                    .requestMatchers("/api/v1/campus/**")
+                    .hasAnyAuthority(
+                        AdminPermission.CAFETERIA.name,
+                        AdminPermission.READING_ROOM.name,
+                        AdminPermission.CONTACT.name,
+                    ).requestMatchers("/api/v1/user/profile")
                     .authenticated()
+                    .anyRequest()
+                    .denyAll()
             }.addFilterBefore(
                 JWTAuthenticationFilter(tokenProvider, redisTemplate),
                 UsernamePasswordAuthenticationFilter::class.java,

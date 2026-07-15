@@ -11,6 +11,7 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.whenever
 import org.springframework.security.core.userdetails.UsernameNotFoundException
+import kotlin.test.assertEquals
 
 @ExtendWith(MockitoExtension::class)
 class JWTUserDetailsServiceTest {
@@ -32,6 +33,7 @@ class JWTUserDetailsServiceTest {
                 email = "test@example.com",
                 phone = "1234567890",
                 active = true,
+                permissions = mutableSetOf(AdminPermission.SHUTTLE),
             )
         whenever(userRepository.findByUserIDAndActiveIsTrue(userID)).thenReturn(user)
         val userDetails = jwtUserDetailsService.loadUserByUsername(userID)
@@ -39,6 +41,7 @@ class JWTUserDetailsServiceTest {
         assert(userDetails.password == "testPassword")
         assert(userDetails.isEnabled)
         assert(userDetails.isAccountNonExpired)
+        assertEquals(listOf("SHUTTLE"), userDetails.authorities.map { it.authority })
     }
 
     @Test
