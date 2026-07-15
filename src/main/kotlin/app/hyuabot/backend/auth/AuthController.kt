@@ -1,10 +1,14 @@
 package app.hyuabot.backend.auth
 
-import app.hyuabot.backend.auth.domain.CreateUserRequest
+import app.hyuabot.backend.auth.domain.ChangePasswordRequest
+import app.hyuabot.backend.auth.domain.CompleteInvitationRequest
 import app.hyuabot.backend.auth.domain.LoginRequest
+import app.hyuabot.backend.auth.domain.UpdateProfileRequest
 import app.hyuabot.backend.auth.domain.UserResponse
+import app.hyuabot.backend.auth.domain.ValidateInvitationRequest
 import app.hyuabot.backend.auth.exception.DuplicateEmailException
-import app.hyuabot.backend.auth.exception.DuplicateUserIDException
+import app.hyuabot.backend.auth.exception.InvalidInvitationException
+import app.hyuabot.backend.auth.exception.InvalidUserInputException
 import app.hyuabot.backend.security.JWTUser
 import app.hyuabot.backend.security.effectivePermissions
 import app.hyuabot.backend.utility.ResponseBuilder
@@ -28,6 +32,7 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.ModelAttribute
+import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -40,88 +45,27 @@ import kotlin.jvm.javaClass
 @Tag(name = "Auth", description = "사용자 인증 및 관리 API")
 class AuthController {
     @Autowired private lateinit var authService: AuthService
+
+    @Autowired private lateinit var invitationService: UserInvitationService
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    @PostMapping("")
-    @Operation(summary = "회원가입", description = "사용자 회원가입 API")
-    @ApiResponses(
-        value = [
-            ApiResponse(
-                responseCode = "201",
-                description = "사용자 회원가입 성공",
-                content =
-                    arrayOf(
-                        Content(
-                            schema =
-                                Schema(implementation = ResponseBuilder.Message::class),
-                            examples =
-                                arrayOf(
-                                    ExampleObject(
-                                        name = "USER_CREATED_SUCCESSFULLY",
-                                        description = "사용자 회원가입 성공 예시",
-                                        value = "{\"message\": \"USER_CREATED_SUCCESSFULLY\"}",
-                                    ),
-                                ),
-                        ),
-                    ),
-            ),
-            ApiResponse(
-                responseCode = "409",
-                description = "사용자 ID 또는 이메일 중복",
-                content =
-                    arrayOf(
-                        Content(
-                            schema = Schema(implementation = ResponseBuilder.Message::class),
-                            examples =
-                                arrayOf(
-                                    ExampleObject(
-                                        name = "DUPLICATE_USER_ID",
-                                        description = "사용자 ID 중복 예시",
-                                        value = "{\"message\": \"DUPLICATE_USER_ID\"}",
-                                    ),
-                                    ExampleObject(
-                                        name = "DUPLICATE_EMAIL",
-                                        description = "이메일 중복 예시",
-                                        value = "{\"message\": \"DUPLICATE_EMAIL\"}",
-                                    ),
-                                ),
-                        ),
-                    ),
-            ),
-            ApiResponse(
-                responseCode = "500",
-                description = "서버 내부 오류",
-                content =
-                    arrayOf(
-                        Content(
-                            schema = Schema(implementation = ResponseBuilder.Message::class),
-                            examples =
-                                arrayOf(
-                                    ExampleObject(
-                                        name = "INTERNAL_SERVER_ERROR",
-                                        description = "서버 내부 오류 예시",
-                                        value = "{\"message\": \"INTERNAL_SERVER_ERROR\"}",
-                                    ),
-                                ),
-                        ),
-                    ),
-            ),
-        ],
-    )
-    fun signUp(
-        @RequestBody payload: CreateUserRequest,
-    ): ResponseEntity<ResponseBuilder.Message> {
+    @PostMapping("/account-setup/validate")
+    fun validateInvitation(
+        @RequestBody request: ValidateInvitationRequest,
+    ) = ResponseBuilder.response(HttpStatus.OK, invitationService.validate(request.token))
+
+    @PostMapping("/account-setup/complete")
+    fun completeInvitation(
+        @RequestBody request: CompleteInvitationRequest,
+    ): ResponseEntity<ResponseBuilder.Message> =
         try {
-            authService.signUp(payload)
-            return ResponseBuilder.response(HttpStatus.CREATED, "USER_CREATED_SUCCESSFULLY")
-        } catch (_: DuplicateUserIDException) {
-            return ResponseBuilder.response(HttpStatus.CONFLICT, "DUPLICATE_USER_ID")
-        } catch (_: DuplicateEmailException) {
-            return ResponseBuilder.response(HttpStatus.CONFLICT, "DUPLICATE_EMAIL")
-        } catch (_: Exception) {
-            return ResponseBuilder.response(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR")
+            invitationService.complete(request.token, request.password)
+            ResponseBuilder.response(HttpStatus.OK, "ACCOUNT_SETUP_COMPLETE")
+        } catch (exception: InvalidUserInputException) {
+            ResponseBuilder.response(HttpStatus.BAD_REQUEST, exception.code)
+        } catch (_: InvalidInvitationException) {
+            ResponseBuilder.response(HttpStatus.BAD_REQUEST, "INVALID_OR_EXPIRED_INVITATION")
         }
-    }
 
     @PostMapping("/token", consumes = [MediaType.APPLICATION_FORM_URLENCODED_VALUE])
     @Operation(
@@ -456,4 +400,58 @@ class AuthController {
             return ResponseBuilder.response(HttpStatus.NOT_FOUND, "NO_USER_INFO")
         }
     }
+
+    @PatchMapping("/profile")
+    fun updateProfile(
+        @RequestBody request: UpdateProfileRequest,
+    ): ResponseEntity<*> =
+        try {
+            val user = authService.updateProfile(currentUserID(), request)
+            ResponseBuilder.response(HttpStatus.OK, userResponse(user))
+        } catch (_: DuplicateEmailException) {
+            ResponseBuilder.response(HttpStatus.CONFLICT, "DUPLICATE_EMAIL")
+        } catch (exception: InvalidUserInputException) {
+            ResponseBuilder.response(HttpStatus.BAD_REQUEST, exception.code)
+        }
+
+    @PutMapping("/password")
+    fun changePassword(
+        @RequestBody request: ChangePasswordRequest,
+    ): ResponseEntity<ResponseBuilder.Message> =
+        try {
+            authService.changePassword(currentUserID(), request)
+            ResponseBuilder.response(
+                HttpStatus.OK,
+                "PASSWORD_CHANGED",
+                cookies = expiredAuthCookies(),
+            )
+        } catch (_: BadCredentialsException) {
+            ResponseBuilder.response(HttpStatus.BAD_REQUEST, "CURRENT_PASSWORD_MISMATCH")
+        } catch (exception: InvalidUserInputException) {
+            ResponseBuilder.response(HttpStatus.BAD_REQUEST, exception.code)
+        }
+
+    private fun currentUserID(): String = (SecurityContextHolder.getContext().authentication?.principal as JWTUser).username
+
+    private fun userResponse(user: app.hyuabot.backend.database.entity.User) =
+        UserResponse(
+            username = user.userID,
+            nickname = user.name,
+            email = user.email,
+            phone = user.phone,
+            active = user.active,
+            permissions = user.permissions.effectivePermissions().sortedBy { it.ordinal },
+        )
+
+    private fun expiredAuthCookies() =
+        listOf("access_token", "refresh_token").map { name ->
+            ResponseCookie
+                .from(name, "")
+                .httpOnly(true)
+                .secure(true)
+                .sameSite("None")
+                .path("/")
+                .maxAge(0)
+                .build()
+        }
 }

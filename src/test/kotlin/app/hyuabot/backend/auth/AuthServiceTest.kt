@@ -1,8 +1,10 @@
 package app.hyuabot.backend.auth
 
-import app.hyuabot.backend.auth.domain.CreateUserRequest
+import app.hyuabot.backend.auth.domain.ChangePasswordRequest
+import app.hyuabot.backend.auth.domain.UpdateProfileRequest
 import app.hyuabot.backend.auth.exception.DuplicateEmailException
-import app.hyuabot.backend.auth.exception.DuplicateUserIDException
+import app.hyuabot.backend.auth.exception.InvalidUserInputException
+import app.hyuabot.backend.database.entity.RefreshToken
 import app.hyuabot.backend.database.entity.User
 import app.hyuabot.backend.database.repository.RefreshTokenRepository
 import app.hyuabot.backend.database.repository.UserRepository
@@ -18,9 +20,7 @@ import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argThat
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.security.authentication.BadCredentialsException
@@ -29,6 +29,7 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.core.Authentication
 import org.springframework.security.crypto.password.PasswordEncoder
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @ExtendWith(MockitoExtension::class)
 class AuthServiceTest {
@@ -53,81 +54,17 @@ class AuthServiceTest {
     @InjectMocks
     lateinit var authService: AuthService
 
-    @Test
-    @DisplayName("회원가입 테스트")
-    fun signUpTest() {
-        val payload =
-            CreateUserRequest(
-                userID = "testUser",
-                password = "testPassword",
-                nickname = "Test User",
-                email = "test@example.com",
-                phone = "1234567890",
-            )
-        whenever(userRepository.findByUserID(payload.userID)).thenReturn(null)
-        whenever(userRepository.findByEmail(payload.email)).thenReturn(null)
-        whenever(passwordEncoder.encode(payload.password)).thenReturn("hashedPassword")
-        authService.signUp(payload)
-        verify(userRepository).save(
-            argThat {
-                userID == payload.userID &&
-                    String(password) == "hashedPassword" &&
-                    name == payload.nickname &&
-                    email == payload.email &&
-                    phone == payload.phone &&
-                    !active
-            },
-        )
-    }
-
-    @Test
-    @DisplayName("회원가입 테스트 (중복 사용자 이름)")
-    fun signUpDuplicateUserIDTest() {
-        val payload =
-            CreateUserRequest(
-                userID = "testUser",
-                password = "testPassword",
-                nickname = "Test User",
-                email = "test@example.com",
-                phone = "1234567890",
-            )
-        whenever(userRepository.findByUserID(payload.userID)).thenReturn(mock())
-        assertThrows<DuplicateUserIDException> { authService.signUp(payload) }
-    }
-
-    @Test
-    @DisplayName("회원가입 테스트 (중복 이메일)")
-    fun signUpDuplicateEmailTest() {
-        val payload =
-            CreateUserRequest(
-                userID = "testUser",
-                password = "testPassword",
-                nickname = "Test User",
-                email = "test@example.com",
-                phone = "1234567890",
-            )
-        whenever(userRepository.findByUserID(payload.userID)).thenReturn(null)
-        whenever(userRepository.findByEmail(payload.email)).thenReturn(mock())
-        assertThrows<DuplicateEmailException> { authService.signUp(payload) }
-    }
-
-    @Test
-    @DisplayName("회원가입 테스트 (비밀번호 인코딩 실패)")
-    fun signUpPasswordEncodingFailureTest() {
-        val payload =
-            CreateUserRequest(
-                userID = "testUser",
-                password = "testPassword",
-                nickname = "Test User",
-                email = "test@example.com",
-                phone = "1234567890",
-            )
-        whenever(userRepository.findByUserID(payload.userID)).thenReturn(null)
-        whenever(userRepository.findByEmail(payload.email)).thenReturn(null)
-        whenever(passwordEncoder.encode(payload.password)).thenReturn(null)
-        authService.signUp(payload)
-        verify(userRepository, never()).save(any())
-    }
+    private fun user(
+        userID: String = "testUser",
+        password: ByteArray? = "encoded-password".toByteArray(),
+    ) = User(
+        userID = userID,
+        password = password,
+        name = "Test User",
+        email = "test@example.com",
+        phone = "01000000000",
+        active = true,
+    )
 
     @Test
     @DisplayName("로그인 테스트")
@@ -185,6 +122,112 @@ class AuthServiceTest {
         val userID = "nonExistentUser"
         whenever(userRepository.findByUserIDAndActiveIsTrue(userID)).thenReturn(null)
         assertThrows<IllegalArgumentException> { authService.getUserInfo(userID) }
+    }
+
+    @Test
+    fun updateProfileNormalizesAndSavesUser() {
+        val user = user()
+        whenever(userRepository.findByUserIDAndActiveIsTrue("testUser")).thenReturn(user)
+        whenever(userRepository.save(user)).thenReturn(user)
+
+        val result =
+            authService.updateProfile(
+                "testUser",
+                UpdateProfileRequest(" Updated User ", " UPDATED@EXAMPLE.COM ", " 01012345678 "),
+            )
+
+        assertEquals("Updated User", result.name)
+        assertEquals("updated@example.com", result.email)
+        assertEquals("01012345678", result.phone)
+        verify(userRepository).save(user)
+    }
+
+    @Test
+    fun updateProfileAllowsSameEmailAndRejectsAnotherUsersEmail() {
+        val user = user()
+        whenever(userRepository.findByUserIDAndActiveIsTrue("testUser")).thenReturn(user)
+        whenever(userRepository.findByEmailIgnoreCase("test@example.com")).thenReturn(user)
+        whenever(userRepository.save(user)).thenReturn(user)
+        authService.updateProfile("testUser", UpdateProfileRequest("User", "test@example.com", ""))
+
+        whenever(userRepository.findByEmailIgnoreCase("other@example.com")).thenReturn(user("other"))
+        assertThrows<DuplicateEmailException> {
+            authService.updateProfile("testUser", UpdateProfileRequest("User", "other@example.com", ""))
+        }
+    }
+
+    @Test
+    fun updateProfileRejectsInvalidInput() {
+        whenever(userRepository.findByUserIDAndActiveIsTrue("testUser")).thenReturn(user())
+        assertThrows<InvalidUserInputException> {
+            authService.updateProfile("testUser", UpdateProfileRequest(" ", "test@example.com", ""))
+        }
+        assertThrows<InvalidUserInputException> {
+            authService.updateProfile("testUser", UpdateProfileRequest("User", " ", ""))
+        }
+    }
+
+    @Test
+    fun changePasswordRevokesRefreshTokenAndIncrementsAuthVersion() {
+        val user = user()
+        val refreshToken = mock<RefreshToken>()
+        whenever(userRepository.findByUserIDAndActiveIsTrue("testUser")).thenReturn(user)
+        whenever(passwordEncoder.matches("current", "encoded-password")).thenReturn(true)
+        whenever(passwordEncoder.encode("a-new-secure-password")).thenReturn("new-encoded")
+        whenever(refreshTokenRepository.findByUserID("testUser")).thenReturn(refreshToken)
+
+        authService.changePassword("testUser", ChangePasswordRequest("current", "a-new-secure-password"))
+
+        assertEquals("new-encoded", user.password?.decodeToString())
+        assertEquals(1, user.authVersion)
+        verify(userRepository).save(user)
+        verify(refreshTokenRepository).delete(refreshToken)
+    }
+
+    @Test
+    fun changePasswordSucceedsWithoutExistingRefreshToken() {
+        val user = user()
+        whenever(userRepository.findByUserIDAndActiveIsTrue("testUser")).thenReturn(user)
+        whenever(passwordEncoder.matches("current", "encoded-password")).thenReturn(true)
+        whenever(passwordEncoder.encode("a-new-secure-password")).thenReturn("new-encoded")
+        whenever(refreshTokenRepository.findByUserID("testUser")).thenReturn(null)
+
+        authService.changePassword("testUser", ChangePasswordRequest("current", "a-new-secure-password"))
+
+        assertEquals("new-encoded", user.password?.decodeToString())
+        assertEquals(1, user.authVersion)
+    }
+
+    @Test
+    fun changePasswordRejectsWrongMissingOrInvalidPassword() {
+        val user = user()
+        whenever(userRepository.findByUserIDAndActiveIsTrue("testUser")).thenReturn(user)
+        whenever(passwordEncoder.matches("wrong", "encoded-password")).thenReturn(false)
+        assertThrows<BadCredentialsException> {
+            authService.changePassword("testUser", ChangePasswordRequest("wrong", "a-new-secure-password"))
+        }
+
+        whenever(userRepository.findByUserIDAndActiveIsTrue("testUser")).thenReturn(user(password = null))
+        assertThrows<BadCredentialsException> {
+            authService.changePassword("testUser", ChangePasswordRequest("current", "a-new-secure-password"))
+        }
+
+        assertThrows<InvalidUserInputException> {
+            authService.changePassword("testUser", ChangePasswordRequest("current", "short"))
+        }
+    }
+
+    @Test
+    fun changePasswordRejectsEncoderFailure() {
+        val user = user()
+        whenever(userRepository.findByUserIDAndActiveIsTrue("testUser")).thenReturn(user)
+        whenever(passwordEncoder.matches("current", "encoded-password")).thenReturn(true)
+        whenever(passwordEncoder.encode("a-new-secure-password")).thenReturn(null)
+
+        assertThrows<InvalidUserInputException> {
+            authService.changePassword("testUser", ChangePasswordRequest("current", "a-new-secure-password"))
+        }
+        assertTrue(user.authVersion == 0)
     }
 
     @Test

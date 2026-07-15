@@ -20,8 +20,8 @@ class User(
     @Id
     @Column(name = "user_id", length = 20, nullable = false)
     val userID: String,
-    @Column(name = "password", columnDefinition = "bytea", nullable = false)
-    var password: ByteArray,
+    @Column(name = "password", columnDefinition = "bytea")
+    var password: ByteArray?,
     @Column(name = "name", length = 20, nullable = false)
     var name: String,
     @Column(name = "email", length = 50, nullable = false)
@@ -30,6 +30,8 @@ class User(
     var phone: String,
     @Column(name = "active", nullable = false)
     var active: Boolean,
+    @Column(name = "auth_version", nullable = false)
+    var authVersion: Int = 0,
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
         name = "admin_user_permission",

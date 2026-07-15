@@ -1,8 +1,12 @@
 package app.hyuabot.backend.auth
 
+import app.hyuabot.backend.auth.domain.ChangePasswordRequest
+import app.hyuabot.backend.auth.domain.InvitationValidationResponse
 import app.hyuabot.backend.auth.domain.TokenResponse
+import app.hyuabot.backend.auth.domain.UpdateProfileRequest
 import app.hyuabot.backend.auth.exception.DuplicateEmailException
-import app.hyuabot.backend.auth.exception.DuplicateUserIDException
+import app.hyuabot.backend.auth.exception.InvalidInvitationException
+import app.hyuabot.backend.auth.exception.InvalidUserInputException
 import app.hyuabot.backend.database.entity.User
 import app.hyuabot.backend.database.repository.UserRepository
 import app.hyuabot.backend.security.AdminPermission
@@ -13,7 +17,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
+import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.whenever
@@ -23,25 +27,34 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.MediaType
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import tools.jackson.databind.ObjectMapper
+import java.time.ZonedDateTime
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class AuthControllerTest {
+    @Autowired
+    private lateinit var controller: AuthController
+
     @MockitoBean
     private lateinit var authService: AuthService
+
+    @MockitoBean
+    private lateinit var invitationService: UserInvitationService
 
     @Autowired
     private lateinit var mockMvc: MockMvc
@@ -72,95 +85,6 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("회원가입 테스트 (정상)")
-    fun testSignUp() {
-        val map: Map<String, String> =
-            mapOf(
-                "userID" to "new_user",
-                "nickname" to "New User",
-                "password" to "new_password",
-                "email" to "new@example.com",
-                "phone" to "0987654321",
-            )
-        mockMvc
-            .perform(
-                post("/api/v1/user")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(map)),
-            ).andExpect(status().isCreated)
-            .andExpect(jsonPath("$.message").value("USER_CREATED_SUCCESSFULLY"))
-    }
-
-    @Test
-    @DisplayName("회원가입 테스트 (이미 존재하는 사용자 ID)")
-    fun testSignUpDuplicateUserID() {
-        doThrow(DuplicateUserIDException::class)
-            .whenever(authService)
-            .signUp(any())
-        val map: Map<String, String> =
-            mapOf(
-                "userID" to "test_user",
-                "nickname" to "Duplicate User",
-                "password" to "duplicate_password",
-                "email" to "new@example.com",
-                "phone" to "0987654321",
-            )
-        mockMvc
-            .perform(
-                post("/api/v1/user")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(map)),
-            ).andExpect(status().isConflict)
-            .andExpect(jsonPath("$.message").value("DUPLICATE_USER_ID"))
-    }
-
-    @Test
-    @DisplayName("회원가입 테스트 (이미 존재하는 이메일)")
-    fun testSignUpDuplicateEmail() {
-        doThrow(DuplicateEmailException::class)
-            .whenever(authService)
-            .signUp(any())
-        val map: Map<String, String> =
-            mapOf(
-                "userID" to "another_user",
-                "nickname" to "Another User",
-                "password" to "another_password",
-                "email" to "test@example.com",
-                "phone" to "0987654321",
-            )
-        mockMvc
-            .perform(
-                post("/api/v1/user")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(map)),
-            ).andExpect(status().isConflict)
-            .andExpect(jsonPath("$.message").value("DUPLICATE_EMAIL"))
-    }
-
-    @Test
-    @DisplayName("회원가입 테스트 (오류)")
-    fun testSignUpError() {
-        doThrow(RuntimeException("DB_ERROR"))
-            .whenever(authService)
-            .signUp(any())
-        val map: Map<String, String> =
-            mapOf(
-                "userID" to "another_user",
-                "nickname" to "Another User",
-                "password" to "another_password",
-                "email" to "another@example.com",
-                "phone" to "0987654321",
-            )
-        mockMvc
-            .perform(
-                post("/api/v1/user")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(map)),
-            ).andExpect(status().isInternalServerError)
-            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
-    }
-
-    @Test
     @DisplayName("로그인 테스트 (정상)")
     fun testLogin() {
         doReturn(
@@ -184,6 +108,53 @@ class AuthControllerTest {
             .andExpect(cookie().exists("access_token"))
             .andExpect(cookie().exists("refresh_token"))
             .andExpect(jsonPath("$.message").value("LOGIN_SUCCESS"))
+    }
+
+    @Test
+    fun validateAndCompleteInvitationArePublic() {
+        val expiry = ZonedDateTime.now().plusHours(1)
+        whenever(invitationService.validate("token")).thenReturn(InvitationValidationResponse(true, expiry))
+
+        mockMvc
+            .perform(
+                post("/api/v1/user/account-setup/validate")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"token\":\"token\"}"),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.valid").value(true))
+
+        mockMvc
+            .perform(
+                post("/api/v1/user/account-setup/complete")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"token\":\"token\",\"password\":\"a-secure-password\"}"),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.message").value("ACCOUNT_SETUP_COMPLETE"))
+    }
+
+    @Test
+    fun completeInvitationMapsInvalidPasswordAndToken() {
+        doThrow(InvalidUserInputException("INVALID_PASSWORD"))
+            .whenever(invitationService)
+            .complete("token", "short")
+        mockMvc
+            .perform(
+                post("/api/v1/user/account-setup/complete")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"token\":\"token\",\"password\":\"short\"}"),
+            ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.message").value("INVALID_PASSWORD"))
+
+        doThrow(InvalidInvitationException())
+            .whenever(invitationService)
+            .complete("expired", "a-secure-password")
+        mockMvc
+            .perform(
+                post("/api/v1/user/account-setup/complete")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"token\":\"expired\",\"password\":\"a-secure-password\"}"),
+            ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.message").value("INVALID_OR_EXPIRED_INVITATION"))
     }
 
     @Test
@@ -420,4 +391,95 @@ class AuthControllerTest {
             ).andExpect(status().isUnauthorized)
             .andExpect(jsonPath("$.message").value("UNAUTHORIZED"))
     }
+
+    @Test
+    @WithCustomMockUser(username = "test_user")
+    fun authenticatedUserCanUpdateProfile() {
+        val request = UpdateProfileRequest("Updated User", "updated@example.com", "01012345678")
+        val user =
+            User(
+                "test_user",
+                "password".toByteArray(),
+                request.nickname,
+                request.email,
+                request.phone,
+                true,
+            )
+        whenever(authService.updateProfile("test_user", request)).thenReturn(user)
+
+        mockMvc
+            .perform(
+                patch("/api/v1/user/profile")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.nickname").value("Updated User"))
+    }
+
+    @Test
+    fun directProfileUpdateRejectsMissingSecurityContext() {
+        SecurityContextHolder.clearContext()
+
+        assertThrows<RuntimeException> {
+            controller.updateProfile(UpdateProfileRequest("User", "user@example.com", ""))
+        }
+    }
+
+    @Test
+    @WithCustomMockUser(username = "test_user")
+    fun updateProfileMapsDuplicateAndInvalidInput() {
+        val request = UpdateProfileRequest("Updated User", "updated@example.com", "")
+        doThrow(DuplicateEmailException()).whenever(authService).updateProfile("test_user", request)
+        performProfileUpdate(request).andExpect(status().isConflict)
+
+        doThrow(InvalidUserInputException("INVALID_USER_INPUT"))
+            .whenever(authService)
+            .updateProfile("test_user", request)
+        performProfileUpdate(request)
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.message").value("INVALID_USER_INPUT"))
+    }
+
+    @Test
+    @WithCustomMockUser(username = "test_user")
+    fun authenticatedUserCanChangePasswordAndErrorsAreMapped() {
+        val request = ChangePasswordRequest("current", "a-new-secure-password")
+        mockMvc
+            .perform(
+                put("/api/v1/user/password")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)),
+            ).andExpect(status().isOk)
+            .andExpect(jsonPath("$.message").value("PASSWORD_CHANGED"))
+            .andExpect(cookie().maxAge("access_token", 0))
+            .andExpect(cookie().maxAge("refresh_token", 0))
+
+        doThrow(BadCredentialsException("CURRENT_PASSWORD_MISMATCH"))
+            .whenever(authService)
+            .changePassword("test_user", request)
+        performPasswordChange(request)
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.message").value("CURRENT_PASSWORD_MISMATCH"))
+
+        doThrow(InvalidUserInputException("INVALID_PASSWORD"))
+            .whenever(authService)
+            .changePassword("test_user", request)
+        performPasswordChange(request)
+            .andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.message").value("INVALID_PASSWORD"))
+    }
+
+    private fun performProfileUpdate(request: UpdateProfileRequest) =
+        mockMvc.perform(
+            patch("/api/v1/user/profile")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)),
+        )
+
+    private fun performPasswordChange(request: ChangePasswordRequest) =
+        mockMvc.perform(
+            put("/api/v1/user/password")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)),
+        )
 }

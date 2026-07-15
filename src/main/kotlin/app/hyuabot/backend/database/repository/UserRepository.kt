@@ -13,6 +13,9 @@ interface UserRepository : JpaRepository<User, String> {
 
     fun findByEmail(email: String): User?
 
+    @Query("select user from user user where lower(trim(user.email)) = lower(trim(:email))")
+    fun findByEmailIgnoreCase(email: String): User?
+
     fun findAllByOrderByNameAscUserIDAsc(): List<User>
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

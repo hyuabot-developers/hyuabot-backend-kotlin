@@ -8,6 +8,7 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.mockito.ArgumentMatchers.startsWith
 import org.mockito.BDDMockito.given
 import org.mockito.BDDMockito.then
@@ -17,11 +18,13 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.core.ValueOperations
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.Authentication
 import java.time.Duration
 import java.time.ZonedDateTime
 import java.util.Base64
 import java.util.UUID
+import org.springframework.security.core.userdetails.User as SpringUser
 
 class JWTTokenProviderTest {
     // Test Target: JWTTokenProvider
@@ -125,6 +128,38 @@ class JWTTokenProviderTest {
         val auth = jwtTokenProvider.getAuthentication(token)
         assert(auth.isAuthenticated)
         assert((auth.principal as JWTUser).username == "testUser")
+    }
+
+    @Test
+    fun testGetAuthenticationRejectsTokenFromPreviousPasswordVersion() {
+        val token = jwtTokenProvider.createAccessToken(authentication)
+        given(userDetailsService.loadUserByUsername("testUser")).willReturn(JWTUser("testUser", "", authVersion = 1))
+
+        assertThrows<BadCredentialsException> { jwtTokenProvider.getAuthentication(token) }
+    }
+
+    @Test
+    fun testGetAuthenticationRejectsUnexpectedUserDetailsType() {
+        val token = jwtTokenProvider.createAccessToken(authentication)
+        given(userDetailsService.loadUserByUsername("testUser"))
+            .willReturn(SpringUser("testUser", "", emptyList()))
+
+        assertThrows<BadCredentialsException> { jwtTokenProvider.getAuthentication(token) }
+    }
+
+    @Test
+    fun testGetAuthenticationRejectsInvalidAuthVersionClaim() {
+        val key = Keys.hmacShaKeyFor(Base64.getDecoder().decode(secret))
+        val token =
+            Jwts
+                .builder()
+                .subject("testUser")
+                .claim("auth_version", "invalid")
+                .signWith(key)
+                .compact()
+        given(userDetailsService.loadUserByUsername("testUser")).willReturn(JWTUser("testUser", ""))
+
+        assertThrows<BadCredentialsException> { jwtTokenProvider.getAuthentication(token) }
     }
 
     @Test
