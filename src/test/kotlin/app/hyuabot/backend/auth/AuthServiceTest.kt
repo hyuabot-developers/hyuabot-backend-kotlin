@@ -7,6 +7,7 @@ import app.hyuabot.backend.database.entity.User
 import app.hyuabot.backend.database.repository.RefreshTokenRepository
 import app.hyuabot.backend.database.repository.UserRepository
 import app.hyuabot.backend.security.JWTTokenProvider
+import app.hyuabot.backend.security.JWTUser
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
 import org.junit.jupiter.api.DisplayName
@@ -22,6 +23,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.core.Authentication
@@ -149,9 +151,23 @@ class AuthServiceTest {
     @DisplayName("토큰 갱신 테스트")
     fun refreshTokenTest() {
         val authentication = mock<Authentication>()
+        val savedRefreshToken = mock<app.hyuabot.backend.database.entity.RefreshToken>()
+        whenever(authentication.principal).thenReturn(JWTUser("testUser", ""))
         whenever(tokenProvider.getAuthentication("refreshToken")).thenReturn(authentication)
-        whenever(tokenProvider.createRefreshToken(authentication)).thenReturn("newRefreshToken")
-        assertEquals("newRefreshToken", authService.refreshToken("refreshToken"))
+        whenever(savedRefreshToken.refreshToken).thenReturn("refreshToken")
+        whenever(refreshTokenRepository.findByUserID("testUser")).thenReturn(savedRefreshToken)
+        whenever(tokenProvider.createAccessToken(authentication)).thenReturn("newAccessToken")
+        assertEquals("newAccessToken", authService.refreshToken("refreshToken"))
+    }
+
+    @Test
+    fun refreshTokenRejectsRevokedToken() {
+        val authentication = mock<Authentication>()
+        whenever(authentication.principal).thenReturn(JWTUser("testUser", ""))
+        whenever(tokenProvider.getAuthentication("refreshToken")).thenReturn(authentication)
+        whenever(refreshTokenRepository.findByUserID("testUser")).thenReturn(null)
+
+        assertThrows<BadCredentialsException> { authService.refreshToken("refreshToken") }
     }
 
     @Test

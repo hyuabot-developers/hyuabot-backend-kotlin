@@ -46,6 +46,9 @@ class JWTTokenProviderTest {
     @Mock
     private lateinit var authentication: Authentication
 
+    @Mock
+    private lateinit var userDetailsService: JWTUserDetailsService
+
     @BeforeEach
     fun setup() {
         MockitoAnnotations.openMocks(this)
@@ -58,6 +61,7 @@ class JWTTokenProviderTest {
                 refreshExpirationDays = refreshExpirationDays,
                 refreshTokenRepository = refreshTokenRepository,
                 redisTemplate = redisTemplate,
+                userDetailsService = userDetailsService,
             )
         val jwtUser = JWTUser("testUser", "")
         given(authentication.principal).willReturn(jwtUser)
@@ -117,6 +121,7 @@ class JWTTokenProviderTest {
     @Test
     fun testGetAuthentication() {
         val token = jwtTokenProvider.createAccessToken(authentication)
+        given(userDetailsService.loadUserByUsername("testUser")).willReturn(JWTUser("testUser", ""))
         val auth = jwtTokenProvider.getAuthentication(token)
         assert(auth.isAuthenticated)
         assert((auth.principal as JWTUser).username == "testUser")

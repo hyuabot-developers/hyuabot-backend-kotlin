@@ -12,9 +12,16 @@ class WithCustomMockUserSecurityContextFactory : WithSecurityContextFactory<With
                 JWTUser(
                     username = annotation.username,
                     password = "testPassword",
+                    permissions = annotation.permissions.toSet(),
                 ),
                 null,
-                emptyList(),
+                annotation.permissions
+                    .toSet()
+                    .effectivePermissions()
+                    .map {
+                        org.springframework.security.core.authority
+                            .SimpleGrantedAuthority(it.name)
+                    },
             )
         val context = SecurityContextHolder.createEmptyContext()
         context.authentication = auth

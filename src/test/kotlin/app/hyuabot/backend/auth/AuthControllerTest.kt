@@ -5,6 +5,7 @@ import app.hyuabot.backend.auth.exception.DuplicateEmailException
 import app.hyuabot.backend.auth.exception.DuplicateUserIDException
 import app.hyuabot.backend.database.entity.User
 import app.hyuabot.backend.database.repository.UserRepository
+import app.hyuabot.backend.security.AdminPermission
 import app.hyuabot.backend.security.WithCustomMockUser
 import io.jsonwebtoken.ExpiredJwtException
 import jakarta.servlet.http.Cookie
@@ -276,6 +277,20 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("토큰 갱신 테스트 (잘못된 토큰)")
+    fun testRefreshTokenWithInvalidToken() {
+        doThrow(BadCredentialsException("INVALID_REFRESH_TOKEN"))
+            .whenever(authService)
+            .refreshToken("invalidRefreshToken")
+        mockMvc
+            .perform(
+                put("/api/v1/user/token")
+                    .cookie(Cookie("refresh_token", "invalidRefreshToken")),
+            ).andExpect(status().isUnauthorized)
+            .andExpect(jsonPath("$.message").value("UNAUTHORIZED"))
+    }
+
+    @Test
     @DisplayName("토큰 갱신 테스트 (오류)")
     fun testRefreshTokenError() {
         doThrow(RuntimeException("DB_ERROR"))
@@ -357,6 +372,7 @@ class AuthControllerTest {
                     email = "test@example.com",
                     phone = "1234567890",
                     active = true,
+                    permissions = mutableSetOf(AdminPermission.SUPER_ADMIN),
                 ),
             )
         mockMvc
@@ -368,6 +384,9 @@ class AuthControllerTest {
                 jsonPath("$.nickname").value("Test User")
                 jsonPath("$.email").value("test@example.com")
                 jsonPath("$.phone").value("1234567890")
+                jsonPath("$.active").value(true)
+                jsonPath("$.permissions[0]").value("SUPER_ADMIN")
+                jsonPath("$.permissions[8]").value("NOTICE")
             }
     }
 

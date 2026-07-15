@@ -18,6 +18,7 @@ class JWTUserDetailsService(
         return JWTUser(
             username = user.userID,
             password = user.password.decodeToString(),
+            permissions = user.permissions,
         )
     }
 }
