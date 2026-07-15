@@ -14,11 +14,13 @@ class JWTUserDetailsService(
         val user =
             userRepository.findByUserIDAndActiveIsTrue(username)
                 ?: throw UsernameNotFoundException("NO_USER_INFO")
+        val password = user.password?.decodeToString() ?: throw UsernameNotFoundException("NO_USER_INFO")
 
         return JWTUser(
             username = user.userID,
-            password = user.password.decodeToString(),
+            password = password,
             permissions = user.permissions,
+            authVersion = user.authVersion,
         )
     }
 }

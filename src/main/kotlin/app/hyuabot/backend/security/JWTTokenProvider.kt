@@ -10,6 +10,7 @@ import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.userdetails.UserDetails
@@ -54,6 +55,7 @@ class JWTTokenProvider(
             .issuedAt(Date())
             .expiration(Date(System.currentTimeMillis() + expirationMinutes * 1000 * 60)) // 만료 시간 설정
             .subject((authentication.principal as JWTUser).username)
+            .claim(AUTH_VERSION_CLAIM, (authentication.principal as JWTUser).authVersion)
             .signWith(key)
             .compact()
 
@@ -63,6 +65,7 @@ class JWTTokenProvider(
             .issuedAt(Date())
             .expiration(Date(System.currentTimeMillis() + expirationMinutes * 1000 * 60)) // 만료 시간 설정
             .subject(userID)
+            .claim(AUTH_VERSION_CLAIM, 0)
             .signWith(key)
             .compact()
 
@@ -75,6 +78,7 @@ class JWTTokenProvider(
                 .issuedAt(Date())
                 .expiration(Date(System.currentTimeMillis() + refreshExpirationDays * 1000 * 60 * 60 * 24)) // 만료 시간 설정
                 .subject(userID)
+                .claim(AUTH_VERSION_CLAIM, (authentication.principal as JWTUser).authVersion)
                 .signWith(key)
                 .compact()
         val previousRefreshToken = refreshTokenRepository.findByUserID(userID)
@@ -119,6 +123,14 @@ class JWTTokenProvider(
     // Claims 에서 Authentication 객체 생성
     private fun getAuthentication(claims: Claims): Authentication {
         val principal: UserDetails = userDetailsService.loadUserByUsername(claims.subject)
+        val tokenAuthVersion = (claims[AUTH_VERSION_CLAIM] as? Number)?.toInt()
+        if (principal !is JWTUser || tokenAuthVersion != principal.authVersion) {
+            throw BadCredentialsException("TOKEN_REVOKED")
+        }
         return UsernamePasswordAuthenticationToken(principal, "", principal.authorities)
+    }
+
+    companion object {
+        private const val AUTH_VERSION_CLAIM = "auth_version"
     }
 }

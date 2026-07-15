@@ -33,6 +33,7 @@ class JWTUserDetailsServiceTest {
                 email = "test@example.com",
                 phone = "1234567890",
                 active = true,
+                authVersion = 3,
                 permissions = mutableSetOf(AdminPermission.SHUTTLE),
             )
         whenever(userRepository.findByUserIDAndActiveIsTrue(userID)).thenReturn(user)
@@ -41,6 +42,7 @@ class JWTUserDetailsServiceTest {
         assert(userDetails.password == "testPassword")
         assert(userDetails.isEnabled)
         assert(userDetails.isAccountNonExpired)
+        assertEquals(3, (userDetails as JWTUser).authVersion)
         assertEquals(listOf("SHUTTLE"), userDetails.authorities.map { it.authority })
     }
 
@@ -50,5 +52,13 @@ class JWTUserDetailsServiceTest {
         val userID = "nonExistentUser"
         whenever(userRepository.findByUserIDAndActiveIsTrue(userID)).thenReturn(null)
         assertThrows<UsernameNotFoundException> { jwtUserDetailsService.loadUserByUsername(userID) }
+    }
+
+    @Test
+    fun pendingUserCannotAuthenticate() {
+        val user = User("pending", null, "Pending", "pending@example.com", "", false)
+        whenever(userRepository.findByUserIDAndActiveIsTrue("pending")).thenReturn(user)
+
+        assertThrows<UsernameNotFoundException> { jwtUserDetailsService.loadUserByUsername("pending") }
     }
 }

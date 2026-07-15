@@ -32,7 +32,7 @@ class SecurityConfig(
                 configuration.addAllowedOrigin("https://admin.hyuabot.app")
                 configuration.addAllowedOrigin("https://backend.hyuabot.app")
                 configuration.addAllowedOrigin("https://dashboard.hyuabot.app")
-                configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS") // 허용할 HTTP 메서드
+                configuration.allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 configuration.allowCredentials = true // 자격 증명 허용
                 configuration.allowedHeaders = listOf("*") // 모든 헤더 허용
                 val source = UrlBasedCorsConfigurationSource()
@@ -49,8 +49,8 @@ class SecurityConfig(
             }.authorizeHttpRequests { requests ->
                 requests // 인증 API, Swagger UI, GraphQL 클라이언트 API는 인증 없이 접근 가능
                     .requestMatchers(
-                        "/api/v1/user",
                         "/api/v1/user/token",
+                        "/api/v1/user/account-setup/**",
                         "/api/v1/live-activity/**",
                         "/api/v1/analytics/watch/events",
                         "/swagger-ui/**",
@@ -89,7 +89,7 @@ class SecurityConfig(
                         AdminPermission.CAFETERIA.name,
                         AdminPermission.READING_ROOM.name,
                         AdminPermission.CONTACT.name,
-                    ).requestMatchers("/api/v1/user/profile")
+                    ).requestMatchers("/api/v1/user/profile", "/api/v1/user/password")
                     .authenticated()
                     .anyRequest()
                     .denyAll()

@@ -1,9 +1,10 @@
 package app.hyuabot.backend.auth
 
-import app.hyuabot.backend.auth.domain.CreateUserRequest
+import app.hyuabot.backend.auth.domain.ChangePasswordRequest
 import app.hyuabot.backend.auth.domain.TokenResponse
+import app.hyuabot.backend.auth.domain.UpdateProfileRequest
 import app.hyuabot.backend.auth.exception.DuplicateEmailException
-import app.hyuabot.backend.auth.exception.DuplicateUserIDException
+import app.hyuabot.backend.auth.exception.InvalidUserInputException
 import app.hyuabot.backend.database.entity.User
 import app.hyuabot.backend.database.repository.RefreshTokenRepository
 import app.hyuabot.backend.database.repository.UserRepository
@@ -25,32 +26,6 @@ class AuthService(
     private val authenticationManagerBuilder: AuthenticationManagerBuilder,
     private val tokenProvider: JWTTokenProvider,
 ) {
-    fun signUp(payload: CreateUserRequest) {
-        // 사용자 이름 중복 확인
-        userRepository.findByUserID(payload.userID)?.let {
-            throw DuplicateUserIDException()
-        }
-        // 이메일 중복 확인
-        userRepository.findByEmail(payload.email)?.let {
-            throw DuplicateEmailException()
-        }
-        // 사용자 생성
-        val encodedPassword = passwordEncoder.encode(payload.password)
-        if (encodedPassword != null) {
-            val user =
-                User(
-                    userID = payload.userID,
-                    password = encodedPassword.toByteArray(),
-                    name = payload.nickname,
-                    email = payload.email,
-                    phone = payload.phone,
-                    active = false,
-                )
-            userRepository.save(user)
-            return
-        }
-    }
-
     @Transactional
     fun login(
         userID: String,
@@ -75,6 +50,52 @@ class AuthService(
     fun getUserInfo(userID: String): User =
         userRepository.findByUserIDAndActiveIsTrue(userID)
             ?: throw IllegalArgumentException("NO_USER_INFO")
+
+    @Transactional
+    fun updateProfile(
+        userID: String,
+        request: UpdateProfileRequest,
+    ): User {
+        val user = getUserInfo(userID)
+        val nickname = request.nickname.trim()
+        val email = request.email.trim().lowercase()
+        val phone = request.phone.trim()
+        if (
+            nickname.isEmpty() ||
+            nickname.length > 20 ||
+            email.isEmpty() ||
+            email.length > 50 ||
+            phone.length > 15
+        ) {
+            throw InvalidUserInputException("INVALID_USER_INPUT")
+        }
+        userRepository.findByEmailIgnoreCase(email)?.let {
+            if (it.userID != userID) throw DuplicateEmailException()
+        }
+        user.name = nickname
+        user.email = email
+        user.phone = phone
+        return userRepository.save(user)
+    }
+
+    @Transactional
+    fun changePassword(
+        userID: String,
+        request: ChangePasswordRequest,
+    ) {
+        UserInvitationService.validatePassword(request.newPassword)
+        val user = getUserInfo(userID)
+        val encodedPassword = user.password?.decodeToString()
+        if (encodedPassword == null || !passwordEncoder.matches(request.currentPassword, encodedPassword)) {
+            throw BadCredentialsException("CURRENT_PASSWORD_MISMATCH")
+        }
+        user.password =
+            (passwordEncoder.encode(request.newPassword) ?: throw InvalidUserInputException("INVALID_PASSWORD"))
+                .toByteArray()
+        user.authVersion += 1
+        userRepository.save(user)
+        refreshTokenRepository.findByUserID(userID)?.let(refreshTokenRepository::delete)
+    }
 
     fun logout(
         userInfo: User,

@@ -7,6 +7,7 @@ class JWTUser(
     username: String,
     password: String,
     permissions: Set<AdminPermission> = emptySet(),
+    val authVersion: Int = 0,
 ) : User(
         username,
         password,

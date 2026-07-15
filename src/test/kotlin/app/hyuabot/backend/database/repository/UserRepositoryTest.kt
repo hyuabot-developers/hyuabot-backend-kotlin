@@ -105,7 +105,7 @@ class UserRepositoryTest {
         val user = userRepository.findByUserIDAndActiveIsTrue("user123")
         assert(user != null)
         assert(user?.userID == "user123")
-        val inactiveUser = createUser(userID = "user456", active = false)
+        val inactiveUser = createUser(userID = "user456", email = "user456@example.com", active = false)
         userRepository.save(inactiveUser)
         val inactiveResult = userRepository.findByUserIDAndActiveIsTrue("user456")
         assert(inactiveResult == null)
