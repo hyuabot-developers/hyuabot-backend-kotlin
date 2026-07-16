@@ -81,6 +81,9 @@ class UserInvitationServiceTest {
 
         whenever(userRepository.findByUserID("new-user")).thenReturn(user("encoded".toByteArray()))
         assertThrows<InvalidInvitationException> { service.issue("new-user", "jil8885") }
+
+        whenever(userRepository.findByUserID("new-user")).thenReturn(user().apply { deletedAt = ZonedDateTime.now() })
+        assertThrows<AdminUserNotFoundException> { service.issue("new-user", "jil8885") }
     }
 
     @Test
@@ -108,9 +111,9 @@ class UserInvitationServiceTest {
         val user = user()
         whenever(invitationRepository.findActiveForUpdate(service.hash("token"))).thenReturn(invitation)
         whenever(userRepository.findByUserID("new-user")).thenReturn(user)
-        whenever(passwordEncoder.encode("a-secure-password")).thenReturn("encoded")
+        whenever(passwordEncoder.encode("Password1!")).thenReturn("encoded")
 
-        service.complete("token", "a-secure-password")
+        service.complete("token", "Password1!")
 
         assertTrue(user.active)
         assertEquals("encoded", user.password?.decodeToString())
@@ -121,32 +124,39 @@ class UserInvitationServiceTest {
 
     @Test
     fun completeRejectsInvalidInvitationStates() {
-        assertThrows<InvalidInvitationException> { service.complete("missing", "a-secure-password") }
+        assertThrows<InvalidInvitationException> { service.complete("missing", "Password1!") }
 
         val expired = invitation(expiresAt = ZonedDateTime.now().minusMinutes(1))
         whenever(invitationRepository.findActiveForUpdate(service.hash("expired"))).thenReturn(expired)
-        assertThrows<InvalidInvitationException> { service.complete("expired", "a-secure-password") }
+        assertThrows<InvalidInvitationException> { service.complete("expired", "Password1!") }
 
         val valid = invitation()
         whenever(invitationRepository.findActiveForUpdate(service.hash("unknown-user"))).thenReturn(valid)
         whenever(userRepository.findByUserID("new-user")).thenReturn(null)
-        assertThrows<InvalidInvitationException> { service.complete("unknown-user", "a-secure-password") }
+        assertThrows<InvalidInvitationException> { service.complete("unknown-user", "Password1!") }
 
         whenever(invitationRepository.findActiveForUpdate(service.hash("configured"))).thenReturn(valid)
         whenever(userRepository.findByUserID("new-user")).thenReturn(user("encoded".toByteArray()))
-        assertThrows<InvalidInvitationException> { service.complete("configured", "a-secure-password") }
+        assertThrows<InvalidInvitationException> { service.complete("configured", "Password1!") }
+
+        whenever(invitationRepository.findActiveForUpdate(service.hash("deleted"))).thenReturn(valid)
+        whenever(userRepository.findByUserID("new-user")).thenReturn(user().apply { deletedAt = ZonedDateTime.now() })
+        assertThrows<InvalidInvitationException> { service.complete("deleted", "Password1!") }
     }
 
     @Test
     fun completeRejectsInvalidPasswordAndEncoderFailure() {
-        assertThrows<InvalidUserInputException> { service.complete("token", "too-short") }
-        assertThrows<InvalidUserInputException> { service.complete("token", "가".repeat(25)) }
+        assertThrows<InvalidUserInputException> { service.complete("token", "Ab1!") }
+        assertThrows<InvalidUserInputException> { service.complete("token", "Password!") }
+        assertThrows<InvalidUserInputException> { service.complete("token", "Password1") }
+        assertThrows<InvalidUserInputException> { service.complete("token", "1234567!") }
+        assertThrows<InvalidUserInputException> { service.complete("token", "Ab1!" + "가".repeat(23)) }
 
         val invitation = invitation()
         whenever(invitationRepository.findActiveForUpdate(service.hash("token"))).thenReturn(invitation)
         whenever(userRepository.findByUserID("new-user")).thenReturn(user())
         whenever(passwordEncoder.encode(any())).thenReturn(null)
-        assertThrows<InvalidUserInputException> { service.complete("token", "a-secure-password") }
+        assertThrows<InvalidUserInputException> { service.complete("token", "Password1!") }
         assertNull(invitation.consumedAt)
     }
 

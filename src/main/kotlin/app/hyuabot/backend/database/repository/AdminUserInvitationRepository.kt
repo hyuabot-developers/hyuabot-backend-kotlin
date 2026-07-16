@@ -17,6 +17,19 @@ interface AdminUserInvitationRepository : JpaRepository<AdminUserInvitation, UUI
     @Query(
         """
         select invitation from admin_user_invitation invitation
+        where (invitation.userID = :userID or invitation.createdBy = :userID)
+          and invitation.consumedAt is null
+          and invitation.revokedAt is null
+        """,
+    )
+    fun findAllActiveRelatedForUpdate(
+        @Param("userID") userID: String,
+    ): List<AdminUserInvitation>
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query(
+        """
+        select invitation from admin_user_invitation invitation
         where invitation.tokenHash = :tokenHash
           and invitation.consumedAt is null
           and invitation.revokedAt is null

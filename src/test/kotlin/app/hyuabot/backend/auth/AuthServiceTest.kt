@@ -173,10 +173,10 @@ class AuthServiceTest {
         val refreshToken = mock<RefreshToken>()
         whenever(userRepository.findByUserIDAndActiveIsTrue("testUser")).thenReturn(user)
         whenever(passwordEncoder.matches("current", "encoded-password")).thenReturn(true)
-        whenever(passwordEncoder.encode("a-new-secure-password")).thenReturn("new-encoded")
+        whenever(passwordEncoder.encode("Password1!")).thenReturn("new-encoded")
         whenever(refreshTokenRepository.findByUserID("testUser")).thenReturn(refreshToken)
 
-        authService.changePassword("testUser", ChangePasswordRequest("current", "a-new-secure-password"))
+        authService.changePassword("testUser", ChangePasswordRequest("current", "Password1!"))
 
         assertEquals("new-encoded", user.password?.decodeToString())
         assertEquals(1, user.authVersion)
@@ -189,10 +189,10 @@ class AuthServiceTest {
         val user = user()
         whenever(userRepository.findByUserIDAndActiveIsTrue("testUser")).thenReturn(user)
         whenever(passwordEncoder.matches("current", "encoded-password")).thenReturn(true)
-        whenever(passwordEncoder.encode("a-new-secure-password")).thenReturn("new-encoded")
+        whenever(passwordEncoder.encode("Password1!")).thenReturn("new-encoded")
         whenever(refreshTokenRepository.findByUserID("testUser")).thenReturn(null)
 
-        authService.changePassword("testUser", ChangePasswordRequest("current", "a-new-secure-password"))
+        authService.changePassword("testUser", ChangePasswordRequest("current", "Password1!"))
 
         assertEquals("new-encoded", user.password?.decodeToString())
         assertEquals(1, user.authVersion)
@@ -204,12 +204,12 @@ class AuthServiceTest {
         whenever(userRepository.findByUserIDAndActiveIsTrue("testUser")).thenReturn(user)
         whenever(passwordEncoder.matches("wrong", "encoded-password")).thenReturn(false)
         assertThrows<BadCredentialsException> {
-            authService.changePassword("testUser", ChangePasswordRequest("wrong", "a-new-secure-password"))
+            authService.changePassword("testUser", ChangePasswordRequest("wrong", "Password1!"))
         }
 
         whenever(userRepository.findByUserIDAndActiveIsTrue("testUser")).thenReturn(user(password = null))
         assertThrows<BadCredentialsException> {
-            authService.changePassword("testUser", ChangePasswordRequest("current", "a-new-secure-password"))
+            authService.changePassword("testUser", ChangePasswordRequest("current", "Password1!"))
         }
 
         assertThrows<InvalidUserInputException> {
@@ -222,10 +222,10 @@ class AuthServiceTest {
         val user = user()
         whenever(userRepository.findByUserIDAndActiveIsTrue("testUser")).thenReturn(user)
         whenever(passwordEncoder.matches("current", "encoded-password")).thenReturn(true)
-        whenever(passwordEncoder.encode("a-new-secure-password")).thenReturn(null)
+        whenever(passwordEncoder.encode("Password1!")).thenReturn(null)
 
         assertThrows<InvalidUserInputException> {
-            authService.changePassword("testUser", ChangePasswordRequest("current", "a-new-secure-password"))
+            authService.changePassword("testUser", ChangePasswordRequest("current", "Password1!"))
         }
         assertTrue(user.authVersion == 0)
     }

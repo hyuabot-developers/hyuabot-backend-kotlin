@@ -5,6 +5,7 @@ import app.hyuabot.backend.security.AdminPermission
 import java.time.ZonedDateTime
 
 enum class AdminUserStatus {
+    DELETED,
     PENDING_SETUP,
     INVITATION_EXPIRED,
     ACTIVE,
@@ -35,6 +36,7 @@ data class AdminUserResponse(
                 active = user.active,
                 status =
                     when {
+                        user.deletedAt != null -> AdminUserStatus.DELETED
                         user.password == null && invitationExpiresAt?.isAfter(now) == true ->
                             AdminUserStatus.PENDING_SETUP
                         user.password == null -> AdminUserStatus.INVITATION_EXPIRED

@@ -13,6 +13,7 @@ import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import java.time.ZonedDateTime
 
 @Entity(name = "user")
 @Table(name = "admin_user")
@@ -32,6 +33,8 @@ class User(
     var active: Boolean,
     @Column(name = "auth_version", nullable = false)
     var authVersion: Int = 0,
+    @Column(name = "deleted_at", columnDefinition = "timestamptz")
+    var deletedAt: ZonedDateTime? = null,
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
         name = "admin_user_permission",
