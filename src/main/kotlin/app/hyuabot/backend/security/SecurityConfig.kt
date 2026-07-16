@@ -89,7 +89,9 @@ class SecurityConfig(
                         AdminPermission.CAFETERIA.name,
                         AdminPermission.READING_ROOM.name,
                         AdminPermission.CONTACT.name,
-                    ).requestMatchers("/api/v1/user/profile", "/api/v1/user/password", "/api/v1/user/overview")
+                    ).requestMatchers("/api/v1/user/push/**")
+                    .hasAuthority(AdminPermission.SUPER_ADMIN.name)
+                    .requestMatchers("/api/v1/user/profile", "/api/v1/user/password", "/api/v1/user/overview")
                     .authenticated()
                     .anyRequest()
                     .denyAll()
