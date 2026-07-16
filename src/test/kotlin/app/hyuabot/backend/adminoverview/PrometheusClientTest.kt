@@ -3,18 +3,23 @@ package app.hyuabot.backend.adminoverview
 import com.sun.net.httpserver.HttpServer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.net.InetSocketAddress
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicInteger
 
 class PrometheusClientTest {
     @Test
     fun `cron job queries parse valid series and ignore malformed series`() {
+        val queries = mutableListOf<String>()
         withServer(
             listOf(
-                """{"status":"success","data":{"result":[{"metric":{"owner_name":"bus-realtime-cron-job"},"value":[1,"100"]},{"metric":{},"value":[1,"200"]},{"metric":{"owner_name":"invalid"},"value":[1,"not-a-number"]}]}}""",
+                """{"status":"success","data":{"result":[{"metric":{"owner_name":"bus-realtime-cron-job"},"value":[1,"100"]},{"metric":{},"value":[1,"200"]},{"metric":{"owner_name":"invalid"},"value":[1,"not-a-number"]},{"metric":{"owner_name":"missing-value"},"value":[]}]}}""",
                 """{"status":"success","data":{"result":[{"metric":{"owner_name":"subway-realtime-cron-job"},"value":[1,"200"]}]}}""",
             ),
+            queries,
         ) { baseURL ->
             val runs = PrometheusClient(baseURL).getCronJobRuns()
             assertEquals("1970-01-01T00:01:40Z", runs.getValue("bus-realtime-cron-job").lastSuccessAt)
@@ -22,6 +27,9 @@ class PrometheusClientTest {
             assertEquals(null, runs.getValue("subway-realtime-cron-job").lastSuccessAt)
             assertEquals("1970-01-01T00:03:20Z", runs.getValue("subway-realtime-cron-job").lastFailureAt)
         }
+        assertEquals(2, queries.size)
+        assertTrue(queries.all { query -> "max_over_time" in query })
+        assertTrue(queries.all { query -> "[24h:1m]" in query })
     }
 
     @Test
@@ -36,11 +44,17 @@ class PrometheusClientTest {
 
     private fun withServer(
         responses: List<String>,
+        queries: MutableList<String> = mutableListOf(),
         block: (String) -> Unit,
     ) {
         val server = HttpServer.create(InetSocketAddress(0), 0)
         val requestIndex = AtomicInteger()
         server.createContext("/api/v1/query") { exchange ->
+            queries +=
+                URLDecoder.decode(
+                    exchange.requestURI.rawQuery.substringAfter("query="),
+                    StandardCharsets.UTF_8,
+                )
             val response = responses[requestIndex.getAndIncrement().coerceAtMost(responses.lastIndex)]
             val bytes = response.toByteArray()
             exchange.responseHeaders.add("Content-Type", "application/json")

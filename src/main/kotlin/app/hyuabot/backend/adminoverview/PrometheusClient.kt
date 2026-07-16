@@ -35,11 +35,8 @@ class PrometheusClient(
         return response.data.result
             .mapNotNull { result ->
                 val name = result.metric["owner_name"] ?: return@mapNotNull null
-                val seconds =
-                    result.value
-                        .getOrNull(1)
-                        ?.toString()
-                        ?.toDoubleOrNull() ?: return@mapNotNull null
+                val rawValue = result.value.getOrNull(1) ?: return@mapNotNull null
+                val seconds = rawValue.toString().toDoubleOrNull() ?: return@mapNotNull null
                 name to Instant.ofEpochSecond(seconds.toLong())
             }.toMap()
     }
@@ -60,8 +57,8 @@ class PrometheusClient(
 
     companion object {
         private const val LAST_SUCCESS_QUERY =
-            "max by (owner_name) ((kube_job_status_completion_time{namespace=\"hyuabot\"} * on(job_name) group_left(owner_name) kube_job_owner{namespace=\"hyuabot\",owner_kind=\"CronJob\"}) * on(job_name) group_left() (kube_job_status_succeeded{namespace=\"hyuabot\"} > 0))"
+            "max by (owner_name) (max_over_time(((kube_job_status_completion_time{namespace=\"hyuabot\"} * on(job_name) group_left(owner_name) kube_job_owner{namespace=\"hyuabot\",owner_kind=\"CronJob\"}) * on(job_name) group_left() (kube_job_status_succeeded{namespace=\"hyuabot\"} > 0))[24h:1m]))"
         private const val LAST_FAILURE_QUERY =
-            "max by (owner_name) ((kube_job_status_start_time{namespace=\"hyuabot\"} * on(job_name) group_left(owner_name) kube_job_owner{namespace=\"hyuabot\",owner_kind=\"CronJob\"}) * on(job_name) group_left() (kube_job_status_failed{namespace=\"hyuabot\"} > 0))"
+            "max by (owner_name) (max_over_time(((kube_job_status_start_time{namespace=\"hyuabot\"} * on(job_name) group_left(owner_name) kube_job_owner{namespace=\"hyuabot\",owner_kind=\"CronJob\"}) * on(job_name) group_left() (kube_job_status_failed{namespace=\"hyuabot\"} > 0))[24h:1m]))"
     }
 }
