@@ -1,13 +1,21 @@
 package app.hyuabot.backend.database.repository
 
 import app.hyuabot.backend.database.entity.SubwayTimetable
+import jakarta.persistence.LockModeType
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalTime
 
 interface SubwayTimetableRepository : JpaRepository<SubwayTimetable, Int> {
     fun findByStationID(stationID: String): List<SubwayTimetable>
+
+    fun findByStationIDIn(stationIDs: List<String>): List<SubwayTimetable>
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT timetable FROM subway_timetable timetable WHERE timetable.stationID IN :stationIDs")
+    fun findByStationIDInForUpdate(stationIDs: List<String>): List<SubwayTimetable>
 
     fun findByStationIDAndDepartureTimeAfter(
         stationID: String,
