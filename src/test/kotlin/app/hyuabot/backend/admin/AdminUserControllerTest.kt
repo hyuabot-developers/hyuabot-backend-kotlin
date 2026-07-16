@@ -7,6 +7,7 @@ import app.hyuabot.backend.admin.domain.UpdateAdminUserRequest
 import app.hyuabot.backend.admin.exception.AdminUserNotFoundException
 import app.hyuabot.backend.admin.exception.LastSuperAdminException
 import app.hyuabot.backend.admin.exception.PendingUserActivationException
+import app.hyuabot.backend.admin.exception.SelfDeletionException
 import app.hyuabot.backend.auth.exception.DuplicateEmailException
 import app.hyuabot.backend.auth.exception.DuplicateUserIDException
 import app.hyuabot.backend.auth.exception.InvalidInvitationException
@@ -25,6 +26,7 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
@@ -200,6 +202,37 @@ class AdminUserControllerTest {
                     .content(objectMapper.writeValueAsString(request)),
             ).andExpect(status().isConflict)
             .andExpect(jsonPath("$.message").value("USER_SETUP_REQUIRED"))
+    }
+
+    @Test
+    @WithCustomMockUser
+    fun superAdminCanDeleteUser() {
+        mockMvc
+            .perform(delete("/api/v1/admin/users/user"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.message").value("ADMIN_USER_DELETED"))
+    }
+
+    @Test
+    @WithCustomMockUser
+    fun deleteUserMapsNotFoundAndSafetyConflicts() {
+        doThrow(AdminUserNotFoundException()).whenever(service).deleteUser("missing", "testUser")
+        mockMvc
+            .perform(delete("/api/v1/admin/users/missing"))
+            .andExpect(status().isNotFound)
+            .andExpect(jsonPath("$.message").value("ADMIN_USER_NOT_FOUND"))
+
+        doThrow(LastSuperAdminException()).whenever(service).deleteUser("last-admin", "testUser")
+        mockMvc
+            .perform(delete("/api/v1/admin/users/last-admin"))
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.message").value("LAST_SUPER_ADMIN_REQUIRED"))
+
+        doThrow(SelfDeletionException()).whenever(service).deleteUser("testUser", "testUser")
+        mockMvc
+            .perform(delete("/api/v1/admin/users/testUser"))
+            .andExpect(status().isConflict)
+            .andExpect(jsonPath("$.message").value("SELF_DELETION_NOT_ALLOWED"))
     }
 
     private fun performCreate(request: CreateAdminUserRequest) =

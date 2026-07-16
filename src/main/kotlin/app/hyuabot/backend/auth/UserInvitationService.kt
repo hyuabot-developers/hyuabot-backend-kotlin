@@ -35,7 +35,7 @@ class UserInvitationService(
         userID: String,
         createdBy: String,
     ): IssuedInvitation {
-        val user = userRepository.findByUserID(userID) ?: throw AdminUserNotFoundException()
+        val user = userRepository.findByUserID(userID)?.takeIf { it.deletedAt == null } ?: throw AdminUserNotFoundException()
         if (user.password != null) {
             throw InvalidInvitationException()
         }
@@ -81,7 +81,7 @@ class UserInvitationService(
         if (!invitation.expiresAt.isAfter(now)) {
             throw InvalidInvitationException()
         }
-        val user = userRepository.findByUserID(invitation.userID) ?: throw InvalidInvitationException()
+        val user = userRepository.findByUserID(invitation.userID)?.takeIf { it.deletedAt == null } ?: throw InvalidInvitationException()
         if (user.password != null) {
             throw InvalidInvitationException()
         }
@@ -115,7 +115,13 @@ class UserInvitationService(
 
         fun validatePassword(password: String) {
             val byteLength = password.toByteArray().size
-            if (password.length < 15 || byteLength > 72) {
+            if (
+                password.length < 8 ||
+                byteLength > 72 ||
+                !password.contains(Regex("[A-Za-z]")) ||
+                !password.contains(Regex("[0-9]")) ||
+                !password.contains(Regex("[\\p{P}\\p{S}]"))
+            ) {
                 throw InvalidUserInputException("INVALID_PASSWORD")
             }
         }

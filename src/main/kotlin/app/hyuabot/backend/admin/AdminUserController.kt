@@ -6,6 +6,7 @@ import app.hyuabot.backend.admin.domain.UpdateAdminUserRequest
 import app.hyuabot.backend.admin.exception.AdminUserNotFoundException
 import app.hyuabot.backend.admin.exception.LastSuperAdminException
 import app.hyuabot.backend.admin.exception.PendingUserActivationException
+import app.hyuabot.backend.admin.exception.SelfDeletionException
 import app.hyuabot.backend.auth.exception.DuplicateEmailException
 import app.hyuabot.backend.auth.exception.DuplicateUserIDException
 import app.hyuabot.backend.auth.exception.InvalidInvitationException
@@ -15,6 +16,7 @@ import app.hyuabot.backend.utility.ResponseBuilder
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -83,6 +85,21 @@ class AdminUserController(
             ResponseBuilder.response(HttpStatus.CONFLICT, "LAST_SUPER_ADMIN_REQUIRED")
         } catch (_: PendingUserActivationException) {
             ResponseBuilder.response(HttpStatus.CONFLICT, "USER_SETUP_REQUIRED")
+        }
+
+    @DeleteMapping("/{userID}")
+    fun deleteUser(
+        @PathVariable userID: String,
+    ): ResponseEntity<ResponseBuilder.Message> =
+        try {
+            adminUserService.deleteUser(userID, currentUserID())
+            ResponseBuilder.response(HttpStatus.OK, "ADMIN_USER_DELETED")
+        } catch (_: AdminUserNotFoundException) {
+            ResponseBuilder.response(HttpStatus.NOT_FOUND, "ADMIN_USER_NOT_FOUND")
+        } catch (_: LastSuperAdminException) {
+            ResponseBuilder.response(HttpStatus.CONFLICT, "LAST_SUPER_ADMIN_REQUIRED")
+        } catch (_: SelfDeletionException) {
+            ResponseBuilder.response(HttpStatus.CONFLICT, "SELF_DELETION_NOT_ALLOWED")
         }
 
     private fun currentUserID(): String = (SecurityContextHolder.getContext().authentication?.principal as JWTUser).username

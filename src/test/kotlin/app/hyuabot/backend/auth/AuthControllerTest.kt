@@ -127,7 +127,7 @@ class AuthControllerTest {
             .perform(
                 post("/api/v1/user/account-setup/complete")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"token\":\"token\",\"password\":\"a-secure-password\"}"),
+                    .content("{\"token\":\"token\",\"password\":\"Password1!\"}"),
             ).andExpect(status().isOk)
             .andExpect(jsonPath("$.message").value("ACCOUNT_SETUP_COMPLETE"))
     }
@@ -147,12 +147,12 @@ class AuthControllerTest {
 
         doThrow(InvalidInvitationException())
             .whenever(invitationService)
-            .complete("expired", "a-secure-password")
+            .complete("expired", "Password1!")
         mockMvc
             .perform(
                 post("/api/v1/user/account-setup/complete")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content("{\"token\":\"expired\",\"password\":\"a-secure-password\"}"),
+                    .content("{\"token\":\"expired\",\"password\":\"Password1!\"}"),
             ).andExpect(status().isBadRequest)
             .andExpect(jsonPath("$.message").value("INVALID_OR_EXPIRED_INVITATION"))
     }
@@ -443,7 +443,7 @@ class AuthControllerTest {
     @Test
     @WithCustomMockUser(username = "test_user")
     fun authenticatedUserCanChangePasswordAndErrorsAreMapped() {
-        val request = ChangePasswordRequest("current", "a-new-secure-password")
+        val request = ChangePasswordRequest("current", "Password1!")
         mockMvc
             .perform(
                 put("/api/v1/user/password")

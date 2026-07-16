@@ -2,6 +2,7 @@ package app.hyuabot.backend.database.entity
 
 import app.hyuabot.backend.security.AdminPermission
 import org.junit.jupiter.api.Test
+import java.time.ZonedDateTime
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -39,6 +40,7 @@ class UserTest {
         e.email = "y"
         e.phone = "y"
         e.active = true
+        e.deletedAt = ZonedDateTime.now()
         e.permissions.add(AdminPermission.NOTICE)
         assertEquals(setOf(AdminPermission.NOTICE), e.permissions)
     }

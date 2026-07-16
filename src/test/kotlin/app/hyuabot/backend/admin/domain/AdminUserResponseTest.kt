@@ -23,6 +23,10 @@ class AdminUserResponseTest {
     @Test
     fun mapsEveryAccountStatus() {
         assertEquals(
+            AdminUserStatus.DELETED,
+            AdminUserResponse.from(user().apply { deletedAt = now }, now = now).status,
+        )
+        assertEquals(
             AdminUserStatus.PENDING_SETUP,
             AdminUserResponse.from(user(password = null), now.plusMinutes(1), now).status,
         )

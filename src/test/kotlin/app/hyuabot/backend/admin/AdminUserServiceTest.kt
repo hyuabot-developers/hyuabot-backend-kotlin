@@ -1,19 +1,23 @@
 package app.hyuabot.backend.admin
 
+import app.hyuabot.backend.admin.domain.AdminUserResponse
 import app.hyuabot.backend.admin.domain.AdminUserStatus
 import app.hyuabot.backend.admin.domain.CreateAdminUserRequest
 import app.hyuabot.backend.admin.domain.UpdateAdminUserRequest
 import app.hyuabot.backend.admin.exception.AdminUserNotFoundException
 import app.hyuabot.backend.admin.exception.LastSuperAdminException
 import app.hyuabot.backend.admin.exception.PendingUserActivationException
+import app.hyuabot.backend.admin.exception.SelfDeletionException
 import app.hyuabot.backend.auth.IssuedInvitation
 import app.hyuabot.backend.auth.UserInvitationService
 import app.hyuabot.backend.auth.exception.DuplicateEmailException
 import app.hyuabot.backend.auth.exception.DuplicateUserIDException
 import app.hyuabot.backend.auth.exception.InvalidUserInputException
 import app.hyuabot.backend.database.entity.AdminUserInvitation
+import app.hyuabot.backend.database.entity.RefreshToken
 import app.hyuabot.backend.database.entity.User
 import app.hyuabot.backend.database.repository.AdminUserInvitationRepository
+import app.hyuabot.backend.database.repository.RefreshTokenRepository
 import app.hyuabot.backend.database.repository.UserRepository
 import app.hyuabot.backend.security.AdminPermission
 import org.junit.jupiter.api.Test
@@ -23,6 +27,7 @@ import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import java.time.ZonedDateTime
 import java.util.UUID
@@ -40,6 +45,9 @@ class AdminUserServiceTest {
 
     @Mock
     lateinit var invitationService: UserInvitationService
+
+    @Mock
+    lateinit var refreshTokenRepository: RefreshTokenRepository
 
     @InjectMocks
     lateinit var service: AdminUserService
@@ -143,6 +151,9 @@ class AdminUserServiceTest {
 
         whenever(userRepository.findByUserID("missing")).thenReturn(null)
         assertThrows<AdminUserNotFoundException> { service.reissueInvitation("missing", "creator") }
+
+        whenever(userRepository.findByUserID("deleted")).thenReturn(user(id = "deleted").apply { deletedAt = ZonedDateTime.now() })
+        assertThrows<AdminUserNotFoundException> { service.reissueInvitation("deleted", "creator") }
     }
 
     @Test
@@ -168,6 +179,12 @@ class AdminUserServiceTest {
 
         assertThrows<AdminUserNotFoundException> {
             service.updateUser("missing", UpdateAdminUserRequest(true, emptySet()))
+        }
+
+        whenever(userRepository.findAllForPermissionUpdate())
+            .thenReturn(listOf(user(id = "deleted").apply { deletedAt = ZonedDateTime.now() }))
+        assertThrows<AdminUserNotFoundException> {
+            service.updateUser("deleted", UpdateAdminUserRequest(true, emptySet()))
         }
     }
 
@@ -245,5 +262,87 @@ class AdminUserServiceTest {
         assertThrows<PendingUserActivationException> {
             service.updateUser("user", UpdateAdminUserRequest(true, emptySet()))
         }
+    }
+
+    @Test
+    fun deleteUserAnonymizesAccountAndRevokesAccess() {
+        val target = user()
+        val admin = user(id = "admin", permissions = setOf(AdminPermission.SUPER_ADMIN))
+        val invitation =
+            AdminUserInvitation(
+                UUID.randomUUID(),
+                target.userID,
+                "hash",
+                target.userID,
+                ZonedDateTime.now().plusHours(1),
+                createdAt = ZonedDateTime.now(),
+            )
+        val refreshToken = org.mockito.kotlin.mock<RefreshToken>()
+        whenever(userRepository.findAllForPermissionUpdate()).thenReturn(listOf(target, admin))
+        whenever(invitationRepository.findAllActiveRelatedForUpdate("user")).thenReturn(listOf(invitation))
+        whenever(refreshTokenRepository.findByUserID("user")).thenReturn(refreshToken)
+
+        service.deleteUser("user", "admin")
+
+        assertFalse(target.active)
+        assertEquals(null, target.password)
+        assertEquals(1, target.authVersion)
+        assertEquals("삭제된 관리자", target.name)
+        assertTrue(target.email.matches(Regex("deleted-[0-9a-f-]{16}@deleted\\.invalid")))
+        assertEquals("", target.phone)
+        assertTrue(target.permissions.isEmpty())
+        assertEquals(target.deletedAt, invitation.revokedAt)
+        verify(refreshTokenRepository).delete(refreshToken)
+        verify(userRepository).save(target)
+    }
+
+    @Test
+    fun deleteUserSucceedsWithoutInvitationOrRefreshToken() {
+        val target = user(active = false)
+        whenever(userRepository.findAllForPermissionUpdate()).thenReturn(listOf(target))
+        whenever(invitationRepository.findAllActiveRelatedForUpdate("user")).thenReturn(emptyList())
+        whenever(refreshTokenRepository.findByUserID("user")).thenReturn(null)
+
+        service.deleteUser("user", "admin")
+
+        assertEquals(AdminUserStatus.DELETED, AdminUserResponse.from(target).status)
+        verifyNoInteractions(invitationService)
+    }
+
+    @Test
+    fun deleteUserRejectsMissingDeletedSelfAndLastSuperAdmin() {
+        whenever(userRepository.findAllForPermissionUpdate()).thenReturn(emptyList())
+        assertThrows<AdminUserNotFoundException> { service.deleteUser("missing", "admin") }
+
+        val deleted = user(id = "deleted").apply { deletedAt = ZonedDateTime.now() }
+        whenever(userRepository.findAllForPermissionUpdate()).thenReturn(listOf(deleted))
+        assertThrows<AdminUserNotFoundException> { service.deleteUser("deleted", "admin") }
+
+        val self = user(id = "admin", permissions = setOf(AdminPermission.SUPER_ADMIN))
+        whenever(userRepository.findAllForPermissionUpdate()).thenReturn(listOf(self))
+        assertThrows<SelfDeletionException> { service.deleteUser("admin", "admin") }
+
+        val lastSuperAdmin = user(permissions = setOf(AdminPermission.SUPER_ADMIN))
+        whenever(userRepository.findAllForPermissionUpdate()).thenReturn(listOf(lastSuperAdmin))
+        assertThrows<LastSuperAdminException> { service.deleteUser("user", "admin") }
+    }
+
+    @Test
+    fun deleteUserAllowsRemovingSuperAdminWhenAnotherRemains() {
+        val target = user(permissions = setOf(AdminPermission.SUPER_ADMIN))
+        val other = user(id = "other", permissions = setOf(AdminPermission.SUPER_ADMIN))
+        val deletedSuperAdmin =
+            user(id = "deleted", permissions = setOf(AdminPermission.SUPER_ADMIN)).apply {
+                deletedAt = ZonedDateTime.now()
+            }
+        val inactiveSuperAdmin = user(id = "inactive", active = false, permissions = setOf(AdminPermission.SUPER_ADMIN))
+        val regularAdmin = user(id = "regular")
+        whenever(userRepository.findAllForPermissionUpdate())
+            .thenReturn(listOf(target, deletedSuperAdmin, inactiveSuperAdmin, regularAdmin, other))
+        whenever(invitationRepository.findAllActiveRelatedForUpdate("user")).thenReturn(emptyList())
+
+        service.deleteUser("user", "admin")
+
+        assertEquals(AdminUserStatus.DELETED, AdminUserResponse.from(target).status)
     }
 }
