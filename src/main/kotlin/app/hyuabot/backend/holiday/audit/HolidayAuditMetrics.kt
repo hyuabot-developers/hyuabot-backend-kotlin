@@ -23,6 +23,15 @@ class HolidayAuditMetrics(
                 }.tag("severity", severity.lowercase())
                 .register(meterRegistry)
         }
+        listOf("today" to 0L, "tomorrow" to 1L).forEach { (window, daysFromToday) ->
+            Gauge
+                .builder("hyuabot.holiday.configuration.due.issues") {
+                    val audit = snapshot()
+                    val targetDate = audit.checkedAt.toLocalDate().plusDays(daysFromToday)
+                    audit.issues.count { it.date == targetDate }.toDouble()
+                }.tag("window", window)
+                .register(meterRegistry)
+        }
         Gauge
             .builder("hyuabot.holiday.sync.age.seconds") {
                 snapshot().lastSuccessAt?.let { Duration.between(it, snapshot().checkedAt).seconds.toDouble() } ?: -1.0
