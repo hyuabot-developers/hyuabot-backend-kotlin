@@ -1,7 +1,6 @@
 package app.hyuabot.backend.database.repository
 
 import app.hyuabot.backend.database.entity.SubwayTimetable
-import app.hyuabot.backend.holiday.audit.SubwayHolidayCoverageGap
 import jakarta.persistence.LockModeType
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Lock
@@ -10,17 +9,6 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalTime
 
 interface SubwayTimetableRepository : JpaRepository<SubwayTimetable, Int> {
-    @Query(
-        """
-        SELECT new app.hyuabot.backend.holiday.audit.SubwayHolidayCoverageGap(t.stationID, t.heading)
-        FROM subway_timetable t
-        GROUP BY t.stationID, t.heading
-        HAVING SUM(CASE WHEN t.weekday = 'weekdays' THEN 1 ELSE 0 END) > 0
-           AND SUM(CASE WHEN t.weekday = 'weekends' THEN 1 ELSE 0 END) = 0
-        """,
-    )
-    fun findHolidayCoverageGaps(): List<SubwayHolidayCoverageGap>
-
     fun findByStationID(stationID: String): List<SubwayTimetable>
 
     fun findByStationIDIn(stationIDs: List<String>): List<SubwayTimetable>
