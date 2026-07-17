@@ -217,10 +217,10 @@ class PublicHolidayController {
             }
         } catch (_: LocalDateNotValidException) {
             ResponseBuilder.response(HttpStatus.BAD_REQUEST, ResponseBuilder.Message("LOCAL_DATE_NOT_VALID"))
-        } catch (_: IllegalArgumentException) {
-            ResponseBuilder.response(HttpStatus.BAD_REQUEST, ResponseBuilder.Message("INVALID_HOLIDAY_TYPE"))
         } catch (_: PublicHolidayNotFoundException) {
             ResponseBuilder.response(HttpStatus.NOT_FOUND, ResponseBuilder.Message("PUBLIC_HOLIDAY_NOT_FOUND"))
+        } catch (_: IllegalArgumentException) {
+            ResponseBuilder.response(HttpStatus.BAD_REQUEST, ResponseBuilder.Message("INVALID_HOLIDAY_TYPE"))
         } catch (_: DuplicatePublicHolidayException) {
             ResponseBuilder.response(HttpStatus.CONFLICT, ResponseBuilder.Message("DUPLICATE_PUBLIC_HOLIDAY"))
         } catch (e: Exception) {
