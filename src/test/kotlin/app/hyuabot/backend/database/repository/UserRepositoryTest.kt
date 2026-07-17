@@ -122,9 +122,9 @@ class UserRepositoryTest {
     }
 
     @Test
-    @DisplayName("사용자별 인증 토큰 조회")
-    fun testFindTokenByUserID() {
-        val token = refreshTokenRepository.findByUserID("user123")
+    @DisplayName("사용자와 토큰 값으로 인증 세션 조회")
+    fun testFindTokenByUserIDAndRefreshToken() {
+        val token = refreshTokenRepository.findByUserIDAndRefreshToken("user123", "refreshToken")
         assert(token != null)
         assert(token?.uuid == uuid)
         assert(token?.userID == "user123")
@@ -133,23 +133,32 @@ class UserRepositoryTest {
         assert(token?.createdAt == currentTime)
         assert(token?.updatedAt == currentTime)
         assert(token?.user?.userID == "user123")
-        val nonExistentToken = refreshTokenRepository.findByUserID("nonexistent")
+        val nonExistentToken =
+            refreshTokenRepository.findByUserIDAndRefreshToken("user123", "nonexistentRefreshToken")
         assert(nonExistentToken == null)
     }
 
     @Test
-    @DisplayName("사용자별 인증 토큰 갱신")
-    fun testUpdateTokenByUserID() {
-        val token = refreshTokenRepository.findByUserID("user123")
-        assert(token != null)
-        token?.let {
-            it.refreshToken = "newRefreshToken"
-            it.expiredAt = currentTime.plusDays(60)
-            it.updatedAt = currentTime
-            refreshTokenRepository.save(it)
-        }
-        val updatedToken = refreshTokenRepository.findByUserID("user123")
-        assert(updatedToken?.refreshToken == "newRefreshToken")
-        assert(updatedToken?.expiredAt == currentTime.plusDays(60))
+    @DisplayName("한 사용자의 여러 인증 세션 저장 및 전체 삭제")
+    fun testMultipleSessionsAndDeleteAllByUserID() {
+        refreshTokenRepository.save(
+            RefreshToken(
+                uuid = UUID.randomUUID(),
+                userID = "user123",
+                refreshToken = "secondRefreshToken",
+                expiredAt = currentTime.plusDays(30),
+                createdAt = currentTime,
+                updatedAt = currentTime,
+                user = userRepository.findByUserID("user123"),
+            ),
+        )
+
+        assert(refreshTokenRepository.findByUserIDAndRefreshToken("user123", "refreshToken") != null)
+        assert(refreshTokenRepository.findByUserIDAndRefreshToken("user123", "secondRefreshToken") != null)
+
+        refreshTokenRepository.deleteAllByUserID("user123")
+
+        assert(refreshTokenRepository.findByUserIDAndRefreshToken("user123", "refreshToken") == null)
+        assert(refreshTokenRepository.findByUserIDAndRefreshToken("user123", "secondRefreshToken") == null)
     }
 }

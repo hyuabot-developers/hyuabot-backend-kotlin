@@ -4,7 +4,6 @@ import app.hyuabot.backend.auth.domain.ChangePasswordRequest
 import app.hyuabot.backend.auth.domain.UpdateProfileRequest
 import app.hyuabot.backend.auth.exception.DuplicateEmailException
 import app.hyuabot.backend.auth.exception.InvalidUserInputException
-import app.hyuabot.backend.database.entity.RefreshToken
 import app.hyuabot.backend.database.entity.User
 import app.hyuabot.backend.database.repository.RefreshTokenRepository
 import app.hyuabot.backend.database.repository.UserRepository
@@ -19,7 +18,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
-import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -91,8 +89,8 @@ class AuthServiceTest {
         val savedRefreshToken = mock<app.hyuabot.backend.database.entity.RefreshToken>()
         whenever(authentication.principal).thenReturn(JWTUser("testUser", ""))
         whenever(tokenProvider.getAuthentication("refreshToken")).thenReturn(authentication)
-        whenever(savedRefreshToken.refreshToken).thenReturn("refreshToken")
-        whenever(refreshTokenRepository.findByUserID("testUser")).thenReturn(savedRefreshToken)
+        whenever(refreshTokenRepository.findByUserIDAndRefreshToken("testUser", "refreshToken"))
+            .thenReturn(savedRefreshToken)
         whenever(tokenProvider.createAccessToken(authentication)).thenReturn("newAccessToken")
         assertEquals("newAccessToken", authService.refreshToken("refreshToken"))
     }
@@ -102,7 +100,7 @@ class AuthServiceTest {
         val authentication = mock<Authentication>()
         whenever(authentication.principal).thenReturn(JWTUser("testUser", ""))
         whenever(tokenProvider.getAuthentication("refreshToken")).thenReturn(authentication)
-        whenever(refreshTokenRepository.findByUserID("testUser")).thenReturn(null)
+        whenever(refreshTokenRepository.findByUserIDAndRefreshToken("testUser", "refreshToken")).thenReturn(null)
 
         assertThrows<BadCredentialsException> { authService.refreshToken("refreshToken") }
     }
@@ -168,20 +166,18 @@ class AuthServiceTest {
     }
 
     @Test
-    fun changePasswordRevokesRefreshTokenAndIncrementsAuthVersion() {
+    fun changePasswordRevokesAllRefreshTokensAndIncrementsAuthVersion() {
         val user = user()
-        val refreshToken = mock<RefreshToken>()
         whenever(userRepository.findByUserIDAndActiveIsTrue("testUser")).thenReturn(user)
         whenever(passwordEncoder.matches("current", "encoded-password")).thenReturn(true)
         whenever(passwordEncoder.encode("Password1!")).thenReturn("new-encoded")
-        whenever(refreshTokenRepository.findByUserID("testUser")).thenReturn(refreshToken)
 
         authService.changePassword("testUser", ChangePasswordRequest("current", "Password1!"))
 
         assertEquals("new-encoded", user.password?.decodeToString())
         assertEquals(1, user.authVersion)
         verify(userRepository).save(user)
-        verify(refreshTokenRepository).delete(refreshToken)
+        verify(refreshTokenRepository).deleteAllByUserID("testUser")
     }
 
     @Test
@@ -190,12 +186,11 @@ class AuthServiceTest {
         whenever(userRepository.findByUserIDAndActiveIsTrue("testUser")).thenReturn(user)
         whenever(passwordEncoder.matches("current", "encoded-password")).thenReturn(true)
         whenever(passwordEncoder.encode("Password1!")).thenReturn("new-encoded")
-        whenever(refreshTokenRepository.findByUserID("testUser")).thenReturn(null)
-
         authService.changePassword("testUser", ChangePasswordRequest("current", "Password1!"))
 
         assertEquals("new-encoded", user.password?.decodeToString())
         assertEquals(1, user.authVersion)
+        verify(refreshTokenRepository).deleteAllByUserID("testUser")
     }
 
     @Test
@@ -238,12 +233,14 @@ class AuthServiceTest {
                 whenever(userID).thenReturn("testUser")
             }
         val accessToken = "accessToken"
-        val cookies = arrayOf(Cookie("access_token", accessToken))
+        val refreshToken = "refreshToken"
+        val cookies = arrayOf(Cookie("access_token", accessToken), Cookie("refresh_token", refreshToken))
+        val savedSession = mock<app.hyuabot.backend.database.entity.RefreshToken>()
         whenever(request.cookies).thenReturn(cookies)
-        whenever(refreshTokenRepository.findByUserID(user.userID)).thenReturn(mock())
+        whenever(refreshTokenRepository.findByUserIDAndRefreshToken(user.userID, refreshToken)).thenReturn(savedSession)
         authService.logout(user, request)
-        verify(tokenProvider).invalidateAccessToken(user, accessToken)
-        verify(refreshTokenRepository).delete(any())
+        verify(tokenProvider).invalidateAccessToken(accessToken)
+        verify(refreshTokenRepository).delete(savedSession)
     }
 
     @Test
@@ -268,14 +265,11 @@ class AuthServiceTest {
     @Test
     @DisplayName("로그아웃 테스트 (Refresh Token 없음)")
     fun logoutNoRefreshTokenTest() {
-        val user =
-            mock<User>().apply {
-                whenever(userID).thenReturn("testUser")
-            }
+        val user = mock<User>()
         val cookies = arrayOf(Cookie("access_token", "accessToken"))
         whenever(request.cookies).thenReturn(cookies)
-        whenever(refreshTokenRepository.findByUserID(user.userID)).thenReturn(null)
         val exception = assertThrows<IllegalArgumentException> { authService.logout(user, request) }
         assertEquals("NO_REFRESH_TOKEN", exception.message)
+        verify(tokenProvider).invalidateAccessToken("accessToken")
     }
 }

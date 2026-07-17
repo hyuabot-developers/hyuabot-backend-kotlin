@@ -14,7 +14,6 @@ import app.hyuabot.backend.auth.exception.DuplicateEmailException
 import app.hyuabot.backend.auth.exception.DuplicateUserIDException
 import app.hyuabot.backend.auth.exception.InvalidUserInputException
 import app.hyuabot.backend.database.entity.AdminUserInvitation
-import app.hyuabot.backend.database.entity.RefreshToken
 import app.hyuabot.backend.database.entity.User
 import app.hyuabot.backend.database.repository.AdminUserInvitationRepository
 import app.hyuabot.backend.database.repository.RefreshTokenRepository
@@ -277,10 +276,8 @@ class AdminUserServiceTest {
                 ZonedDateTime.now().plusHours(1),
                 createdAt = ZonedDateTime.now(),
             )
-        val refreshToken = org.mockito.kotlin.mock<RefreshToken>()
         whenever(userRepository.findAllForPermissionUpdate()).thenReturn(listOf(target, admin))
         whenever(invitationRepository.findAllActiveRelatedForUpdate("user")).thenReturn(listOf(invitation))
-        whenever(refreshTokenRepository.findByUserID("user")).thenReturn(refreshToken)
 
         service.deleteUser("user", "admin")
 
@@ -292,7 +289,7 @@ class AdminUserServiceTest {
         assertEquals("", target.phone)
         assertTrue(target.permissions.isEmpty())
         assertEquals(target.deletedAt, invitation.revokedAt)
-        verify(refreshTokenRepository).delete(refreshToken)
+        verify(refreshTokenRepository).deleteAllByUserID("user")
         verify(userRepository).save(target)
     }
 
@@ -301,11 +298,11 @@ class AdminUserServiceTest {
         val target = user(active = false)
         whenever(userRepository.findAllForPermissionUpdate()).thenReturn(listOf(target))
         whenever(invitationRepository.findAllActiveRelatedForUpdate("user")).thenReturn(emptyList())
-        whenever(refreshTokenRepository.findByUserID("user")).thenReturn(null)
 
         service.deleteUser("user", "admin")
 
         assertEquals(AdminUserStatus.DELETED, AdminUserResponse.from(target).status)
+        verify(refreshTokenRepository).deleteAllByUserID("user")
         verifyNoInteractions(invitationService)
     }
 
