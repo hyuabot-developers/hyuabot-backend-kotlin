@@ -1,7 +1,6 @@
 package app.hyuabot.backend.security
 
 import app.hyuabot.backend.database.entity.RefreshToken
-import app.hyuabot.backend.database.entity.User
 import app.hyuabot.backend.database.repository.RefreshTokenRepository
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import io.jsonwebtoken.Claims
@@ -32,20 +31,12 @@ class JWTTokenProvider(
     private val key by lazy { Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret)) }
 
     // 기존 Access token 무효화
-    fun invalidateAccessToken(
-        user: User,
-        accessToken: String,
-    ) {
-        refreshTokenRepository.findByUserID(user.userID)?.let {
-            redisTemplate.opsForValue().set(
-                "access_token:$accessToken",
-                "logout",
-                Duration.between(
-                    ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone),
-                    it.expiredAt,
-                ),
-            )
-        }
+    fun invalidateAccessToken(accessToken: String) {
+        redisTemplate.opsForValue().set(
+            "access_token:$accessToken",
+            "logout",
+            Duration.ofMinutes(expirationMinutes),
+        )
     }
 
     // Access token 생성
@@ -72,36 +63,29 @@ class JWTTokenProvider(
     // Refresh token 생성
     fun createRefreshToken(authentication: Authentication): String {
         val userID = (authentication.principal as JWTUser).username
+        val sessionID = UUID.randomUUID()
+        val now = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone)
         val refreshToken =
             Jwts
                 .builder()
+                .id(sessionID.toString())
                 .issuedAt(Date())
                 .expiration(Date(System.currentTimeMillis() + refreshExpirationDays * 1000 * 60 * 60 * 24)) // 만료 시간 설정
                 .subject(userID)
                 .claim(AUTH_VERSION_CLAIM, (authentication.principal as JWTUser).authVersion)
                 .signWith(key)
                 .compact()
-        val previousRefreshToken = refreshTokenRepository.findByUserID(userID)
-        if (previousRefreshToken != null) {
-            previousRefreshToken.apply {
-                this.refreshToken = refreshToken
-                this.expiredAt = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone).plusDays(refreshExpirationDays)
-                this.updatedAt = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone)
-            }
-            refreshTokenRepository.save(previousRefreshToken)
-        } else {
-            refreshTokenRepository.save(
-                RefreshToken(
-                    uuid = UUID.randomUUID(),
-                    userID = userID,
-                    refreshToken = refreshToken,
-                    expiredAt = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone).plusDays(refreshExpirationDays),
-                    createdAt = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone),
-                    updatedAt = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone),
-                    user = null,
-                ),
-            )
-        }
+        refreshTokenRepository.save(
+            RefreshToken(
+                uuid = sessionID,
+                userID = userID,
+                refreshToken = refreshToken,
+                expiredAt = now.plusDays(refreshExpirationDays),
+                createdAt = now,
+                updatedAt = now,
+                user = null,
+            ),
+        )
         return refreshToken
     }
 

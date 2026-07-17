@@ -129,7 +129,7 @@ class AdminUserService(
 
         val now = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone)
         invitationRepository.findAllActiveRelatedForUpdate(userID).forEach { it.revokedAt = now }
-        refreshTokenRepository.findByUserID(userID)?.let(refreshTokenRepository::delete)
+        refreshTokenRepository.deleteAllByUserID(userID)
         user.active = false
         user.password = null
         user.authVersion += 1

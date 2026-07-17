@@ -41,7 +41,7 @@ class AuthService(
     fun refreshToken(refreshToken: String): String {
         val authentication = tokenProvider.getAuthentication(refreshToken)
         val userID = (authentication.principal as JWTUser).username
-        if (refreshTokenRepository.findByUserID(userID)?.refreshToken != refreshToken) {
+        if (refreshTokenRepository.findByUserIDAndRefreshToken(userID, refreshToken) == null) {
             throw BadCredentialsException("INVALID_REFRESH_TOKEN")
         }
         return tokenProvider.createAccessToken(authentication)
@@ -94,7 +94,7 @@ class AuthService(
                 .toByteArray()
         user.authVersion += 1
         userRepository.save(user)
-        refreshTokenRepository.findByUserID(userID)?.let(refreshTokenRepository::delete)
+        refreshTokenRepository.deleteAllByUserID(userID)
     }
 
     fun logout(
@@ -102,14 +102,16 @@ class AuthService(
         request: HttpServletRequest,
     ) {
         // Access token 무효화
-        tokenProvider.invalidateAccessToken(
-            user = userInfo,
-            accessToken =
-                request.cookies.firstOrNull { it.name == "access_token" }?.value
-                    ?: throw IllegalArgumentException("NO_ACCESS_TOKEN"),
-        )
-        refreshTokenRepository.findByUserID(userInfo.userID)?.let { refreshToken ->
-            refreshTokenRepository.delete(refreshToken)
+        val accessToken =
+            request.cookies.firstOrNull { it.name == "access_token" }?.value
+                ?: throw IllegalArgumentException("NO_ACCESS_TOKEN")
+        tokenProvider.invalidateAccessToken(accessToken)
+
+        val refreshToken =
+            request.cookies.firstOrNull { it.name == "refresh_token" }?.value
+                ?: throw IllegalArgumentException("NO_REFRESH_TOKEN")
+        refreshTokenRepository.findByUserIDAndRefreshToken(userInfo.userID, refreshToken)?.let { session ->
+            refreshTokenRepository.delete(session)
         } ?: throw IllegalArgumentException("NO_REFRESH_TOKEN")
     }
 }

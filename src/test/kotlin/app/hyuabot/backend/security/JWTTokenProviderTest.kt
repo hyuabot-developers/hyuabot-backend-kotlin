@@ -1,7 +1,5 @@
 package app.hyuabot.backend.security
 
-import app.hyuabot.backend.database.entity.RefreshToken
-import app.hyuabot.backend.database.entity.User
 import app.hyuabot.backend.database.repository.RefreshTokenRepository
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
@@ -14,16 +12,15 @@ import org.mockito.BDDMockito.given
 import org.mockito.BDDMockito.then
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
-import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.times
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.core.ValueOperations
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.Authentication
 import java.time.Duration
-import java.time.ZonedDateTime
 import java.util.Base64
-import java.util.UUID
 import org.springframework.security.core.userdetails.User as SpringUser
 
 class JWTTokenProviderTest {
@@ -90,35 +87,31 @@ class JWTTokenProviderTest {
 
     @Test
     fun testCreateRefreshToken() {
-        // Check if the refresh token is not stored in the repository
-        given(refreshTokenRepository.findByUserID("testUser")).willReturn(null)
         val token = jwtTokenProvider.createRefreshToken(authentication)
+        val savedSession = argumentCaptor<app.hyuabot.backend.database.entity.RefreshToken>()
+
         assert(token.isNotBlank())
-        then(refreshTokenRepository).should().findByUserID("testUser")
+        then(refreshTokenRepository).should().save(savedSession.capture())
+        assert(savedSession.firstValue.userID == "testUser")
+        assert(savedSession.firstValue.refreshToken == token)
+        assert(savedSession.firstValue.uuid.toString() == parseClaims(token).id)
     }
 
     @Test
-    fun testExtendRefreshToken() {
-        // Mock existing refresh token
-        val now = ZonedDateTime.now()
-        val existingToken =
-            RefreshToken(
-                uuid = UUID.randomUUID(),
-                userID = "testUser",
-                refreshToken = "previousRefreshToken",
-                expiredAt = now.plusDays(1),
-                createdAt = now.minusDays(10),
-                updatedAt = now.minusDays(1),
-                user = null,
-            )
-        given(refreshTokenRepository.findByUserID("testUser")).willReturn(existingToken)
-        // Extend the refresh token
-        val newToken = jwtTokenProvider.createRefreshToken(authentication)
-        assert(newToken.isNotBlank())
-        assert(existingToken.refreshToken == newToken)
-        assert(existingToken.expiredAt.isAfter(now))
-        assert(existingToken.updatedAt.isAfter(now.minusDays(1)))
-        then(refreshTokenRepository).should().save(existingToken)
+    fun testCreateRefreshTokenCreatesIndependentSessions() {
+        val firstToken = jwtTokenProvider.createRefreshToken(authentication)
+        val secondToken = jwtTokenProvider.createRefreshToken(authentication)
+        val savedSessions = argumentCaptor<app.hyuabot.backend.database.entity.RefreshToken>()
+
+        then(refreshTokenRepository).should(times(2)).save(savedSessions.capture())
+        assert(firstToken != secondToken)
+        assert(
+            savedSessions.allValues
+                .map { it.uuid }
+                .distinct()
+                .size == 2,
+        )
+        assert(savedSessions.allValues.map { it.refreshToken } == listOf(firstToken, secondToken))
     }
 
     @Test
@@ -164,56 +157,15 @@ class JWTTokenProviderTest {
 
     @Test
     fun testInvalidateAccessToken() {
-        // Mock existing refresh token
-        val now = ZonedDateTime.now()
-        val existingToken =
-            RefreshToken(
-                uuid = UUID.randomUUID(),
-                userID = "testUser",
-                refreshToken = "previousRefreshToken",
-                expiredAt = now.plusDays(1),
-                createdAt = now.minusDays(10),
-                updatedAt = now.minusDays(1),
-                user = null,
-            )
-        given(refreshTokenRepository.findByUserID("testUser")).willReturn(existingToken)
-        // Invalidate the access token
-        val user =
-            User(
-                userID = "testUser",
-                password = ByteArray(0),
-                name = "Test User",
-                email = "",
-                phone = "",
-                active = true,
-            )
         val accessToken = jwtTokenProvider.createAccessToken("testUser")
-        jwtTokenProvider.invalidateAccessToken(user, accessToken)
+        jwtTokenProvider.invalidateAccessToken(accessToken)
+
         then(valueOperations).should().set(
             startsWith("access_token:"),
             eq("logout"),
-            any<Duration>(),
+            eq(Duration.ofMinutes(expirationMinutes)),
         )
-    }
-
-    @Test
-    fun testInvalidAccessTokenWithoutRefreshToken() {
-        // Mock no existing refresh token
-        given(refreshTokenRepository.findByUserID("testUser")).willReturn(null)
-        // Attempt to invalidate access token without a refresh token
-        val user =
-            User(
-                userID = "testUser",
-                password = ByteArray(0),
-                name = "Test User",
-                email = "",
-                phone = "",
-                active = true,
-            )
-        val accessToken = jwtTokenProvider.createAccessToken("testUser")
-        jwtTokenProvider.invalidateAccessToken(user, accessToken)
-        // Verify that no interaction with redisTemplate occurred
-        then(valueOperations).shouldHaveNoInteractions()
+        then(refreshTokenRepository).shouldHaveNoInteractions()
     }
 
     fun parseClaims(token: String): Claims {
