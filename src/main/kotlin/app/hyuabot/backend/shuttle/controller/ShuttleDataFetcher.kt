@@ -12,6 +12,7 @@ import app.hyuabot.backend.codegen.types.ShuttleStop
 import app.hyuabot.backend.codegen.types.ShuttleTimetable
 import app.hyuabot.backend.codegen.types.ShuttleTimetableEntry
 import app.hyuabot.backend.codegen.types.ShuttleTimetableGroup
+import app.hyuabot.backend.holiday.service.PublicHolidayService
 import app.hyuabot.backend.shuttle.domain.ShuttleFilterContext
 import app.hyuabot.backend.shuttle.domain.ShuttleTimetableKey
 import app.hyuabot.backend.shuttle.domain.ShuttleTimetableResult
@@ -31,6 +32,7 @@ import java.util.concurrent.CompletableFuture
 @DgsComponent
 class ShuttleDataFetcher(
     private val holidayService: ShuttleHolidayService,
+    private val publicHolidayService: PublicHolidayService,
     private val periodService: ShuttlePeriodService,
     private val stopService: ShuttleStopService,
 ) {
@@ -219,10 +221,12 @@ class ShuttleDataFetcher(
             } else {
                 Triple(listOf(periods.type), listOf(false), true)
             }
-        } else {
-            val isWeekends = date.dayOfWeek.value == 6 || date.dayOfWeek.value == 7
-            return Triple(listOf(periods.type), listOf(!isWeekends), false)
         }
+        if (publicHolidayService.findPublicHoliday(date) != null) {
+            return Triple(listOf(periods.type), listOf(false), false)
+        }
+        val isWeekends = date.dayOfWeek.value == 6 || date.dayOfWeek.value == 7
+        return Triple(listOf(periods.type), listOf(!isWeekends), false)
     }
 
     private fun ShuttleTimetableViewItem.toTimetableEntry() =

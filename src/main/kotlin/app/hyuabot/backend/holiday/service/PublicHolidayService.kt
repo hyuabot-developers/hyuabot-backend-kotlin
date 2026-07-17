@@ -19,6 +19,7 @@ class PublicHolidayService(
     fun getPublicHolidayList() = publicHolidayRepository.findAll().sortedBy { it.date }
 
     fun createPublicHoliday(payload: PublicHolidayRequest): PublicHoliday {
+        require(payload.calendarType in CALENDAR_TYPES) { "Unsupported calendar type" }
         if (!LocalDateTimeBuilder.checkLocalDateFormat(payload.date)) {
             throw LocalDateNotValidException()
         }
@@ -45,6 +46,7 @@ class PublicHolidayService(
         seq: Int,
         payload: PublicHolidayRequest,
     ): PublicHoliday {
+        require(payload.calendarType in CALENDAR_TYPES) { "Unsupported calendar type" }
         if (!LocalDateTimeBuilder.checkLocalDateFormat(payload.date)) {
             throw LocalDateNotValidException()
         }
@@ -79,5 +81,9 @@ class PublicHolidayService(
             date,
             LocalDate.parse(lunarDate.lunarIsoFormat, dateFormatter),
         )
+    }
+
+    companion object {
+        private val CALENDAR_TYPES = setOf("solar", "lunar")
     }
 }

@@ -114,6 +114,22 @@ class PublicHolidayControllerTest {
     }
 
     @Test
+    @DisplayName("공휴일 항목 추가 - 잘못된 달력 유형")
+    @WithCustomMockUser(username = "test_user")
+    fun testCreatePublicHolidayInvalidCalendarType() {
+        val request = PublicHolidayRequest(date = "2025-03-01", name = "삼일절", calendarType = "gregorian")
+        doThrow(IllegalArgumentException()).whenever(service).createPublicHoliday(request)
+
+        mockMvc
+            .perform(
+                post("/api/v1/holiday")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)),
+            ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.message").value("INVALID_HOLIDAY_TYPE"))
+    }
+
+    @Test
     @DisplayName("공휴일 항목 추가 - 중복된 날짜")
     @WithCustomMockUser(username = "test_user")
     fun testCreatePublicHolidayDuplicateDate() {
@@ -241,6 +257,22 @@ class PublicHolidayControllerTest {
             ).andExpect(status().isBadRequest)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.message").value("LOCAL_DATE_NOT_VALID"))
+    }
+
+    @Test
+    @DisplayName("공휴일 항목 수정 - 잘못된 달력 유형")
+    @WithCustomMockUser(username = "test_user")
+    fun testUpdatePublicHolidayInvalidCalendarType() {
+        val request = PublicHolidayRequest(date = "2025-03-01", name = "삼일절", calendarType = "gregorian")
+        doThrow(IllegalArgumentException()).whenever(service).updatePublicHoliday(1, request)
+
+        mockMvc
+            .perform(
+                put("/api/v1/holiday/1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)),
+            ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.message").value("INVALID_HOLIDAY_TYPE"))
     }
 
     @Test

@@ -119,6 +119,11 @@ class ShuttleHolidayController {
                 HttpStatus.BAD_REQUEST,
                 ResponseBuilder.Message("LOCAL_DATE_NOT_VALID"),
             )
+        } catch (_: IllegalArgumentException) {
+            ResponseBuilder.response(
+                HttpStatus.BAD_REQUEST,
+                ResponseBuilder.Message("INVALID_HOLIDAY_TYPE"),
+            )
         } catch (_: DuplicateShuttleHolidayException) {
             ResponseBuilder.response(
                 HttpStatus.CONFLICT,
@@ -271,6 +276,11 @@ class ShuttleHolidayController {
             ResponseBuilder.response(
                 HttpStatus.NOT_FOUND,
                 ResponseBuilder.Message("SHUTTLE_HOLIDAY_NOT_FOUND"),
+            )
+        } catch (_: IllegalArgumentException) {
+            ResponseBuilder.response(
+                HttpStatus.BAD_REQUEST,
+                ResponseBuilder.Message("INVALID_HOLIDAY_TYPE"),
             )
         } catch (_: DuplicateShuttleHolidayException) {
             ResponseBuilder.response(

@@ -146,6 +146,22 @@ class ShuttleHolidayControllerTest {
     }
 
     @Test
+    @DisplayName("셔틀 공휴일 추가 - 잘못된 운행 유형")
+    @WithCustomMockUser(username = "test_user")
+    fun testAddShuttleHolidayInvalidType() {
+        val request = ShuttleHolidayRequest(date = "2020-12-25", calendarType = "solar", type = "unknown")
+        doThrow(IllegalArgumentException()).whenever(service).createShuttleHoliday(request)
+
+        mockMvc
+            .perform(
+                post("/api/v1/shuttle/holiday")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)),
+            ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.message").value("INVALID_HOLIDAY_TYPE"))
+    }
+
+    @Test
     @DisplayName("셔틀 공휴일 추가 - 중복된 날짜")
     @WithCustomMockUser(username = "test_user")
     fun testAddShuttleHolidayDuplicateDate() {
@@ -347,6 +363,22 @@ class ShuttleHolidayControllerTest {
             ).andExpect(status().isBadRequest)
             .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andExpect(jsonPath("$.message").value("LOCAL_DATE_NOT_VALID"))
+    }
+
+    @Test
+    @DisplayName("셔틀 공휴일 수정 - 잘못된 운행 유형")
+    @WithCustomMockUser(username = "test_user")
+    fun testUpdateShuttleHolidayInvalidType() {
+        val request = ShuttleHolidayRequest(date = "2020-12-31", calendarType = "solar", type = "unknown")
+        doThrow(IllegalArgumentException()).whenever(service).updateShuttleHoliday(1, request)
+
+        mockMvc
+            .perform(
+                put("/api/v1/shuttle/holiday/1")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)),
+            ).andExpect(status().isBadRequest)
+            .andExpect(jsonPath("$.message").value("INVALID_HOLIDAY_TYPE"))
     }
 
     @Test

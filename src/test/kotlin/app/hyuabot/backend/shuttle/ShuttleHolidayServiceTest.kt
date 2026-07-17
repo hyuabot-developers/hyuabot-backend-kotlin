@@ -69,14 +69,14 @@ class ShuttleHolidayServiceTest {
                 seq = 3,
                 date = LocalDate.of(2024, 3, 1),
                 calendarType = "solar",
-                type = "Independence Movement Day",
+                type = "weekends",
             )
         whenever(
             repository.save(
                 argThat<ShuttleHoliday> {
                     date == LocalDate.of(2024, 3, 1) &&
                         calendarType == "solar" &&
-                        type == "Independence Movement Day"
+                        type == "weekends"
                 },
             ),
         ).thenReturn(newHoliday)
@@ -85,13 +85,13 @@ class ShuttleHolidayServiceTest {
                 ShuttleHolidayRequest(
                     date = "2024-03-01",
                     calendarType = "solar",
-                    type = "Independence Movement Day",
+                    type = "weekends",
                 ),
             )
         assertEquals(3, createdHoliday.seq)
         assertEquals("2024-03-01", createdHoliday.date.toString())
         assertEquals("solar", createdHoliday.calendarType)
-        assertEquals("Independence Movement Day", createdHoliday.type)
+        assertEquals("weekends", createdHoliday.type)
     }
 
     @Test
@@ -102,7 +102,7 @@ class ShuttleHolidayServiceTest {
                 ShuttleHolidayRequest(
                     date = "2024-31-12",
                     calendarType = "solar",
-                    type = "Invalid Date Test",
+                    type = "weekends",
                 ),
             )
         }
@@ -129,7 +129,7 @@ class ShuttleHolidayServiceTest {
                 ShuttleHolidayRequest(
                     date = "2024-01-01",
                     calendarType = "solar",
-                    type = "Duplicate Date Test",
+                    type = "weekends",
                 ),
             )
         }
@@ -177,7 +177,7 @@ class ShuttleHolidayServiceTest {
                 seq = 1,
                 date = LocalDate.of(2024, 1, 2),
                 calendarType = "solar",
-                type = "New Year's Holiday",
+                type = "halt",
             )
         whenever(repository.findById(1)).thenReturn(Optional.of(existingHoliday))
         whenever(
@@ -194,13 +194,13 @@ class ShuttleHolidayServiceTest {
                 ShuttleHolidayRequest(
                     date = "2024-01-02",
                     calendarType = "solar",
-                    type = "New Year's Holiday",
+                    type = "halt",
                 ),
             )
         assertEquals(1, result.seq)
         assertEquals("2024-01-02", result.date.toString())
         assertEquals("solar", result.calendarType)
-        assertEquals("New Year's Holiday", result.type)
+        assertEquals("halt", result.type)
     }
 
     @Test
@@ -212,7 +212,7 @@ class ShuttleHolidayServiceTest {
                 ShuttleHolidayRequest(
                     date = "2024-31-12",
                     calendarType = "solar",
-                    type = "Invalid Date Test",
+                    type = "weekends",
                 ),
             )
         }
@@ -228,7 +228,7 @@ class ShuttleHolidayServiceTest {
                 ShuttleHolidayRequest(
                     date = "2024-01-01",
                     calendarType = "solar",
-                    type = "Non-existent ID Test",
+                    type = "weekends",
                 ),
             )
         }
@@ -265,7 +265,7 @@ class ShuttleHolidayServiceTest {
                 ShuttleHolidayRequest(
                     date = "2024-02-09",
                     calendarType = "lunar",
-                    type = "Duplicate Date Test",
+                    type = "halt",
                 ),
             )
         }
@@ -364,6 +364,27 @@ class ShuttleHolidayServiceTest {
             service.findShuttleHolidayOccurrences(
                 LocalDate.of(2026, 3, 3),
                 LocalDate.of(2026, 3, 1),
+            )
+        }
+    }
+
+    @Test
+    @DisplayName("셔틀 공휴일 생성 - 잘못된 운행 유형")
+    fun testCreateShuttleHolidayInvalidType() {
+        assertThrows<IllegalArgumentException> {
+            service.createShuttleHoliday(
+                ShuttleHolidayRequest(date = "2026-01-01", calendarType = "solar", type = "unknown"),
+            )
+        }
+    }
+
+    @Test
+    @DisplayName("셔틀 공휴일 수정 - 잘못된 달력 유형")
+    fun testUpdateShuttleHolidayInvalidCalendarType() {
+        assertThrows<IllegalArgumentException> {
+            service.updateShuttleHoliday(
+                1,
+                ShuttleHolidayRequest(date = "2026-01-01", calendarType = "gregorian", type = "weekends"),
             )
         }
     }

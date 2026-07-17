@@ -1,9 +1,11 @@
 package app.hyuabot.backend.shuttle
 
 import app.hyuabot.backend.codegen.types.ShuttleLimitInput
+import app.hyuabot.backend.database.entity.PublicHoliday
 import app.hyuabot.backend.database.entity.ShuttleHoliday
 import app.hyuabot.backend.database.entity.ShuttlePeriod
 import app.hyuabot.backend.database.entity.ShuttleStop
+import app.hyuabot.backend.holiday.service.PublicHolidayService
 import app.hyuabot.backend.shuttle.controller.ShuttleDataFetcher
 import app.hyuabot.backend.shuttle.controller.ShuttleTimetableDataLoader
 import app.hyuabot.backend.shuttle.domain.ShuttleArrivalItem
@@ -24,6 +26,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertNotNull
 import org.junit.jupiter.api.assertNull
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Import
@@ -41,6 +45,8 @@ class ShuttleDataFetcherTest {
     @Autowired lateinit var dgsQueryExecutor: DgsQueryExecutor
 
     @MockitoBean lateinit var holidayService: ShuttleHolidayService
+
+    @MockitoBean lateinit var publicHolidayService: PublicHolidayService
 
     @MockitoBean lateinit var periodService: ShuttlePeriodService
 
@@ -642,5 +648,37 @@ class ShuttleDataFetcherTest {
         assertEquals(1, result!!.size)
         val timetable = result[0]["timetable"] as Map<*, *>
         assertEquals(0, (timetable["order"] as List<*>).size)
+    }
+
+    @Test
+    @DisplayName("셔틀버스 시간표 조회 - 공식 공휴일 주말 시간표 폴백")
+    fun testShuttleTimetableUsesWeekendScheduleOnPublicHoliday() {
+        whenever(periodService.findShuttlePeriod(today)).thenReturn(createPeriod())
+        whenever(holidayService.findShuttleHoliday(today)).thenReturn(null)
+        whenever(publicHolidayService.findPublicHoliday(today)).thenReturn(
+            PublicHoliday(date = today, name = "삼일절 대체공휴일", calendarType = "solar"),
+        )
+        whenever(stopService.getAllStops()).thenReturn(listOf(createStop()))
+        whenever(timetableService.getShuttleTimetableBatch(any())).thenAnswer { invocation ->
+            invocation.getArgument<Set<ShuttleTimetableKey>>(0).associateWith { createTimetableResult(emptyList()) }
+        }
+
+        dgsQueryExecutor.execute(
+            """
+            {
+                shuttle(input: { date: "${dateFormatter.format(today)}" }) {
+                    stops {
+                        name
+                        timetable { order { seq } }
+                    }
+                }
+            }
+            """.trimIndent(),
+        )
+
+        val keys = argumentCaptor<Set<ShuttleTimetableKey>>()
+        verify(timetableService).getShuttleTimetableBatch(keys.capture())
+        assertEquals(setOf(false), keys.firstValue.single().weekdays)
+        assertEquals(setOf("semester"), keys.firstValue.single().periods)
     }
 }
