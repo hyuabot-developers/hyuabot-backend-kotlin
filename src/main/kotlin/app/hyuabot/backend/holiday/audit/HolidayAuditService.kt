@@ -1,11 +1,9 @@
 package app.hyuabot.backend.holiday.audit
 
-import app.hyuabot.backend.database.repository.BusTimetableRepository
 import app.hyuabot.backend.database.repository.HolidaySyncStateRepository
 import app.hyuabot.backend.database.repository.PublicHolidayRepository
 import app.hyuabot.backend.database.repository.ShuttleHolidayRepository
 import app.hyuabot.backend.database.repository.ShuttleTimetableRepository
-import app.hyuabot.backend.database.repository.SubwayTimetableRepository
 import app.hyuabot.backend.security.AdminPermission
 import app.hyuabot.backend.shuttle.service.ShuttlePeriodService
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
@@ -22,8 +20,6 @@ class HolidayAuditService(
     private val shuttleHolidayRepository: ShuttleHolidayRepository,
     private val shuttleTimetableRepository: ShuttleTimetableRepository,
     private val shuttlePeriodService: ShuttlePeriodService,
-    private val busTimetableRepository: BusTimetableRepository,
-    private val subwayTimetableRepository: SubwayTimetableRepository,
 ) {
     fun audit(
         permissions: Set<AdminPermission>,
@@ -46,28 +42,6 @@ class HolidayAuditService(
         }
         if (AdminPermission.SHUTTLE in effectivePermissions) {
             issues += auditShuttle(now.toLocalDate())
-        }
-        if (AdminPermission.BUS in effectivePermissions) {
-            issues +=
-                busTimetableRepository.findHolidayCoverageGaps().map { gap ->
-                    issue(
-                        code = "BUS_HOLIDAY_TIMETABLE_EMPTY",
-                        service = "bus",
-                        message = "노선 ${gap.routeID}의 기점 ${gap.startStopID}에 공휴일 시간표가 없습니다.",
-                        path = "/bus/timetable",
-                    )
-                }
-        }
-        if (AdminPermission.SUBWAY in effectivePermissions) {
-            issues +=
-                subwayTimetableRepository.findHolidayCoverageGaps().map { gap ->
-                    issue(
-                        code = "SUBWAY_HOLIDAY_TIMETABLE_EMPTY",
-                        service = "subway",
-                        message = "${gap.stationID}역 ${gap.heading} 방향에 주말 시간표가 없습니다.",
-                        path = "/subway/timetable",
-                    )
-                }
         }
         return HolidayAuditResult(now, syncState?.lastSuccessAt, issues.sortedWith(compareBy({ it.date }, { it.code }, { it.message })))
     }
