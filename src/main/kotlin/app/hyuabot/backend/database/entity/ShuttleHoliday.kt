@@ -15,7 +15,7 @@ import java.time.LocalDate
 @Table(
     name = "shuttle_holiday",
     indexes = [
-        Index(name = "idx_shuttle_holiday_date", columnList = "holiday_date, holiday_type, calendar_type", unique = true),
+        Index(name = "idx_shuttle_holiday_date", columnList = "holiday_date, calendar_type", unique = true),
     ],
 )
 @SequenceGenerator(name = "shuttle_holiday_seq_seq", allocationSize = 1)

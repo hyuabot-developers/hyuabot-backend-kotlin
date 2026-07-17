@@ -22,6 +22,11 @@ interface ShuttleTimetableRepository : JpaRepository<ShuttleTimetable, Int> {
 
     fun findByPeriodType(periodType: String): List<ShuttleTimetable>
 
+    fun existsByPeriodTypeAndWeekday(
+        periodType: String,
+        weekday: Boolean,
+    ): Boolean
+
     fun findByRouteNameAndWeekday(
         routeName: String,
         isWeekdays: Boolean,

@@ -213,4 +213,25 @@ class PublicHolidayServiceTest {
         val result = service.findPublicHoliday(solarDate)
         assertEquals(null, result)
     }
+
+    @Test
+    @DisplayName("공휴일 생성 - 잘못된 달력 유형")
+    fun testCreatePublicHolidayInvalidCalendarType() {
+        assertThrows<IllegalArgumentException> {
+            service.createPublicHoliday(
+                PublicHolidayRequest(date = "2026-01-01", name = "테스트", calendarType = "gregorian"),
+            )
+        }
+    }
+
+    @Test
+    @DisplayName("공휴일 수정 - 잘못된 달력 유형")
+    fun testUpdatePublicHolidayInvalidCalendarType() {
+        assertThrows<IllegalArgumentException> {
+            service.updatePublicHoliday(
+                1,
+                PublicHolidayRequest(date = "2026-01-01", name = "테스트", calendarType = "gregorian"),
+            )
+        }
+    }
 }

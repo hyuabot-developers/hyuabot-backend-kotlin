@@ -5,6 +5,9 @@ import app.hyuabot.backend.database.entity.AdminUserInvitation
 import app.hyuabot.backend.database.entity.ShuttleHoliday
 import app.hyuabot.backend.database.entity.ShuttlePeriod
 import app.hyuabot.backend.database.repository.AdminUserInvitationRepository
+import app.hyuabot.backend.holiday.audit.HolidayAuditIssue
+import app.hyuabot.backend.holiday.audit.HolidayAuditResult
+import app.hyuabot.backend.holiday.audit.HolidayAuditService
 import app.hyuabot.backend.security.AdminPermission
 import app.hyuabot.backend.shuttle.service.ShuttleHolidayService
 import app.hyuabot.backend.shuttle.service.ShuttlePeriodService
@@ -23,9 +26,23 @@ class AdminOverviewServiceTest {
     private val prometheusClient = mock<PrometheusClient>()
     private val periodService = mock<ShuttlePeriodService>()
     private val holidayService = mock<ShuttleHolidayService>()
+    private val holidayAuditService = mock<HolidayAuditService>()
     private val invitationRepository = mock<AdminUserInvitationRepository>()
     private val service =
-        AdminOverviewService(prometheusClient, periodService, holidayService, invitationRepository, "https://grafana.example")
+        AdminOverviewService(
+            prometheusClient,
+            periodService,
+            holidayService,
+            holidayAuditService,
+            invitationRepository,
+            "https://grafana.example",
+        )
+
+    init {
+        whenever(holidayAuditService.audit(any(), any())).thenAnswer { invocation ->
+            HolidayAuditResult(invocation.getArgument(1), null, emptyList())
+        }
+    }
 
     @Test
     fun `overview summarizes service health shuttle holiday and expiring invitations`() {
@@ -60,6 +77,7 @@ class AdminOverviewServiceTest {
         assertEquals("ERROR", result.services.first { it.id == "subway" }.status)
         assertEquals("WARNING", result.services.first { it.id == "cafeteria" }.status)
         assertEquals("UNKNOWN", result.services.first { it.id == "reading-room" }.status)
+        assertEquals("NORMAL", result.services.first { it.id == "holiday-configuration" }.status)
     }
 
     @Test
@@ -103,7 +121,7 @@ class AdminOverviewServiceTest {
 
         val result = service.getOverview(setOf(AdminPermission.SHUTTLE))
 
-        assertEquals("special · 오늘은 special-day입니다.", result.services.single().message)
+        assertEquals("special · 오늘은 special-day입니다.", result.services.first { it.id == "shuttle" }.message)
     }
 
     @Test
@@ -115,8 +133,8 @@ class AdminOverviewServiceTest {
 
         val result = service.getOverview(setOf(AdminPermission.BUS), overnight)
 
-        assertEquals("NORMAL", result.services.single().status)
-        assertEquals("현재는 실시간 수집 운영 시간 외입니다.", result.services.single().message)
+        assertEquals("NORMAL", result.services.first { it.id == "bus" }.status)
+        assertEquals("현재는 실시간 수집 운영 시간 외입니다.", result.services.first { it.id == "bus" }.message)
 
         val earlyMorning = overnight.withHour(1)
         whenever(prometheusClient.getCronJobRuns()).thenReturn(
@@ -127,9 +145,77 @@ class AdminOverviewServiceTest {
             service
                 .getOverview(setOf(AdminPermission.BUS), earlyMorning)
                 .services
-                .single()
+                .first { it.id == "bus" }
                 .message,
         )
+    }
+
+    @Test
+    fun `holiday configuration card promotes imminent issues to error`() {
+        val now = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone)
+        whenever(holidayAuditService.audit(any(), any())).thenReturn(
+            HolidayAuditResult(
+                checkedAt = now,
+                lastSuccessAt = now.minusHours(1),
+                issues =
+                    listOf(
+                        HolidayAuditIssue(
+                            code = "SHUTTLE_DECISION_MISSING",
+                            service = "shuttle",
+                            date = now.toLocalDate(),
+                            message = "설정이 필요합니다.",
+                            severity = "ERROR",
+                            managementPath = "/shuttle/holiday",
+                        ),
+                        HolidayAuditIssue(
+                            code = "PUBLIC_HOLIDAY_SYNC_STALE",
+                            service = "holiday",
+                            date = null,
+                            message = "동기화를 확인해주세요.",
+                            severity = "WARNING",
+                            managementPath = "/bus/holiday",
+                        ),
+                    ),
+            ),
+        )
+        whenever(prometheusClient.getCronJobRuns()).thenReturn(emptyMap())
+
+        val card = service.getOverview(setOf(AdminPermission.BUS), now).services.first { it.id == "holiday-configuration" }
+
+        assertEquals("ERROR", card.status)
+        assertEquals("임박한 휴일 설정 문제 1건과 확인 항목 1건이 있습니다.", card.message)
+        assertEquals(now.minusHours(1).toString(), card.lastSuccessAt)
+        assertEquals("/operations/holiday-audit", card.managementPath)
+    }
+
+    @Test
+    fun `holiday configuration card distinguishes warnings and unrelated permissions`() {
+        val now = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone)
+        whenever(holidayAuditService.audit(any(), any())).thenReturn(
+            HolidayAuditResult(
+                checkedAt = now,
+                lastSuccessAt = now.minusHours(1),
+                issues =
+                    listOf(
+                        HolidayAuditIssue(
+                            code = "PUBLIC_HOLIDAY_SYNC_STALE",
+                            service = "holiday",
+                            date = null,
+                            message = "동기화를 확인해주세요.",
+                            severity = "WARNING",
+                            managementPath = "/bus/holiday",
+                        ),
+                    ),
+            ),
+        )
+        whenever(prometheusClient.getCronJobRuns()).thenReturn(emptyMap())
+
+        val warning = service.getOverview(setOf(AdminPermission.BUS), now).services.first { it.id == "holiday-configuration" }
+        val unrelated = service.getOverview(setOf(AdminPermission.CAFETERIA), now)
+
+        assertEquals("WARNING", warning.status)
+        assertEquals("확인이 필요한 휴일 설정이 1건 있습니다.", warning.message)
+        assertEquals(listOf("cafeteria"), unrelated.services.map { it.id })
     }
 
     private fun invitation(expiresAt: ZonedDateTime) =

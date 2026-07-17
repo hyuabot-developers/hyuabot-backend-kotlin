@@ -20,6 +20,7 @@ class ShuttleHolidayService(
     fun getShuttleHolidayList() = shuttleHolidayRepository.findAll().sortedBy { it.date }
 
     fun createShuttleHoliday(payload: ShuttleHolidayRequest): ShuttleHoliday {
+        validateTypes(payload)
         if (!LocalDateTimeBuilder.checkLocalDateFormat(payload.date)) {
             throw LocalDateNotValidException()
         }
@@ -46,6 +47,7 @@ class ShuttleHolidayService(
         seq: Int,
         payload: ShuttleHolidayRequest,
     ): ShuttleHoliday {
+        validateTypes(payload)
         if (!LocalDateTimeBuilder.checkLocalDateFormat(payload.date)) {
             throw LocalDateNotValidException()
         }
@@ -97,5 +99,15 @@ class ShuttleHolidayService(
                     )
                 }
             }.toList()
+    }
+
+    private fun validateTypes(payload: ShuttleHolidayRequest) {
+        require(payload.type in HOLIDAY_TYPES) { "Unsupported shuttle holiday type" }
+        require(payload.calendarType in CALENDAR_TYPES) { "Unsupported calendar type" }
+    }
+
+    companion object {
+        private val HOLIDAY_TYPES = setOf("weekends", "halt")
+        private val CALENDAR_TYPES = setOf("solar", "lunar")
     }
 }

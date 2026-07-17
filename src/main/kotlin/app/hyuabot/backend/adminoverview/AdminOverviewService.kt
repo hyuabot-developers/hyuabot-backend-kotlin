@@ -4,6 +4,8 @@ import app.hyuabot.backend.adminoverview.domain.AdminOverviewResponse
 import app.hyuabot.backend.adminoverview.domain.AdminServiceStatus
 import app.hyuabot.backend.adminoverview.domain.CronJobRun
 import app.hyuabot.backend.database.repository.AdminUserInvitationRepository
+import app.hyuabot.backend.holiday.audit.HolidayAuditResult
+import app.hyuabot.backend.holiday.audit.HolidayAuditService
 import app.hyuabot.backend.security.AdminPermission
 import app.hyuabot.backend.shuttle.service.ShuttleHolidayService
 import app.hyuabot.backend.shuttle.service.ShuttlePeriodService
@@ -20,6 +22,7 @@ class AdminOverviewService(
     private val prometheusClient: PrometheusClient,
     private val shuttlePeriodService: ShuttlePeriodService,
     private val shuttleHolidayService: ShuttleHolidayService,
+    private val holidayAuditService: HolidayAuditService,
     private val invitationRepository: AdminUserInvitationRepository,
     @param:Value("\${admin.overview.grafana-url:https://grafana.hyuabot.app}") private val grafanaURL: String,
 ) {
@@ -31,9 +34,22 @@ class AdminOverviewService(
         now: ZonedDateTime,
     ): AdminOverviewResponse {
         val jobs = runCatching { prometheusClient.getCronJobRuns() }.getOrNull()
+        val holidayAudit =
+            if (permissions.any {
+                    it == AdminPermission.SUPER_ADMIN ||
+                        it == AdminPermission.SHUTTLE ||
+                        it == AdminPermission.BUS ||
+                        it == AdminPermission.SUBWAY
+                }
+            ) {
+                holidayAuditService.audit(permissions, now)
+            } else {
+                null
+            }
         val services =
             buildList {
                 if (AdminPermission.SHUTTLE in permissions) add(shuttleStatus(now.toLocalDate()))
+                holidayAudit?.let { add(holidayStatus(it)) }
                 JOBS.filter { it.permission in permissions }.forEach { definition ->
                     add(jobStatus(definition, jobs?.get(definition.jobName), now.toInstant()))
                 }
@@ -73,6 +89,34 @@ class AdminOverviewService(
             lastSuccessAt = null,
             lastFailureAt = null,
             managementPath = "/shuttle/period",
+        )
+    }
+
+    private fun holidayStatus(audit: HolidayAuditResult): AdminServiceStatus {
+        val errors = audit.issues.count { it.severity == "ERROR" }
+        val warnings = audit.issues.size - errors
+        val status =
+            if (errors > 0) {
+                "ERROR"
+            } else if (warnings > 0) {
+                "WARNING"
+            } else {
+                "NORMAL"
+            }
+        val message =
+            when {
+                errors > 0 -> "임박한 휴일 설정 문제 ${errors}건과 확인 항목 ${warnings}건이 있습니다."
+                warnings > 0 -> "확인이 필요한 휴일 설정이 ${warnings}건 있습니다."
+                else -> "향후 90일의 휴일 시간표 설정이 정상입니다."
+            }
+        return AdminServiceStatus(
+            id = "holiday-configuration",
+            title = "휴일 시간표",
+            status = status,
+            message = message,
+            lastSuccessAt = audit.lastSuccessAt?.toString(),
+            lastFailureAt = null,
+            managementPath = "/operations/holiday-audit",
         )
     }
 

@@ -28,4 +28,22 @@ interface PublicHolidayRepository : JpaRepository<PublicHoliday, Int> {
         solarDate: LocalDate,
         lunarDate: LocalDate,
     ): PublicHoliday?
+
+    @Query(
+        value = """
+            SELECT seq, holiday_date, holiday_name, calendar_type
+            FROM public_holiday
+            WHERE source = :source
+              AND calendar_type = :calendarType
+              AND holiday_date BETWEEN :start AND :end
+            ORDER BY holiday_date
+        """,
+        nativeQuery = true,
+    )
+    fun findOfficialHolidaysBetween(
+        source: String,
+        calendarType: String,
+        start: LocalDate,
+        end: LocalDate,
+    ): List<PublicHoliday>
 }
