@@ -28,9 +28,9 @@ class HolidayAuditMetricsTest {
                 checkedAt,
                 checkedAt.minusHours(2),
                 listOf(
-                    issue("WARNING"),
-                    issue("ERROR"),
-                    issue("ERROR"),
+                    issue("WARNING", checkedAt.toLocalDate().plusDays(2)),
+                    issue("ERROR", checkedAt.toLocalDate()),
+                    issue("ERROR", checkedAt.toLocalDate().plusDays(1)),
                 ),
             ),
         )
@@ -54,6 +54,22 @@ class HolidayAuditMetricsTest {
                 .gauge()
                 .value(),
         )
+        assertEquals(
+            1.0,
+            registry
+                .get("hyuabot.holiday.configuration.due.issues")
+                .tag("window", "today")
+                .gauge()
+                .value(),
+        )
+        assertEquals(
+            1.0,
+            registry
+                .get("hyuabot.holiday.configuration.due.issues")
+                .tag("window", "tomorrow")
+                .gauge()
+                .value(),
+        )
         assertEquals(7200.0, registry.get("hyuabot.holiday.sync.age.seconds").gauge().value())
         metrics.snapshot(firstRead.plusSeconds(4 * 60))
         metrics.snapshot(firstRead.plusSeconds(6 * 60))
@@ -74,13 +90,15 @@ class HolidayAuditMetricsTest {
         assertEquals(-1.0, registry.get("hyuabot.holiday.sync.age.seconds").gauge().value())
     }
 
-    private fun issue(severity: String) =
-        HolidayAuditIssue(
-            code = "TEST",
-            service = "holiday",
-            date = LocalDate.of(2026, 7, 17),
-            message = "test",
-            severity = severity,
-            managementPath = "/holiday",
-        )
+    private fun issue(
+        severity: String,
+        date: LocalDate,
+    ) = HolidayAuditIssue(
+        code = "TEST",
+        service = "holiday",
+        date = date,
+        message = "test",
+        severity = severity,
+        managementPath = "/holiday",
+    )
 }
