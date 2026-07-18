@@ -112,6 +112,8 @@ allOpen {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    maxHeapSize = "2g"
+    maxParallelForks = 1
     finalizedBy(tasks.jacocoTestReport)
 }
 
@@ -119,8 +121,12 @@ tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.test)
     violationRules {
         rule {
+            element = "BUNDLE"
+            enabled = true
             limit {
-                minimum = "0.8".toBigDecimal() // 80% coverage
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                minimum = "1.0".toBigDecimal() // 100% coverage
             }
         }
     }
