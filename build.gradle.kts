@@ -2,13 +2,13 @@ import com.netflix.graphql.dgs.codegen.gradle.GenerateJavaTask
 import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
-    kotlin("jvm") version "2.3.10"
-    kotlin("plugin.spring") version "2.3.10"
-    kotlin("plugin.jpa") version "2.3.10"
-    id("org.springframework.boot") version "4.0.3"
+    kotlin("jvm") version "2.3.21"
+    kotlin("plugin.spring") version "2.3.21"
+    kotlin("plugin.jpa") version "2.3.21"
+    id("org.springframework.boot") version "4.1.0"
     id("io.spring.dependency-management") version "1.1.7"
-    id("com.netflix.dgs.codegen") version "8.3.0"
-    id("org.jlleitschuh.gradle.ktlint").version("14.0.1")
+    id("com.netflix.dgs.codegen") version "8.6.0"
+    id("org.jlleitschuh.gradle.ktlint").version("14.2.0")
     id("jacoco")
 }
 
@@ -16,12 +16,12 @@ group = "app.hyuabot"
 version = "0.0.1-SNAPSHOT"
 
 jacoco {
-    toolVersion = "0.8.13"
+    toolVersion = "0.8.15"
 }
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
@@ -30,7 +30,7 @@ repositories {
     maven { url = uri("https://jitpack.io") }
 }
 
-extra["netflixDgsVersion"] = "11.1.0"
+extra["netflixDgsVersion"] = "12.0.1"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
@@ -53,7 +53,7 @@ dependencies {
     developmentOnly("org.springframework.boot:spring-boot-devtools")
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:6.2.3")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:6.3.0")
     testImplementation("com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.springframework.graphql:spring-graphql-test")
@@ -62,7 +62,7 @@ dependencies {
     // Encrypt secret variables
     implementation("com.github.ulisesbocchio:jasypt-spring-boot-starter:4.0.4")
     // Hibernate utilities
-    implementation("io.hypersistence:hypersistence-utils-hibernate-73:3.15.2")
+    implementation("io.hypersistence:hypersistence-utils-hibernate-73:3.15.4")
     // jwt
     implementation("io.jsonwebtoken:jjwt-api:0.13.0")
     // Swagger

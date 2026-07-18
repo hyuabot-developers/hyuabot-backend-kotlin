@@ -13,10 +13,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
-          java-version: 21
+          java-version: 25
           distribution: 'zulu'
           check-latest: 'true'
       - name: Run ktlint
@@ -28,10 +28,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
-          java-version: 21
+          java-version: 25
           distribution: 'zulu'
           check-latest: 'true'
       - name: Create application-test.properties
@@ -75,10 +75,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
-          java-version: 21
+          java-version: 25
           distribution: 'zulu'
           check-latest: 'true'
       - name: Create application-test.properties
