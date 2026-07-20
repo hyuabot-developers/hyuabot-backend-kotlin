@@ -189,7 +189,7 @@ jobs:
         run: |
           docker push ${{ env.IMAGE_NAME }}
       - name: Sync image to worker registry
-        uses: hyuabot-developers/hyuabot-infrastructure/.github/actions/sync-local-registry@2301646d60e5299a87d38fd7a1b6e4fe227430ca
+        uses: hyuabot-developers/hyuabot-infrastructure/.github/actions/sync-local-registry@a091ea37f391ae60eb7828325782a397cc7cae9c
         with:
           image: ${{ env.IMAGE_NAME }}
       - name: Clean local docker image
