@@ -1,10 +1,9 @@
 name: Deploy Docker Image
+
 on:
   pull_request:
-    branches:
-      - main
-    types:
-      - closed
+    branches: [main]
+    types: [closed]
   workflow_dispatch:
     inputs:
       no-cache:
@@ -12,172 +11,61 @@ on:
         required: false
         default: false
         type: boolean
+
 concurrency:
   group: deploy-production
   cancel-in-progress: false
+
+defaults:
+  run:
+    shell: zsh -f {0}
+
 jobs:
   select-build-runner:
-    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
-    runs-on: ["self-hosted", "ARM64", "1st"]
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: [self-hosted, ARM64, Linux, 1st]
     outputs:
-      use_mac: ${{ steps.runner.outputs.use_mac }}
+      runner: ${{ steps.select.outputs.runner }}
+      use-mac: ${{ steps.select.outputs.use-mac }}
     steps:
-      - name: Check Mac runner availability
-        id: runner
-        env:
-          RUNNER_ADMIN_TOKEN: ${{ secrets.RUNNER_ADMIN_TOKEN || github.token }}
-          ORG: ${{ github.repository_owner }}
-          TARGET_RUNNER_NAME: Jeongin-MBP
-        run: |
-          python3 - <<'PY'
-          import json
-          import os
-          import urllib.request
+      - name: Select container build runner
+        id: select
+        uses: hyuabot-developers/hyuabot-infrastructure/.github/actions/select-container-build-runner@5267e08410bc6ed01aaf774a49a2bda8809c2bd2
+        with:
+          token: ${{ secrets.RUNNER_ADMIN_TOKEN }}
+          mac-enabled: ${{ secrets.SSH_HOST != '' || secrets.ORACLE_TRANSFER_TARGET != '' }}
 
-          token = os.environ.get("RUNNER_ADMIN_TOKEN", "")
-          org = os.environ["ORG"]
-          runner_name = os.environ["TARGET_RUNNER_NAME"]
-          use_mac = "false"
-
-          if token:
-              try:
-                  request = urllib.request.Request(
-                      f"https://api.github.com/orgs/{org}/actions/runners?per_page=100",
-                      headers={
-                          "Accept": "application/vnd.github+json",
-                          "Authorization": f"Bearer {token}",
-                          "X-GitHub-Api-Version": "2022-11-28",
-                      },
-                  )
-                  with urllib.request.urlopen(request, timeout=10) as response:
-                      runners = json.load(response).get("runners", [])
-                  for runner in runners:
-                      if runner.get("name") == runner_name:
-                          if runner.get("status") == "online" and not runner.get("busy"):
-                              use_mac = "true"
-                          break
-              except Exception as error:
-                  print(f"Could not check {runner_name}; using Oracle fallback: {error}")
-
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-              output.write(f"use_mac={use_mac}\n")
-          PY
-
-  build-jar-mac:
+  build-and-publish:
     needs: select-build-runner
-    if: needs.select-build-runner.outputs.use_mac == 'true'
-    runs-on: ["self-hosted", "ARM64", "macOS"]
-    environment: production
-    outputs:
-      jar_transferred: ${{ steps.transfer.outputs.transferred }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-      - name: Set up JDK 25
-        uses: actions/setup-java@v5.3.0
-        with:
-          java-version: 25
-          distribution: 'zulu'
-          check-latest: 'true'
-      - name: Build application jar
-        run: |
-          ./gradlew --no-daemon bootJar -x test
-          cp "$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-plain.jar' | head -n 1)" build/libs/app.jar
-      - name: Verify application jar contains no generated secret properties
-        run: |
-          if jar tf build/libs/app.jar | grep -q 'BOOT-INF/classes/encrypted.properties'; then
-            echo 'Generated secret properties must not be packaged in app.jar.'
-            exit 1
-          fi
-      - name: Transfer application jar to Oracle runner
-        id: transfer
-        env:
-          SSH_HOST: ${{ secrets.SSH_HOST || secrets.ORACLE_TRANSFER_TARGET }}
-          TRANSFER_DIR: /tmp/hyuabot-deploy/${{ github.run_id }}
-        run: |
-          if [ -z "$SSH_HOST" ]; then
-            echo "SSH_HOST is not set; falling back to artifact transfer."
-            echo "transferred=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          TRANSFER_HOST="${SSH_HOST#*@}"
-          TRANSFER_TARGET="ubuntu@$TRANSFER_HOST"
-          if ssh -o BatchMode=yes -o ConnectTimeout=10 "$TRANSFER_TARGET" "mkdir -p '$TRANSFER_DIR'" &&
-             scp -o BatchMode=yes -o ConnectTimeout=10 build/libs/app.jar "$TRANSFER_TARGET:$TRANSFER_DIR/app.jar"; then
-            echo "transferred=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "Direct transfer failed; falling back to artifact transfer."
-            echo "transferred=false" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Upload application jar
-        if: steps.transfer.outputs.transferred != 'true'
-        uses: actions/upload-artifact@v7
-        with:
-          name: app-jar
-          path: build/libs/app.jar
-          retention-days: 1
-
-  build-jar-oracle:
-    needs: select-build-runner
-    if: needs.select-build-runner.outputs.use_mac != 'true'
-    runs-on: ["self-hosted", "ARM64", "1st"]
-    environment: production
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-      - name: Set up JDK 25
-        uses: actions/setup-java@v5.3.0
-        with:
-          java-version: 25
-          distribution: 'zulu'
-          check-latest: 'true'
-      - name: Build application jar
-        run: |
-          ./gradlew --no-daemon bootJar -x test
-          cp "$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-plain.jar' | head -n 1)" build/libs/app.jar
-      - name: Verify application jar contains no generated secret properties
-        run: |
-          if jar tf build/libs/app.jar | grep -q 'BOOT-INF/classes/encrypted.properties'; then
-            echo 'Generated secret properties must not be packaged in app.jar.'
-            exit 1
-          fi
-      - name: Upload application jar
-        uses: actions/upload-artifact@v7
-        with:
-          name: app-jar
-          path: build/libs/app.jar
-          retention-days: 1
-
-  deploy:
-    needs:
-      - build-jar-mac
-      - build-jar-oracle
-    if: always() && (needs.build-jar-mac.result == 'success' || needs.build-jar-oracle.result == 'success')
-    runs-on: ["self-hosted", "ARM64", "1st"]
+    runs-on: ${{ fromJSON(needs.select-build-runner.outputs.runner) }}
     environment: production
     env:
-      IMAGE_NAME: localhost:5000/hyuabot-backend-kotlin:latest
+      IMAGE_NAME: localhost:5000/hyuabot-backend-kotlin:${{ github.sha }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-      - name: Copy transferred application jar
-        if: needs.build-jar-mac.outputs.jar_transferred == 'true'
-        run: |
-          mkdir -p build/libs
-          cp /tmp/hyuabot-deploy/${{ github.run_id }}/app.jar build/libs/app.jar
-      - name: Download application jar
-        if: needs.build-jar-mac.outputs.jar_transferred != 'true'
-        uses: actions/download-artifact@v8
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5.3.0
         with:
-          name: app-jar
-          path: build/libs
+          java-version: 25
+          distribution: zulu
+          check-latest: true
+      - name: Build application jar
+        run: |
+          ./gradlew --no-daemon bootJar -x test
+          cp "$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-plain.jar' | head -n 1)" build/libs/app.jar
+      - name: Verify application jar contains no generated secret properties
+        run: |
+          if jar tf build/libs/app.jar | grep -q 'BOOT-INF/classes/encrypted.properties'; then
+            print -u2 -r -- 'Generated secret properties must not be packaged in app.jar.'
+            exit 1
+          fi
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
         with:
           keep-state: true
           cleanup: false
-      - name: Build and push
+      - name: Build image
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -185,28 +73,45 @@ jobs:
           load: true
           tags: ${{ env.IMAGE_NAME }}
           no-cache: ${{ github.event_name == 'workflow_dispatch' && inputs['no-cache'] }}
-      - name: Push docker image
-        run: |
-          docker push ${{ env.IMAGE_NAME }}
-      - name: Sync image to worker registry
-        uses: hyuabot-developers/hyuabot-infrastructure/.github/actions/sync-local-registry@a091ea37f391ae60eb7828325782a397cc7cae9c
+      - name: Publish image to first-node registry
+        uses: hyuabot-developers/hyuabot-infrastructure/.github/actions/publish-local-registry@5267e08410bc6ed01aaf774a49a2bda8809c2bd2
         with:
           image: ${{ env.IMAGE_NAME }}
-      - name: Clean local docker image
-        if: always()
-        run: |
-          docker image rm ${{ env.IMAGE_NAME }} || true
-          docker image prune -f
-      - name: Clean transferred application jar
-        if: always() && needs.build-jar-mac.outputs.jar_transferred == 'true'
-        run: |
-          rm -rf /tmp/hyuabot-deploy/${{ github.run_id }}
-  restart:
-    if: always() && github.event_name == 'workflow_dispatch' && needs.deploy.result == 'success'
-    needs: deploy
-    runs-on: ["self-hosted", "ARM64", "1st"]
+          use-mac: ${{ needs.select-build-runner.outputs.use-mac }}
+          first-host: ${{ secrets.SSH_HOST || secrets.ORACLE_TRANSFER_TARGET }}
+
+  sync:
+    needs: build-and-publish
+    runs-on: [self-hosted, ARM64, Linux, 1st]
     environment: production
+    env:
+      IMAGE_NAME: localhost:5000/hyuabot-backend-kotlin:${{ github.sha }}
     steps:
-      - name: Restart backend service
+      - name: Sync image to worker registry
+        uses: hyuabot-developers/hyuabot-infrastructure/.github/actions/sync-local-registry@5267e08410bc6ed01aaf774a49a2bda8809c2bd2
+        with:
+          image: ${{ env.IMAGE_NAME }}
+
+  deploy:
+    if: github.event_name == 'workflow_dispatch'
+    needs: sync
+    runs-on: [self-hosted, ARM64, Linux, 1st]
+    environment: production
+    env:
+      IMAGE_NAME: localhost:5000/hyuabot-backend-kotlin:${{ github.sha }}
+    steps:
+      - name: Deploy immutable backend image
         run: |
-          sudo k3s kubectl -n hyuabot rollout restart deployment/hyuabot-backend-kotlin
+          kubectl -n hyuabot set image \
+            deployment/hyuabot-backend-kotlin \
+            "api=${IMAGE_NAME}"
+          kubectl -n hyuabot rollout status \
+            deployment/hyuabot-backend-kotlin \
+            --timeout=300s
+      - name: Verify backend health
+        run: |
+          curl --fail --show-error --silent \
+            --retry 5 \
+            --retry-all-errors \
+            --retry-delay 3 \
+            http://127.0.0.1:30001/actuator/health
