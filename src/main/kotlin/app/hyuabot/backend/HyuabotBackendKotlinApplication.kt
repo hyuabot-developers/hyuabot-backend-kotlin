@@ -1,11 +1,9 @@
 package app.hyuabot.backend
 
-import com.ulisesbocchio.jasyptspringboot.annotation.EncryptablePropertySource
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-@EncryptablePropertySource(name = "EncryptedProperties", value = ["classpath:encrypted.properties"])
 class HyuabotBackendKotlinApplication {
     companion object {
         @JvmStatic
