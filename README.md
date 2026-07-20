@@ -35,28 +35,30 @@ A Spring Boot GraphQL API backend for [HYUabot](https://github.com/hyuabot-devel
 - Java 21+
 - PostgreSQL
 - Redis
-- Jasypt password (for decrypting `encrypted.properties`)
+- Runtime environment variables for database, Redis, Jasypt, and JWT configuration
 
 ## Configuration
 
-The application uses `application.properties` for base configuration and `encrypted.properties` for sensitive values (encrypted with Jasypt).
+The application uses `application.properties` for base configuration. Sensitive values are injected through runtime environment variables and are not packaged in the JAR or container image. Jasypt remains enabled for any `ENC(...)` values supplied through the Spring environment.
 
 Required environment variables / secrets:
 
 | Variable            | Description                |
 |---------------------|----------------------------|
-| `DATABASE_URL`      | PostgreSQL JDBC URL        |
-| `DATABASE_USERNAME` | Database username          |
-| `DATABASE_PASSWORD` | Database password          |
-| `REDIS_URL`         | Redis host                 |
-| `REDIS_PORT`        | Redis port                 |
-| `JASYPT_PASSWORD`   | Jasypt decryption password |
-| `JWT_SECRET`        | JWT signing secret         |
+| `SPRING_DATASOURCE_URL`      | PostgreSQL JDBC URL        |
+| `SPRING_DATASOURCE_USERNAME` | Database username          |
+| `SPRING_DATASOURCE_PASSWORD` | Database password          |
+| `SPRING_DATA_REDIS_HOST`     | Redis host                 |
+| `SPRING_DATA_REDIS_PORT`     | Redis port                 |
+| `JASYPT_ENCRYPTOR_PASSWORD`  | Jasypt decryption password |
+| `JWT_SECRET`                 | JWT signing secret         |
 
-Pass the Jasypt password at startup:
+Pass all sensitive configuration at startup. For example:
 
 ```bash
-java -Djasypt.encryptor.password=<password> -jar app.jar
+JASYPT_ENCRYPTOR_PASSWORD=<password> \
+JWT_SECRET=<jwt-secret> \
+java -jar app.jar
 ```
 
 ## Getting Started

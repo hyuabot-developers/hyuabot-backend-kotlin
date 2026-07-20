@@ -70,14 +70,6 @@ jobs:
     environment: production
     outputs:
       jar_transferred: ${{ steps.transfer.outputs.transferred }}
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
-      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-      REDIS_URL: ${{ secrets.REDIS_URL }}
-      REDIS_PORT: ${{ secrets.REDIS_PORT }}
-      JASYPT_PASSWORD: ${{ secrets.JASYPT_PASSWORD }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -87,23 +79,16 @@ jobs:
           java-version: 25
           distribution: 'zulu'
           check-latest: 'true'
-      - name: Create encrypted application.properties
-        run: |
-          echo "spring.datasource.driver-class-name=org.postgresql.Driver" > src/main/resources/encrypted.properties
-          echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/encrypted.properties
-          echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/encrypted.properties
-          echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/encrypted.properties
-          echo "spring.data.redis.host=$REDIS_URL" >> src/main/resources/encrypted.properties
-          echo "spring.data.redis.port=$REDIS_PORT" >> src/main/resources/encrypted.properties
-          echo "spring.sql.init.mode=always" >> src/main/resources/encrypted.properties
-          echo "jasypt.encryptor.password=$JASYPT_PASSWORD" >> src/main/resources/encrypted.properties
-          echo "jwt.secret=$JWT_SECRET" >> src/main/resources/encrypted.properties
-          echo "jwt.expiration=5" >> src/main/resources/encrypted.properties
-          echo "jwt.expiration.refresh=7" >> src/main/resources/encrypted.properties
       - name: Build application jar
         run: |
           ./gradlew --no-daemon bootJar -x test
           cp "$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-plain.jar' | head -n 1)" build/libs/app.jar
+      - name: Verify application jar contains no generated secret properties
+        run: |
+          if jar tf build/libs/app.jar | grep -q 'BOOT-INF/classes/encrypted.properties'; then
+            echo 'Generated secret properties must not be packaged in app.jar.'
+            exit 1
+          fi
       - name: Transfer application jar to Oracle runner
         id: transfer
         env:
@@ -138,14 +123,6 @@ jobs:
     if: needs.select-build-runner.outputs.use_mac != 'true'
     runs-on: ["self-hosted", "ARM64", "1st"]
     environment: production
-    env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
-      DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-      REDIS_URL: ${{ secrets.REDIS_URL }}
-      REDIS_PORT: ${{ secrets.REDIS_PORT }}
-      JASYPT_PASSWORD: ${{ secrets.JASYPT_PASSWORD }}
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -155,23 +132,16 @@ jobs:
           java-version: 25
           distribution: 'zulu'
           check-latest: 'true'
-      - name: Create encrypted application.properties
-        run: |
-          echo "spring.datasource.driver-class-name=org.postgresql.Driver" > src/main/resources/encrypted.properties
-          echo "spring.datasource.url=$DATABASE_URL" >> src/main/resources/encrypted.properties
-          echo "spring.datasource.username=$DATABASE_USERNAME" >> src/main/resources/encrypted.properties
-          echo "spring.datasource.password=$DATABASE_PASSWORD" >> src/main/resources/encrypted.properties
-          echo "spring.data.redis.host=$REDIS_URL" >> src/main/resources/encrypted.properties
-          echo "spring.data.redis.port=$REDIS_PORT" >> src/main/resources/encrypted.properties
-          echo "spring.sql.init.mode=always" >> src/main/resources/encrypted.properties
-          echo "jasypt.encryptor.password=$JASYPT_PASSWORD" >> src/main/resources/encrypted.properties
-          echo "jwt.secret=$JWT_SECRET" >> src/main/resources/encrypted.properties
-          echo "jwt.expiration=5" >> src/main/resources/encrypted.properties
-          echo "jwt.expiration.refresh=7" >> src/main/resources/encrypted.properties
       - name: Build application jar
         run: |
           ./gradlew --no-daemon bootJar -x test
           cp "$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-plain.jar' | head -n 1)" build/libs/app.jar
+      - name: Verify application jar contains no generated secret properties
+        run: |
+          if jar tf build/libs/app.jar | grep -q 'BOOT-INF/classes/encrypted.properties'; then
+            echo 'Generated secret properties must not be packaged in app.jar.'
+            exit 1
+          fi
       - name: Upload application jar
         uses: actions/upload-artifact@v7
         with:
@@ -235,4 +205,4 @@ jobs:
     steps:
       - name: Restart backend service
         run: |
-          kubectl -n hyuabot rollout restart deployment/hyuabot-backend-kotlin
+          sudo k3s kubectl -n hyuabot rollout restart deployment/hyuabot-backend-kotlin
