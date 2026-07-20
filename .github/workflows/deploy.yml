@@ -30,10 +30,9 @@ jobs:
     steps:
       - name: Select container build runner
         id: select
-        uses: hyuabot-developers/hyuabot-infrastructure/.github/actions/select-container-build-runner@5267e08410bc6ed01aaf774a49a2bda8809c2bd2
+        uses: hyuabot-developers/hyuabot-infrastructure/.github/actions/select-container-build-runner@accefba87348b747359be6ee4a2ed8d16ca625f6
         with:
           token: ${{ secrets.RUNNER_ADMIN_TOKEN }}
-          mac-enabled: ${{ secrets.SSH_HOST != '' || secrets.ORACLE_TRANSFER_TARGET != '' }}
 
   build-and-publish:
     needs: select-build-runner
@@ -74,7 +73,7 @@ jobs:
           tags: ${{ env.IMAGE_NAME }}
           no-cache: ${{ github.event_name == 'workflow_dispatch' && inputs['no-cache'] }}
       - name: Publish image to first-node registry
-        uses: hyuabot-developers/hyuabot-infrastructure/.github/actions/publish-local-registry@5267e08410bc6ed01aaf774a49a2bda8809c2bd2
+        uses: hyuabot-developers/hyuabot-infrastructure/.github/actions/publish-local-registry@accefba87348b747359be6ee4a2ed8d16ca625f6
         with:
           image: ${{ env.IMAGE_NAME }}
           use-mac: ${{ needs.select-build-runner.outputs.use-mac }}
@@ -88,7 +87,7 @@ jobs:
       IMAGE_NAME: localhost:5000/hyuabot-backend-kotlin:${{ github.sha }}
     steps:
       - name: Sync image to worker registry
-        uses: hyuabot-developers/hyuabot-infrastructure/.github/actions/sync-local-registry@5267e08410bc6ed01aaf774a49a2bda8809c2bd2
+        uses: hyuabot-developers/hyuabot-infrastructure/.github/actions/sync-local-registry@accefba87348b747359be6ee4a2ed8d16ca625f6
         with:
           image: ${{ env.IMAGE_NAME }}
 
