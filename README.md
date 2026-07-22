@@ -138,9 +138,13 @@ The Dockerfile uses a multi-stage build with `eclipse-temurin:21-jre-alpine` as 
 | Workflow | Trigger | Actions |
 |---|---|---|
 | `code-check.yml` | Push / PR | ktlint check, tests, JaCoCo coverage |
-| `deploy.yml` | Merged PR / manual | Docker build & push, Kubernetes rolling restart |
+| `deploy.yml` | Merged PR | Build and publish a commit-SHA image to both node registries |
+| `deploy.yml` | Manual | Build and publish a commit-SHA image, then roll it out to Kubernetes and verify backend health |
 
 Deployment targets a Kubernetes cluster under the `hyuabot` namespace.
+The workflow is the only owner of the live Deployment container image. Runtime
+Kubernetes patches must omit `spec.template.spec.containers[].image` so a
+configuration update cannot replace the immutable SHA tag.
 
 ## Project Structure
 
