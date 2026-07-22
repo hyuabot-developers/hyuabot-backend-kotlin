@@ -52,6 +52,23 @@ class HomeWeatherServiceTest {
         assertNull(service.current())
     }
 
+    @Test
+    fun `uses null defaults for optional forecast values`() {
+        val forecast =
+            HomeWeatherPayload(
+                issuedAt = ZonedDateTime.parse("2026-07-21T11:00:00+09:00"),
+                expiresAt = ZonedDateTime.parse("2026-07-21T13:00:00+09:00"),
+                precipitationProbabilityMax = 0,
+                precipitationType = "NONE",
+                primaryCondition = "CLEAR",
+            )
+
+        assertNull(forecast.currentTemperature)
+        assertNull(forecast.minimumTemperature)
+        assertNull(forecast.maximumTemperature)
+        assertNull(forecast.precipitationStartAt)
+    }
+
     private fun forecast(expiresAt: String) =
         HomeWeatherPayload(
             issuedAt = ZonedDateTime.parse("2026-07-21T11:00:00+09:00"),
