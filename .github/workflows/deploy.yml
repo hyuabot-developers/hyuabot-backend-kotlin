@@ -92,6 +92,8 @@ jobs:
           image: ${{ env.IMAGE_NAME }}
 
   deploy:
+    # Merged pull requests publish and sync the immutable SHA image only.
+    # Production rollout remains an explicit manual action.
     if: github.event_name == 'workflow_dispatch'
     needs: sync
     runs-on: [self-hosted, ARM64, Linux, 1st]
@@ -107,6 +109,15 @@ jobs:
           kubectl -n hyuabot rollout status \
             deployment/hyuabot-backend-kotlin \
             --timeout=300s
+          deployed_image="$(
+            kubectl -n hyuabot get \
+              deployment/hyuabot-backend-kotlin \
+              -o jsonpath='{.spec.template.spec.containers[?(@.name=="api")].image}'
+          )"
+          if [[ "$deployed_image" != "$IMAGE_NAME" ]]; then
+            print -u2 -r -- "Expected ${IMAGE_NAME}, deployed ${deployed_image}"
+            exit 1
+          fi
       - name: Verify backend health
         run: |
           curl --fail --show-error --silent \
