@@ -3,6 +3,7 @@ scalar DateTime
 scalar LocalTime
 
 type Query {
+    homeWeather: HomeWeather
     notices(input: NoticeInput): [NoticeCategory!]!
     calendar(input: AcademicCalendarInput): AcademicCalendar!
     phonebook(input: PhonebookInput): Phonebook!
@@ -13,6 +14,18 @@ type Query {
     bus(input: [BusRouteStopInput!]!): [BusRouteStop!]!
     subway(input: SubwayInput!): [SubwayStation!]!
     shuttle(input: ShuttleInput!): Shuttle!
+}
+
+type HomeWeather {
+    issuedAt: DateTime!
+    expiresAt: DateTime!
+    currentTemperature: Float
+    minimumTemperature: Float
+    maximumTemperature: Float
+    precipitationProbabilityMax: Int!
+    precipitationStartAt: DateTime
+    precipitationType: String!
+    primaryCondition: String!
 }
 
 # 공지사항 카테고리와 공지사항을 반환하는 쿼리입니다.
