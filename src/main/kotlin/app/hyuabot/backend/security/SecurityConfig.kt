@@ -53,6 +53,7 @@ class SecurityConfig(
                         "/api/v1/user/account-setup/**",
                         "/api/v1/live-activity/**",
                         "/api/v1/analytics/watch/events",
+                        "/api/v1/presence/shuttle",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
                         "/graphql/**",
