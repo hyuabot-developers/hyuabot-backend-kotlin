@@ -197,6 +197,14 @@ class AdminOverviewService(
                     Duration.ofMinutes(5),
                     "/readingRoom/room",
                 ),
+                JobDefinition(
+                    "weather",
+                    "날씨",
+                    AdminPermission.NOTICE,
+                    "weather-cron-job",
+                    Duration.ofMinutes(90),
+                    "/notice/notice",
+                ),
             )
     }
 }
