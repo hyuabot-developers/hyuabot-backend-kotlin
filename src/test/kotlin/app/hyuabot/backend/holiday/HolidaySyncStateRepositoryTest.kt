@@ -36,9 +36,29 @@ class HolidaySyncStateRepositoryTest {
 
         val result = repository.findBySource("KASI")
 
+        assertEquals("KASI", result?.source)
+        assertEquals(success.toZonedDateTime(), result?.lastAttemptAt)
         assertEquals(success.toZonedDateTime(), result?.lastSuccessAt)
+        assertEquals(LocalDate.of(2026, 1, 1), result?.rangeStart)
         assertEquals(LocalDate.of(2027, 12, 31), result?.rangeEnd)
         assertNull(result?.lastError)
+    }
+
+    @Test
+    fun `nullable sync timestamps are mapped`() {
+        val resultSet = mock<ResultSet>()
+        whenever(resultSet.getString("source")).thenReturn("KASI")
+        whenever(resultSet.getObject("last_attempt_at", OffsetDateTime::class.java)).thenReturn(null)
+        whenever(resultSet.getObject("last_success_at", OffsetDateTime::class.java)).thenReturn(null)
+        whenever(jdbcTemplate.query(any<String>(), any<RowMapper<HolidaySyncState>>(), eq("KASI"))).thenAnswer { invocation ->
+            val mapper = invocation.getArgument<RowMapper<HolidaySyncState>>(1)
+            listOf(mapper.mapRow(resultSet, 0))
+        }
+
+        val result = repository.findBySource("KASI")
+
+        assertNull(result?.lastAttemptAt)
+        assertNull(result?.lastSuccessAt)
     }
 
     @Test
