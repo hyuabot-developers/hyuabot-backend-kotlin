@@ -218,6 +218,34 @@ class AdminOverviewServiceTest {
         assertEquals(listOf("cafeteria"), unrelated.services.map { it.id })
     }
 
+    @Test
+    fun `weather status follows notice permission and hourly freshness`() {
+        val current = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone)
+        whenever(prometheusClient.getCronJobRuns()).thenReturn(
+            mapOf("weather-cron-job" to CronJobRun(current.minusMinutes(89).toInstant().toString(), null)),
+        )
+
+        val normal = service.getOverview(setOf(AdminPermission.NOTICE), current).services.single()
+
+        assertEquals("weather", normal.id)
+        assertEquals("날씨", normal.title)
+        assertEquals("NORMAL", normal.status)
+        assertEquals("/notice/notice", normal.managementPath)
+
+        whenever(prometheusClient.getCronJobRuns()).thenReturn(
+            mapOf("weather-cron-job" to CronJobRun(current.minusMinutes(91).toInstant().toString(), null)),
+        )
+
+        assertEquals(
+            "WARNING",
+            service
+                .getOverview(setOf(AdminPermission.NOTICE), current)
+                .services
+                .single()
+                .status,
+        )
+    }
+
     private fun invitation(expiresAt: ZonedDateTime) =
         AdminUserInvitation(
             uuid = UUID.randomUUID(),

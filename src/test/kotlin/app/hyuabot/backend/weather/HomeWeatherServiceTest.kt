@@ -63,10 +63,14 @@ class HomeWeatherServiceTest {
                 primaryCondition = "CLEAR",
             )
 
+        assertEquals(ZonedDateTime.parse("2026-07-21T11:00:00+09:00"), forecast.issuedAt)
         assertNull(forecast.currentTemperature)
         assertNull(forecast.minimumTemperature)
         assertNull(forecast.maximumTemperature)
+        assertEquals(0, forecast.precipitationProbabilityMax)
         assertNull(forecast.precipitationStartAt)
+        assertEquals("NONE", forecast.precipitationType)
+        assertEquals("CLEAR", forecast.primaryCondition)
     }
 
     private fun forecast(expiresAt: String) =

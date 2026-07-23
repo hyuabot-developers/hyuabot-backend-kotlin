@@ -272,4 +272,21 @@ class AuthServiceTest {
         assertEquals("NO_REFRESH_TOKEN", exception.message)
         verify(tokenProvider).invalidateAccessToken("accessToken")
     }
+
+    @Test
+    @DisplayName("로그아웃 테스트 (저장된 Refresh Token 없음)")
+    fun logoutNoSavedRefreshTokenTest() {
+        val user =
+            mock<User>().apply {
+                whenever(userID).thenReturn("testUser")
+            }
+        val cookies = arrayOf(Cookie("access_token", "accessToken"), Cookie("refresh_token", "refreshToken"))
+        whenever(request.cookies).thenReturn(cookies)
+        whenever(refreshTokenRepository.findByUserIDAndRefreshToken("testUser", "refreshToken")).thenReturn(null)
+
+        val exception = assertThrows<IllegalArgumentException> { authService.logout(user, request) }
+
+        assertEquals("NO_REFRESH_TOKEN", exception.message)
+        verify(tokenProvider).invalidateAccessToken("accessToken")
+    }
 }

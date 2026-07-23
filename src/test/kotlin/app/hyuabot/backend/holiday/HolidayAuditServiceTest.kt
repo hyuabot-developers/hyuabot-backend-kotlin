@@ -51,9 +51,13 @@ class HolidayAuditServiceTest {
     fun `super admin receives sync and shuttle issues`() {
         val imminent = now.toLocalDate().plusDays(2)
         val later = now.toLocalDate().plusDays(10)
+        val undecided = now.toLocalDate().plusDays(20)
         whenever(syncStateRepository.findBySource("KASI")).thenReturn(null)
         whenever(shuttleHolidayRepository.findAll()).thenReturn(
-            listOf(ShuttleHoliday(1, LocalDate.of(2026, 1, 1), "legacy", "gregorian")),
+            listOf(
+                ShuttleHoliday(1, LocalDate.of(2026, 1, 1), "legacy", "gregorian"),
+                ShuttleHoliday(2, LocalDate.of(2026, 1, 1), "weekends", "gregorian"),
+            ),
         )
         whenever(
             publicHolidayRepository.findOfficialHolidaysBetween(
@@ -66,16 +70,27 @@ class HolidayAuditServiceTest {
             listOf(
                 PublicHoliday(1, imminent, "제헌절", "solar"),
                 PublicHoliday(2, later, "광복절", "solar"),
+                PublicHoliday(3, undecided, "추가 공휴일", "solar"),
             ),
         )
         whenever(shuttleHolidayRepository.findByDateAndCalendarType(imminent, "solar")).thenReturn(null)
         whenever(shuttleHolidayRepository.findByDateAndCalendarType(later, "solar")).thenReturn(
             ShuttleHoliday(2, later, "weekends", "solar"),
         )
+        whenever(shuttleHolidayRepository.findByDateAndCalendarType(undecided, "solar")).thenReturn(null)
         whenever(shuttlePeriodService.findShuttlePeriod(imminent)).thenReturn(null)
         whenever(shuttlePeriodService.findShuttlePeriod(later)).thenReturn(
             app.hyuabot.backend.database.entity.ShuttlePeriod(
                 1,
+                "vacation",
+                now.minusDays(1),
+                now.plusDays(30),
+                null,
+            ),
+        )
+        whenever(shuttlePeriodService.findShuttlePeriod(undecided)).thenReturn(
+            app.hyuabot.backend.database.entity.ShuttlePeriod(
+                2,
                 "vacation",
                 now.minusDays(1),
                 now.plusDays(30),
@@ -100,6 +115,9 @@ class HolidayAuditServiceTest {
         assertTrue(result.issues.filter { it.date == imminent }.all { it.severity == "ERROR" })
         assertTrue(result.issues.filter { it.date == later }.all { it.severity == "WARNING" })
         assertEquals("/bus/holiday", result.issues.first { it.code == "PUBLIC_HOLIDAY_SYNC_STALE" }.managementPath)
+        val invalidDecision = result.issues.first { it.code == "SHUTTLE_DECISION_INVALID" }
+        assertEquals("shuttle", invalidDecision.service)
+        assertEquals("2026-01-01 셔틀 휴일 설정값을 확인해주세요.", invalidDecision.message)
     }
 
     @Test
@@ -115,7 +133,9 @@ class HolidayAuditServiceTest {
                 lastError = null,
             )
         whenever(syncStateRepository.findBySource("KASI")).thenReturn(syncState)
-        whenever(shuttleHolidayRepository.findAll()).thenReturn(emptyList())
+        whenever(shuttleHolidayRepository.findAll()).thenReturn(
+            listOf(ShuttleHoliday(1, date, "halt", "solar")),
+        )
         whenever(publicHolidayRepository.findOfficialHolidaysBetween(any(), any(), any(), any())).thenReturn(
             listOf(PublicHoliday(1, date, "광복절", "solar")),
         )
@@ -130,7 +150,10 @@ class HolidayAuditServiceTest {
         val result = service().audit(setOf(AdminPermission.SHUTTLE), now)
 
         assertTrue(result.issues.isEmpty())
+        assertEquals("KASI", syncState.source)
+        assertEquals(now.minusHours(1), syncState.lastAttemptAt)
         assertEquals(syncState.lastSuccessAt, result.lastSuccessAt)
+        assertEquals(now.toLocalDate(), syncState.rangeStart)
         verify(shuttleTimetableRepository, never()).existsByPeriodTypeAndWeekday(any(), any())
     }
 
