@@ -1,6 +1,7 @@
 package app.hyuabot.backend.database.repository
 
 import app.hyuabot.backend.database.entity.ShuttleHoliday
+import app.hyuabot.backend.database.entity.ShuttleInitialStopRule
 import app.hyuabot.backend.database.entity.ShuttlePeriod
 import app.hyuabot.backend.database.entity.ShuttlePeriodType
 import app.hyuabot.backend.database.entity.ShuttleRoute
@@ -8,6 +9,7 @@ import app.hyuabot.backend.database.entity.ShuttleRouteStop
 import app.hyuabot.backend.database.entity.ShuttleStop
 import app.hyuabot.backend.database.entity.ShuttleTimetable
 import app.hyuabot.backend.database.entity.ShuttleTimetableView
+import app.hyuabot.backend.shuttle.domain.ShuttleGeoPoint
 import jakarta.persistence.EntityManager
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -44,6 +46,8 @@ class ShuttleRepositoryTest {
     @Autowired lateinit var timetableRepository: ShuttleTimetableRepository
 
     @Autowired lateinit var timetableViewRepository: ShuttleTimetableViewRepository
+
+    @Autowired lateinit var initialStopRuleRepository: ShuttleInitialStopRuleRepository
 
     @Autowired lateinit var entityManager: EntityManager
 
@@ -209,6 +213,7 @@ class ShuttleRepositoryTest {
 
     @AfterEach
     fun tearDown() {
+        initialStopRuleRepository.deleteAll()
         timetableRepository.deleteAll()
         routeStopRepository.deleteAll()
         routeRepository.deleteAll()
@@ -216,6 +221,36 @@ class ShuttleRepositoryTest {
         periodRepository.deleteAll()
         periodTypeRepository.deleteAll()
         holidayRepository.deleteAll()
+    }
+
+    @Test
+    @DisplayName("초기 정류장 다각형 JSON 저장 및 조회")
+    fun testInitialStopRulePolygonJsonRoundTrip() {
+        val polygon =
+            listOf(
+                ShuttleGeoPoint(37.291, 126.831),
+                ShuttleGeoPoint(37.292, 126.832),
+                ShuttleGeoPoint(37.290, 126.833),
+            )
+        val saved =
+            initialStopRuleRepository.saveAndFlush(
+                ShuttleInitialStopRule(
+                    name = "ERICA 평일 오전",
+                    periodType = "semester",
+                    weekday = true,
+                    startTime = LocalTime.of(7, 0),
+                    endTime = LocalTime.of(10, 0),
+                    stopName = "dormitory_o",
+                    priority = 100,
+                    enabled = true,
+                    polygon = polygon,
+                ),
+            )
+
+        entityManager.clear()
+
+        val restored = initialStopRuleRepository.findById(requireNotNull(saved.seq)).orElseThrow()
+        assertEquals(polygon, restored.polygon)
     }
 
     @Test
