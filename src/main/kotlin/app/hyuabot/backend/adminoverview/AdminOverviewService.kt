@@ -2,6 +2,8 @@ package app.hyuabot.backend.adminoverview
 
 import app.hyuabot.backend.adminoverview.domain.AdminOverviewResponse
 import app.hyuabot.backend.adminoverview.domain.AdminServiceStatus
+import app.hyuabot.backend.adminoverview.domain.AdminWeatherForecastStatus
+import app.hyuabot.backend.adminoverview.domain.AdminWeatherSourceStatus
 import app.hyuabot.backend.adminoverview.domain.CronJobRun
 import app.hyuabot.backend.database.repository.AdminUserInvitationRepository
 import app.hyuabot.backend.holiday.audit.HolidayAuditResult
@@ -10,6 +12,7 @@ import app.hyuabot.backend.security.AdminPermission
 import app.hyuabot.backend.shuttle.service.ShuttleHolidayService
 import app.hyuabot.backend.shuttle.service.ShuttlePeriodService
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
+import app.hyuabot.backend.weather.HomeWeatherService
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.Duration
@@ -24,6 +27,7 @@ class AdminOverviewService(
     private val shuttleHolidayService: ShuttleHolidayService,
     private val holidayAuditService: HolidayAuditService,
     private val invitationRepository: AdminUserInvitationRepository,
+    private val homeWeatherService: HomeWeatherService,
     @param:Value("\${admin.overview.grafana-url:https://grafana.hyuabot.app}") private val grafanaURL: String,
 ) {
     fun getOverview(permissions: Set<AdminPermission>): AdminOverviewResponse =
@@ -65,6 +69,24 @@ class AdminOverviewService(
         return AdminOverviewResponse(
             checkedAt = now.toString(),
             services = services,
+            weatherForecast =
+                if (AdminPermission.NOTICE in permissions) {
+                    homeWeatherService.shadow()?.let { weather ->
+                        AdminWeatherForecastStatus(
+                            generatedAt = (weather.forecastUpdatedAt ?: weather.issuedAt).toString(),
+                            observedAt = weather.observedAt?.toString(),
+                            availableModelCount = weather.availableModelCount ?: 0,
+                            agreeingModelCount = weather.agreeingModelCount ?: 0,
+                            precipitationConfidence = weather.precipitationConfidence,
+                            sources =
+                                weather.sources.map { source ->
+                                    AdminWeatherSourceStatus(source.source, source.status)
+                                },
+                        )
+                    }
+                } else {
+                    null
+                },
             expiringInvitationCount = expiringInvitations,
             grafanaURL = grafanaURL,
         )

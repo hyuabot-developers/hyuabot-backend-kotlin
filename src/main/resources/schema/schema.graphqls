@@ -19,13 +19,22 @@ type Query {
 type HomeWeather {
     issuedAt: DateTime!
     expiresAt: DateTime!
+    observedAt: DateTime
+    forecastUpdatedAt: DateTime
     currentTemperature: Float
+    currentPrecipitationType: String
+    currentPrecipitationAmount: Float
     minimumTemperature: Float
     maximumTemperature: Float
     precipitationProbabilityMax: Int!
     precipitationStartAt: DateTime
+    precipitationEndAt: DateTime
     precipitationType: String!
+    precipitationConfidence: String
+    availableModelCount: Int
+    agreeingModelCount: Int
     primaryCondition: String!
+    attribution: String
 }
 
 # 공지사항 카테고리와 공지사항을 반환하는 쿼리입니다.
