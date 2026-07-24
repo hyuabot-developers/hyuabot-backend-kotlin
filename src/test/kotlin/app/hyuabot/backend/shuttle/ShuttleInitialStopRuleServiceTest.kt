@@ -121,12 +121,30 @@ class ShuttleInitialStopRuleServiceTest {
 
         assertEquals(2, service.getActive(listOf("semester"), listOf(true), LocalTime.of(8, 0), false).size)
         assertEquals(2, service.getActive(listOf("semester"), listOf(true), LocalTime.of(23, 0), false).size)
+        assertFalse(service.isActiveAt(morning, LocalTime.of(6, 59)))
         assertTrue(service.isActiveAt(overnight, LocalTime.of(1, 59)))
         assertFalse(service.isActiveAt(overnight, LocalTime.of(2, 0)))
         assertTrue(service.isActiveAt(incomplete, LocalTime.NOON))
         assertTrue(service.getActive(emptyList(), listOf(true), LocalTime.NOON, false).isEmpty())
         assertTrue(service.getActive(listOf("semester"), emptyList(), LocalTime.NOON, false).isEmpty())
         assertTrue(service.getActive(listOf("semester"), listOf(true), LocalTime.NOON, true).isEmpty())
+    }
+
+    @Test
+    fun acceptsDistinctTimeRange() {
+        allowReferences()
+        whenever(repository.save(any<ShuttleInitialStopRule>())).thenAnswer { it.arguments[0] }
+
+        val created =
+            service.create(
+                request(
+                    startTime = LocalTime.of(7, 0),
+                    endTime = LocalTime.of(10, 0),
+                ),
+            )
+
+        assertEquals(LocalTime.of(7, 0), created.startTime)
+        assertEquals(LocalTime.of(10, 0), created.endTime)
     }
 
     @Test
@@ -146,6 +164,7 @@ class ShuttleInitialStopRuleServiceTest {
     @Test
     fun rejectsInvalidPolygons() {
         allowReferences()
+        whenever(repository.save(any<ShuttleInitialStopRule>())).thenAnswer { it.arguments[0] }
         assertInvalid(request(polygon = triangle.take(2)))
         assertInvalid(request(polygon = List(101) { index -> ShuttleGeoPoint(37.0 + index * 0.0001, 126.0) }))
         assertInvalid(
@@ -153,6 +172,16 @@ class ShuttleInitialStopRuleServiceTest {
                 polygon =
                     listOf(
                         ShuttleGeoPoint(91.0, 126.0),
+                        ShuttleGeoPoint(37.0, 126.0),
+                        ShuttleGeoPoint(38.0, 127.0),
+                    ),
+            ),
+        )
+        assertInvalid(
+            request(
+                polygon =
+                    listOf(
+                        ShuttleGeoPoint(-91.0, 126.0),
                         ShuttleGeoPoint(37.0, 126.0),
                         ShuttleGeoPoint(38.0, 127.0),
                     ),
@@ -176,6 +205,47 @@ class ShuttleInitialStopRuleServiceTest {
                         ShuttleGeoPoint(2.0, 2.0),
                         ShuttleGeoPoint(0.0, 2.0),
                         ShuttleGeoPoint(1.0, 0.0),
+                    ),
+            ),
+        )
+        assertInvalid(
+            request(
+                polygon =
+                    listOf(
+                        ShuttleGeoPoint(0.0, 0.0),
+                        ShuttleGeoPoint(1.0, 1.0),
+                        ShuttleGeoPoint(2.0, 2.0),
+                    ),
+            ),
+        )
+        assertInvalid(
+            request(
+                polygon =
+                    listOf(
+                        ShuttleGeoPoint(37.0, 181.0),
+                        ShuttleGeoPoint(38.0, 126.0),
+                        ShuttleGeoPoint(39.0, 127.0),
+                    ),
+            ),
+        )
+        assertInvalid(
+            request(
+                polygon =
+                    listOf(
+                        ShuttleGeoPoint(37.0, -181.0),
+                        ShuttleGeoPoint(38.0, 126.0),
+                        ShuttleGeoPoint(39.0, 127.0),
+                    ),
+            ),
+        )
+        service.create(
+            request(
+                polygon =
+                    listOf(
+                        ShuttleGeoPoint(0.0, 0.0),
+                        ShuttleGeoPoint(0.0, 2.0),
+                        ShuttleGeoPoint(-1.0, 3.0),
+                        ShuttleGeoPoint(1.0, 3.0),
                     ),
             ),
         )

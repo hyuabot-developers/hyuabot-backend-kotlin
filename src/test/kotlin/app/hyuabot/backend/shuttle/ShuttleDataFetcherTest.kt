@@ -24,6 +24,7 @@ import app.hyuabot.backend.utility.ScalarRegistration
 import com.netflix.graphql.dgs.DgsQueryExecutor
 import com.netflix.graphql.dgs.test.EnableDgsTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertNotNull
@@ -152,6 +153,44 @@ class ShuttleDataFetcherTest {
         assertEquals("Campus morning", result["name"])
         assertEquals("station", result["stopName"])
         assertEquals(3, (result["polygon"] as List<*>).size)
+
+        whenever(
+            initialStopRuleService.getActive(
+                periodTypes = eq(listOf("semester")),
+                weekdays = eq(listOf(true)),
+                time = any(),
+                isHalt = eq(false),
+            ),
+        ).thenReturn(
+            listOf(
+                ShuttleInitialStopRule(
+                    seq = null,
+                    name = "Invalid rule",
+                    periodType = "semester",
+                    weekday = true,
+                    startTime = null,
+                    endTime = null,
+                    stopName = "station",
+                    priority = 0,
+                    enabled = true,
+                    polygon = emptyList(),
+                ),
+            ),
+        )
+
+        assertTrue(
+            dgsQueryExecutor
+                .execute(
+                    """
+                    {
+                        shuttle(input: { periods: ["semester"], weekdays: [true] }) {
+                            initialStopRules { seq }
+                        }
+                    }
+                    """.trimIndent(),
+                ).errors
+                .isNotEmpty(),
+        )
     }
 
     private fun createTimetableView(

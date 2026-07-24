@@ -6,6 +6,7 @@ import app.hyuabot.backend.shuttle.domain.ShuttleGeoPoint
 import app.hyuabot.backend.shuttle.domain.ShuttleInitialStopRuleRequest
 import app.hyuabot.backend.shuttle.service.ShuttleInitialStopRuleService
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
@@ -70,7 +71,15 @@ class ShuttleInitialStopRuleControllerTest {
                 .single()
                 .name,
         )
-        assertEquals("station", controller.get(1).stopName)
+        val response = controller.get(1)
+        assertEquals(1, response.seq)
+        assertEquals("semester", response.periodType)
+        assertEquals(true, response.weekday)
+        assertEquals(LocalTime.of(7, 0), response.startTime)
+        assertEquals(LocalTime.of(10, 0), response.endTime)
+        assertEquals("station", response.stopName)
+        assertEquals(true, response.enabled)
+        assertEquals(polygon, response.polygon)
         assertEquals(HttpStatus.CREATED, controller.create(request).statusCode)
         assertEquals(100, controller.update(1, request).priority)
         assertEquals(HttpStatus.NO_CONTENT, controller.delete(1).statusCode)
@@ -84,5 +93,21 @@ class ShuttleInitialStopRuleControllerTest {
             "INVALID_SHUTTLE_INITIAL_STOP_RULE",
             controller.handleInvalid().body?.message,
         )
+
+        whenever(service.get(2)).thenReturn(
+            ShuttleInitialStopRule(
+                seq = null,
+                name = rule.name,
+                periodType = rule.periodType,
+                weekday = rule.weekday,
+                startTime = rule.startTime,
+                endTime = rule.endTime,
+                stopName = rule.stopName,
+                priority = rule.priority,
+                enabled = rule.enabled,
+                polygon = rule.polygon,
+            ),
+        )
+        assertThrows<IllegalArgumentException> { controller.get(2) }
     }
 }
