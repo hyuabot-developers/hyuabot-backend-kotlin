@@ -12,6 +12,9 @@ import app.hyuabot.backend.security.AdminPermission
 import app.hyuabot.backend.shuttle.service.ShuttleHolidayService
 import app.hyuabot.backend.shuttle.service.ShuttlePeriodService
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
+import app.hyuabot.backend.weather.HomeWeatherPayload
+import app.hyuabot.backend.weather.HomeWeatherService
+import app.hyuabot.backend.weather.WeatherSourceStatus
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -21,6 +24,7 @@ import org.mockito.kotlin.whenever
 import java.time.Instant
 import java.time.ZonedDateTime
 import java.util.UUID
+import kotlin.test.assertNotNull
 
 class AdminOverviewServiceTest {
     private val prometheusClient = mock<PrometheusClient>()
@@ -28,6 +32,7 @@ class AdminOverviewServiceTest {
     private val holidayService = mock<ShuttleHolidayService>()
     private val holidayAuditService = mock<HolidayAuditService>()
     private val invitationRepository = mock<AdminUserInvitationRepository>()
+    private val homeWeatherService = mock<HomeWeatherService>()
     private val service =
         AdminOverviewService(
             prometheusClient,
@@ -35,6 +40,7 @@ class AdminOverviewServiceTest {
             holidayService,
             holidayAuditService,
             invitationRepository,
+            homeWeatherService,
             "https://grafana.example",
         )
 
@@ -221,16 +227,42 @@ class AdminOverviewServiceTest {
     @Test
     fun `weather status follows notice permission and hourly freshness`() {
         val current = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone)
+        whenever(homeWeatherService.shadow()).thenReturn(
+            HomeWeatherPayload(
+                issuedAt = current.minusMinutes(10),
+                expiresAt = current.plusHours(1),
+                observedAt = current.minusMinutes(20),
+                forecastUpdatedAt = current.minusMinutes(10),
+                precipitationProbabilityMax = 60,
+                precipitationType = "RAIN",
+                precipitationConfidence = "MEDIUM",
+                availableModelCount = 3,
+                agreeingModelCount = 2,
+                primaryCondition = "RAIN",
+                sources =
+                    listOf(
+                        WeatherSourceStatus("JMA_MSM", "AVAILABLE"),
+                        WeatherSourceStatus("ECMWF_IFS", "AVAILABLE"),
+                        WeatherSourceStatus("GFS_GLOBAL", "AVAILABLE"),
+                    ),
+            ),
+        )
         whenever(prometheusClient.getCronJobRuns()).thenReturn(
             mapOf("weather-cron-job" to CronJobRun(current.minusMinutes(89).toInstant().toString(), null)),
         )
 
-        val normal = service.getOverview(setOf(AdminPermission.NOTICE), current).services.single()
+        val overview = service.getOverview(setOf(AdminPermission.NOTICE), current)
+        val normal = overview.services.single()
+        val diagnostics = assertNotNull(overview.weatherForecast)
 
         assertEquals("weather", normal.id)
         assertEquals("날씨", normal.title)
         assertEquals("NORMAL", normal.status)
         assertEquals("/notice/notice", normal.managementPath)
+        assertEquals(3, diagnostics.availableModelCount)
+        assertEquals(2, diagnostics.agreeingModelCount)
+        assertEquals("MEDIUM", diagnostics.precipitationConfidence)
+        assertEquals("JMA_MSM", diagnostics.sources.first().source)
 
         whenever(prometheusClient.getCronJobRuns()).thenReturn(
             mapOf("weather-cron-job" to CronJobRun(current.minusMinutes(91).toInstant().toString(), null)),
@@ -244,6 +276,30 @@ class AdminOverviewServiceTest {
                 .single()
                 .status,
         )
+    }
+
+    @Test
+    fun `weather diagnostics tolerate missing optional model values`() {
+        val current = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone)
+        whenever(prometheusClient.getCronJobRuns()).thenReturn(emptyMap())
+        whenever(homeWeatherService.shadow()).thenReturn(
+            HomeWeatherPayload(
+                issuedAt = current.minusMinutes(10),
+                expiresAt = current.plusHours(1),
+                precipitationProbabilityMax = 0,
+                precipitationType = "NONE",
+                primaryCondition = "CLEAR",
+            ),
+        )
+
+        val forecast = assertNotNull(service.getOverview(setOf(AdminPermission.NOTICE), current).weatherForecast)
+
+        assertEquals(current.minusMinutes(10).toString(), forecast.generatedAt)
+        assertNull(forecast.observedAt)
+        assertEquals(0, forecast.availableModelCount)
+        assertEquals(0, forecast.agreeingModelCount)
+        assertEquals(0, forecast.sources.size)
+        assertNull(service.getOverview(setOf(AdminPermission.BUS), current).weatherForecast)
     }
 
     private fun invitation(expiresAt: ZonedDateTime) =

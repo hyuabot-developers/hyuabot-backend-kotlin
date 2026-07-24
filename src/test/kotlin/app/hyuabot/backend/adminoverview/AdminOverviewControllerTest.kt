@@ -16,7 +16,7 @@ class AdminOverviewControllerTest {
     fun `controller passes recognized authorities to the service`() {
         val service = mock<AdminOverviewService>()
         val authentication = mock<Authentication>()
-        val response = AdminOverviewResponse("now", emptyList(), null, "grafana")
+        val response = AdminOverviewResponse("now", emptyList(), null, null, "grafana")
         whenever(authentication.authorities).thenReturn(
             listOf(SimpleGrantedAuthority("BUS"), SimpleGrantedAuthority("UNKNOWN")),
         )

@@ -24,6 +24,7 @@ class HomeWeatherServiceTest {
             objectMapper,
             Clock.fixed(now, ZoneOffset.UTC),
             "weather:test",
+            "weather:test:shadow",
         ).also {
             whenever(redisTemplate.opsForValue()).thenReturn(valueOperations)
         }
@@ -35,6 +36,15 @@ class HomeWeatherServiceTest {
         whenever(objectMapper.readValue("forecast-json", HomeWeatherPayload::class.java)).thenReturn(forecast)
 
         assertEquals(forecast, service.current())
+    }
+
+    @Test
+    fun `returns an unexpired shadow forecast`() {
+        val forecast = forecast(expiresAt = "2026-07-21T13:00:00+09:00")
+        whenever(valueOperations.get("weather:test:shadow")).thenReturn("shadow-json")
+        whenever(objectMapper.readValue("shadow-json", HomeWeatherPayload::class.java)).thenReturn(forecast)
+
+        assertEquals(forecast, service.shadow())
     }
 
     @Test
@@ -69,6 +79,16 @@ class HomeWeatherServiceTest {
         assertNull(forecast.maximumTemperature)
         assertEquals(0, forecast.precipitationProbabilityMax)
         assertNull(forecast.precipitationStartAt)
+        assertNull(forecast.observedAt)
+        assertNull(forecast.forecastUpdatedAt)
+        assertNull(forecast.currentPrecipitationType)
+        assertNull(forecast.currentPrecipitationAmount)
+        assertNull(forecast.precipitationEndAt)
+        assertNull(forecast.precipitationConfidence)
+        assertNull(forecast.availableModelCount)
+        assertNull(forecast.agreeingModelCount)
+        assertNull(forecast.attribution)
+        assertEquals(emptyList(), forecast.sources)
         assertEquals("NONE", forecast.precipitationType)
         assertEquals("CLEAR", forecast.primaryCondition)
     }
