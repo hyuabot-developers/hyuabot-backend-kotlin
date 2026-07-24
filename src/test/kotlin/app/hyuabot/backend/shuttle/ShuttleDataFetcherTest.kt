@@ -3,17 +3,20 @@ package app.hyuabot.backend.shuttle
 import app.hyuabot.backend.codegen.types.ShuttleLimitInput
 import app.hyuabot.backend.database.entity.PublicHoliday
 import app.hyuabot.backend.database.entity.ShuttleHoliday
+import app.hyuabot.backend.database.entity.ShuttleInitialStopRule
 import app.hyuabot.backend.database.entity.ShuttlePeriod
 import app.hyuabot.backend.database.entity.ShuttleStop
 import app.hyuabot.backend.holiday.service.PublicHolidayService
 import app.hyuabot.backend.shuttle.controller.ShuttleDataFetcher
 import app.hyuabot.backend.shuttle.controller.ShuttleTimetableDataLoader
 import app.hyuabot.backend.shuttle.domain.ShuttleArrivalItem
+import app.hyuabot.backend.shuttle.domain.ShuttleGeoPoint
 import app.hyuabot.backend.shuttle.domain.ShuttleHolidayOccurrence
 import app.hyuabot.backend.shuttle.domain.ShuttleTimetableKey
 import app.hyuabot.backend.shuttle.domain.ShuttleTimetableResult
 import app.hyuabot.backend.shuttle.domain.ShuttleTimetableViewItem
 import app.hyuabot.backend.shuttle.service.ShuttleHolidayService
+import app.hyuabot.backend.shuttle.service.ShuttleInitialStopRuleService
 import app.hyuabot.backend.shuttle.service.ShuttlePeriodService
 import app.hyuabot.backend.shuttle.service.ShuttleStopService
 import app.hyuabot.backend.shuttle.service.ShuttleTimetableService
@@ -21,12 +24,14 @@ import app.hyuabot.backend.utility.ScalarRegistration
 import com.netflix.graphql.dgs.DgsQueryExecutor
 import com.netflix.graphql.dgs.test.EnableDgsTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertNotNull
 import org.junit.jupiter.api.assertNull
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
@@ -51,6 +56,8 @@ class ShuttleDataFetcherTest {
     @MockitoBean lateinit var periodService: ShuttlePeriodService
 
     @MockitoBean lateinit var stopService: ShuttleStopService
+
+    @MockitoBean lateinit var initialStopRuleService: ShuttleInitialStopRuleService
 
     @MockitoBean lateinit var timetableService: ShuttleTimetableService
 
@@ -95,6 +102,96 @@ class ShuttleDataFetcherTest {
         routeToStart = mutableListOf(),
         routeToEnd = mutableListOf(),
     )
+
+    @Test
+    @DisplayName("셔틀버스 초기 정류장 규칙 조회")
+    fun testInitialStopRules() {
+        whenever(
+            initialStopRuleService.getActive(
+                periodTypes = eq(listOf("semester")),
+                weekdays = eq(listOf(true)),
+                time = any(),
+                isHalt = eq(false),
+            ),
+        ).thenReturn(
+            listOf(
+                ShuttleInitialStopRule(
+                    seq = 1,
+                    name = "Campus morning",
+                    periodType = "semester",
+                    weekday = true,
+                    startTime = LocalTime.of(7, 0),
+                    endTime = LocalTime.of(10, 0),
+                    stopName = "station",
+                    priority = 100,
+                    enabled = true,
+                    polygon =
+                        listOf(
+                            ShuttleGeoPoint(37.29, 126.83),
+                            ShuttleGeoPoint(37.30, 126.83),
+                            ShuttleGeoPoint(37.30, 126.84),
+                        ),
+                ),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<Map<String, Any>>(
+                """
+                {
+                    shuttle(input: { periods: ["semester"], weekdays: [true] }) {
+                        initialStopRules {
+                            seq name periodType weekday startTime endTime stopName priority
+                            polygon { latitude longitude }
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.shuttle.initialStopRules[0]",
+            )
+
+        assertEquals("Campus morning", result["name"])
+        assertEquals("station", result["stopName"])
+        assertEquals(3, (result["polygon"] as List<*>).size)
+
+        whenever(
+            initialStopRuleService.getActive(
+                periodTypes = eq(listOf("semester")),
+                weekdays = eq(listOf(true)),
+                time = any(),
+                isHalt = eq(false),
+            ),
+        ).thenReturn(
+            listOf(
+                ShuttleInitialStopRule(
+                    seq = null,
+                    name = "Invalid rule",
+                    periodType = "semester",
+                    weekday = true,
+                    startTime = null,
+                    endTime = null,
+                    stopName = "station",
+                    priority = 0,
+                    enabled = true,
+                    polygon = emptyList(),
+                ),
+            ),
+        )
+
+        assertTrue(
+            dgsQueryExecutor
+                .execute(
+                    """
+                    {
+                        shuttle(input: { periods: ["semester"], weekdays: [true] }) {
+                            initialStopRules { seq }
+                        }
+                    }
+                    """.trimIndent(),
+                ).errors
+                .isNotEmpty(),
+        )
+    }
 
     private fun createTimetableView(
         seq: Int = 1,

@@ -34,6 +34,8 @@ class AdminOverviewModelsTest {
         assertEquals(listOf("JMA_MSM", "AVAILABLE"), listOf(sourceName, sourceStatus))
         assertEquals(listOf("success", "failure"), listOf(runSuccess, runFailure))
         assertEquals("title", status.title)
+        assertEquals("JMA_MSM", source.source)
+        assertEquals("AVAILABLE", source.status)
         assertEquals("success", status.lastSuccessAt)
         assertEquals("failure", status.lastFailureAt)
         assertEquals("/path", status.managementPath)
