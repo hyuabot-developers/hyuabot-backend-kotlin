@@ -2,7 +2,9 @@ package app.hyuabot.backend.shuttle.controller
 
 import app.hyuabot.backend.codegen.types.Shuttle
 import app.hyuabot.backend.codegen.types.ShuttleArrival
+import app.hyuabot.backend.codegen.types.ShuttleGeoPoint
 import app.hyuabot.backend.codegen.types.ShuttleHoliday
+import app.hyuabot.backend.codegen.types.ShuttleInitialStopRule
 import app.hyuabot.backend.codegen.types.ShuttleInput
 import app.hyuabot.backend.codegen.types.ShuttleLimitInput
 import app.hyuabot.backend.codegen.types.ShuttlePeriod
@@ -18,6 +20,7 @@ import app.hyuabot.backend.shuttle.domain.ShuttleTimetableKey
 import app.hyuabot.backend.shuttle.domain.ShuttleTimetableResult
 import app.hyuabot.backend.shuttle.domain.ShuttleTimetableViewItem
 import app.hyuabot.backend.shuttle.service.ShuttleHolidayService
+import app.hyuabot.backend.shuttle.service.ShuttleInitialStopRuleService
 import app.hyuabot.backend.shuttle.service.ShuttlePeriodService
 import app.hyuabot.backend.shuttle.service.ShuttleStopService
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
@@ -27,6 +30,7 @@ import com.netflix.graphql.dgs.DgsDataFetchingEnvironment
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.concurrent.CompletableFuture
 
 @DgsComponent
@@ -35,6 +39,7 @@ class ShuttleDataFetcher(
     private val publicHolidayService: PublicHolidayService,
     private val periodService: ShuttlePeriodService,
     private val stopService: ShuttleStopService,
+    private val initialStopRuleService: ShuttleInitialStopRuleService,
 ) {
     @DgsQuery
     fun shuttle(
@@ -60,8 +65,39 @@ class ShuttleDataFetcher(
             period = null,
             holiday = null,
             serviceNotices = emptyList(),
+            initialStopRules = emptyList(),
             stops = emptyList(),
         )
+    }
+
+    @DgsData(parentType = "Shuttle")
+    fun initialStopRules(dfe: DgsDataFetchingEnvironment): List<ShuttleInitialStopRule> {
+        val filter = dfe.graphQlContext.get<ShuttleFilterContext>("filter")
+        return initialStopRuleService
+            .getActive(
+                periodTypes = filter.periods,
+                weekdays = filter.weekdays,
+                time = LocalTime.now(LocalDateTimeBuilder.serviceTimezone),
+                isHalt = filter.isHalt,
+            ).map {
+                ShuttleInitialStopRule(
+                    seq = requireNotNull(it.seq),
+                    name = it.name,
+                    periodType = it.periodType,
+                    weekday = it.weekday,
+                    startTime = it.startTime,
+                    endTime = it.endTime,
+                    stopName = it.stopName,
+                    priority = it.priority,
+                    polygon =
+                        it.polygon.map { point ->
+                            ShuttleGeoPoint(
+                                latitude = point.latitude,
+                                longitude = point.longitude,
+                            )
+                        },
+                )
+            }
     }
 
     @DgsData(parentType = "Shuttle")

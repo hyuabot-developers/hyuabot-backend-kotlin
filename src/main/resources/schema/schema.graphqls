@@ -407,7 +407,25 @@ type Shuttle {
     period: ShuttlePeriod
     holiday: ShuttleHoliday
     serviceNotices(start: Date!, end: Date!): [ShuttleServiceNotice!]!
+    initialStopRules: [ShuttleInitialStopRule!]!
     stops: [ShuttleStop!]!
+}
+
+type ShuttleInitialStopRule {
+    seq: Int!
+    name: String!
+    periodType: String!
+    weekday: Boolean!
+    startTime: LocalTime
+    endTime: LocalTime
+    stopName: String!
+    priority: Int!
+    polygon: [ShuttleGeoPoint!]!
+}
+
+type ShuttleGeoPoint {
+    latitude: Float!
+    longitude: Float!
 }
 
 type ShuttleServiceNotice {
