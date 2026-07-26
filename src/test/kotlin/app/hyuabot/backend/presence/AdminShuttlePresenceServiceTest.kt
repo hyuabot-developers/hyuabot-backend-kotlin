@@ -46,4 +46,19 @@ class AdminShuttlePresenceServiceTest {
             assertEquals(count, response.stops[index].viewerCount)
         }
     }
+
+    @Test
+    fun `exposes the six shuttle stop ids in display order`() {
+        assertEquals(
+            listOf(
+                "dormitory_o",
+                "shuttlecock_o",
+                "station",
+                "terminal",
+                "jungang_stn",
+                "shuttlecock_i",
+            ),
+            AdminShuttlePresenceService.SHUTTLE_STOP_IDS,
+        )
+    }
 }
