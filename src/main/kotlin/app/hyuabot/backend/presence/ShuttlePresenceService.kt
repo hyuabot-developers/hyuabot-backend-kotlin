@@ -15,6 +15,7 @@ class ShuttlePresenceService(
     private val redisTemplate: RedisTemplate<String, String>,
     private val meterRegistry: MeterRegistry,
     private val watchAnalyticsClock: Clock,
+    private val shuttleDemandWindowService: ShuttleDemandWindowService,
 ) {
     private val heartbeatScript =
         DefaultRedisScript<Long>().apply {
@@ -29,22 +30,6 @@ class ShuttlePresenceService(
         require(APP_VERSION_REGEX.matches(request.appVersion))
 
         val now = Instant.now(watchAnalyticsClock)
-        val nowEpoch = now.epochSecond
-        val stopKey = "presence:shuttle:${stop.value}"
-        val sessionKey = "presence:shuttle:session:$sessionId"
-        val rateKey = "presence:shuttle:rate:$sessionId"
-        val count =
-            redisTemplate.execute(
-                heartbeatScript,
-                listOf(stopKey, sessionKey, rateKey),
-                (nowEpoch - ACTIVE_WINDOW_SECONDS).toString(),
-                nowEpoch.toString(),
-                sessionId,
-                stopKey,
-                ACTIVE_WINDOW_SECONDS.toString(),
-                STOP_KEY_TTL_SECONDS.toString(),
-                MIN_HEARTBEAT_INTERVAL_SECONDS.toString(),
-            ) ?: 0L
 
         meterRegistry
             .counter(
@@ -55,19 +40,39 @@ class ShuttlePresenceService(
                 stop.value,
             ).increment()
 
-        return responseFor(count, now)
+        val window = shuttleDemandWindowService.demandWindow(stop.value, now) ?: return responseFor(0L, now, 0L)
+
+        val nowEpoch = now.epochSecond
+        val stopKey = "presence:shuttle:${stop.value}"
+        val sessionKey = "presence:shuttle:session:$sessionId"
+        val rateKey = "presence:shuttle:rate:$sessionId"
+        val count =
+            redisTemplate.execute(
+                heartbeatScript,
+                listOf(stopKey, sessionKey, rateKey),
+                window.startEpoch.toString(),
+                nowEpoch.toString(),
+                sessionId,
+                stopKey,
+                window.keyTtlSeconds.toString(),
+                window.keyTtlSeconds.toString(),
+                MIN_HEARTBEAT_INTERVAL_SECONDS.toString(),
+            ) ?: 0L
+
+        return responseFor(count, now, nowEpoch - window.startEpoch)
     }
 
     internal fun responseFor(
         count: Long,
         now: Instant,
+        activeWindowSeconds: Long,
     ): ShuttlePresenceResponse {
         val visible = count >= MINIMUM_VISIBLE_COUNT
         return ShuttlePresenceResponse(
             viewerCount = count.takeIf { visible },
             visible = visible,
             updatedAt = now,
-            activeWindowSeconds = ACTIVE_WINDOW_SECONDS,
+            activeWindowSeconds = activeWindowSeconds,
         )
     }
 
@@ -100,8 +105,6 @@ class ShuttlePresenceService(
     }
 
     companion object {
-        internal const val ACTIVE_WINDOW_SECONDS = 75L
-        private const val STOP_KEY_TTL_SECONDS = 300L
         private const val MIN_HEARTBEAT_INTERVAL_SECONDS = 5L
         private const val MINIMUM_VISIBLE_COUNT = 3L
         private val APP_VERSION_REGEX = Regex("[0-9A-Za-z][0-9A-Za-z.+_-]{0,31}")

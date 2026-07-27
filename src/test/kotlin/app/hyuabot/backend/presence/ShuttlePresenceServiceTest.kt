@@ -20,15 +20,24 @@ class ShuttlePresenceServiceTest {
     private val now = Instant.parse("2026-07-21T03:00:00Z")
     private val redisTemplate = mock<RedisTemplate<String, String>>()
     private val meterRegistry = SimpleMeterRegistry()
+    private val demandWindowService = mock<ShuttleDemandWindowService>()
     private val service =
         ShuttlePresenceService(
             redisTemplate,
             meterRegistry,
             Clock.fixed(now, ZoneOffset.UTC),
+            demandWindowService,
         )
 
     @Test
-    fun `records a valid heartbeat and returns the active viewer count`() {
+    fun `records a valid heartbeat and returns the demand count until the next departure`() {
+        whenever(demandWindowService.demandWindow("station", now))
+            .thenReturn(
+                ShuttleDemandWindowService.DemandWindow(
+                    startEpoch = now.epochSecond - 600,
+                    keyTtlSeconds = 300,
+                ),
+            )
         whenever(
             redisTemplate.execute(
                 any<RedisScript<Long>>(),
@@ -48,6 +57,7 @@ class ShuttlePresenceServiceTest {
         assertTrue(response.visible)
         assertEquals(3, response.viewerCount)
         assertEquals(now, response.updatedAt)
+        assertEquals(600, response.activeWindowSeconds)
         assertEquals(
             1.0,
             meterRegistry
@@ -66,15 +76,37 @@ class ShuttlePresenceServiceTest {
     }
 
     @Test
+    fun `returns an empty demand when there is no upcoming departure`() {
+        whenever(demandWindowService.demandWindow("station", now)).thenReturn(null)
+
+        val response = service.heartbeat(validRequest())
+
+        assertFalse(response.visible)
+        assertNull(response.viewerCount)
+        assertEquals(0, response.activeWindowSeconds)
+        assertEquals(
+            1.0,
+            meterRegistry
+                .counter(
+                    "hyuabot.shuttle.presence.heartbeats",
+                    "platform",
+                    "android",
+                    "stop_id",
+                    "station",
+                ).count(),
+        )
+    }
+
+    @Test
     fun `hides small groups and exposes counts from three viewers`() {
-        val smallGroup = service.responseFor(2, now)
+        val smallGroup = service.responseFor(2, now, 900)
         assertFalse(smallGroup.visible)
         assertNull(smallGroup.viewerCount)
 
-        val visibleGroup = service.responseFor(3, now)
+        val visibleGroup = service.responseFor(3, now, 900)
         assertTrue(visibleGroup.visible)
         assertEquals(3, visibleGroup.viewerCount)
-        assertEquals(75, visibleGroup.activeWindowSeconds)
+        assertEquals(900, visibleGroup.activeWindowSeconds)
     }
 
     @Test

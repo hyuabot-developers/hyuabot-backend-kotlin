@@ -8,37 +8,28 @@ import java.time.Instant
 @Service
 class AdminShuttlePresenceService(
     private val redisTemplate: RedisTemplate<String, String>,
+    private val shuttleDemandWindowService: ShuttleDemandWindowService,
     private val watchAnalyticsClock: Clock,
 ) {
     fun getViewerCounts(): AdminShuttlePresenceResponse {
         val now = Instant.now(watchAnalyticsClock)
-        val minScore = (now.epochSecond - ACTIVE_WINDOW_SECONDS).toDouble()
-        val maxScore = Double.POSITIVE_INFINITY
-
         val stops =
-            SHUTTLE_STOP_IDS.map { stopId ->
+            ShuttleDemandWindowService.STOP_NAMES.map { stopId ->
+                val window = shuttleDemandWindowService.demandWindow(stopId, now)
                 val count =
-                    redisTemplate.opsForZSet().count("presence:shuttle:$stopId", minScore, maxScore) ?: 0L
+                    if (window == null) {
+                        0L
+                    } else {
+                        redisTemplate
+                            .opsForZSet()
+                            .count("presence:shuttle:$stopId", window.startEpoch.toDouble(), Double.POSITIVE_INFINITY) ?: 0L
+                    }
                 AdminShuttlePresenceResponse.StopViewerCount(stopId, count)
             }
-
         return AdminShuttlePresenceResponse(
             stops = stops,
             updatedAt = now,
-            activeWindowSeconds = ACTIVE_WINDOW_SECONDS,
+            activeWindowSeconds = 0L,
         )
-    }
-
-    companion object {
-        internal const val ACTIVE_WINDOW_SECONDS = 75L
-        internal val SHUTTLE_STOP_IDS =
-            listOf(
-                "dormitory_o",
-                "shuttlecock_o",
-                "station",
-                "terminal",
-                "jungang_stn",
-                "shuttlecock_i",
-            )
     }
 }
