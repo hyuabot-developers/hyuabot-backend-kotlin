@@ -15,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 class JWTAuthenticationFilter(
     private val tokenProvider: JWTTokenProvider,
     private val redisTemplate: RedisTemplate<String, String>,
+    private val authCookieProvider: AuthCookieProvider,
 ) : OncePerRequestFilter() {
     override fun doFilterInternal(
         request: HttpServletRequest,
@@ -53,7 +54,7 @@ class JWTAuthenticationFilter(
         val context = SecurityContextHolder.createEmptyContext()
         context.authentication = authentication
         SecurityContextHolder.setContext(context)
-        response.addHeader("Set-Cookie", "access_token=$token; Path=/; HttpOnly; SameSite=None; Secure")
+        response.addHeader("Set-Cookie", authCookieProvider.accessTokenCookie(token).toString())
     } catch (e: Exception) {
         request.setAttribute("error", e.message)
     }

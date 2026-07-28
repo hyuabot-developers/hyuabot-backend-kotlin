@@ -9,6 +9,7 @@ import app.hyuabot.backend.auth.domain.ValidateInvitationRequest
 import app.hyuabot.backend.auth.exception.DuplicateEmailException
 import app.hyuabot.backend.auth.exception.InvalidInvitationException
 import app.hyuabot.backend.auth.exception.InvalidUserInputException
+import app.hyuabot.backend.security.AuthCookieProvider
 import app.hyuabot.backend.security.JWTUser
 import app.hyuabot.backend.security.effectivePermissions
 import app.hyuabot.backend.utility.ResponseBuilder
@@ -25,7 +26,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.http.ResponseCookie
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.context.SecurityContextHolder
@@ -47,6 +47,8 @@ class AuthController {
     @Autowired private lateinit var authService: AuthService
 
     @Autowired private lateinit var invitationService: UserInvitationService
+
+    @Autowired private lateinit var authCookieProvider: AuthCookieProvider
     private val logger = LoggerFactory.getLogger(javaClass)
 
     @PostMapping("/account-setup/validate")
@@ -136,22 +138,8 @@ class AuthController {
     ): ResponseEntity<ResponseBuilder.Message> {
         try {
             authService.login(payload.username, payload.password).let {
-                val accessTokenCookie =
-                    ResponseCookie
-                        .from("access_token", it.accessToken)
-                        .httpOnly(true)
-                        .secure(true)
-                        .sameSite("None")
-                        .path("/")
-                        .build()
-                val refreshTokenCookie =
-                    ResponseCookie
-                        .from("refresh_token", it.refreshToken)
-                        .httpOnly(true)
-                        .secure(true)
-                        .sameSite("None")
-                        .path("/")
-                        .build()
+                val accessTokenCookie = authCookieProvider.accessTokenCookie(it.accessToken)
+                val refreshTokenCookie = authCookieProvider.refreshTokenCookie(it.refreshToken)
                 return ResponseBuilder
                     .response(
                         HttpStatus.CREATED,
@@ -219,14 +207,7 @@ class AuthController {
         val refreshToken = request.cookies.first { it.name == "refresh_token" }.value
         try {
             val newAccessToken = authService.refreshToken(refreshToken)
-            val accessTokenCookie =
-                ResponseCookie
-                    .from("access_token", newAccessToken)
-                    .httpOnly(true)
-                    .secure(true)
-                    .sameSite("None")
-                    .path("/")
-                    .build()
+            val accessTokenCookie = authCookieProvider.accessTokenCookie(newAccessToken)
             return ResponseBuilder.response(
                 HttpStatus.OK,
                 "TOKEN_REFRESH_SUCCESS",
@@ -295,29 +276,11 @@ class AuthController {
         }
         val userID = principal.username
         val userInfo = authService.getUserInfo(userID)
-        val expireAccessToken =
-            ResponseCookie
-                .from("access_token", "")
-                .httpOnly(true)
-                .secure(true)
-                .sameSite("None")
-                .path("/")
-                .maxAge(0)
-                .build()
-        val expireRefreshToken =
-            ResponseCookie
-                .from("refresh_token", "")
-                .httpOnly(true)
-                .secure(true)
-                .sameSite("None")
-                .path("/")
-                .maxAge(0)
-                .build()
         authService.logout(userInfo, request).let {
             return ResponseBuilder.response(
                 HttpStatus.OK,
                 "LOGOUT_SUCCESS",
-                cookies = listOf(expireAccessToken, expireRefreshToken),
+                cookies = authCookieProvider.expiredAuthCookies(),
             )
         }
     }
@@ -423,7 +386,7 @@ class AuthController {
             ResponseBuilder.response(
                 HttpStatus.OK,
                 "PASSWORD_CHANGED",
-                cookies = expiredAuthCookies(),
+                cookies = authCookieProvider.expiredAuthCookies(),
             )
         } catch (_: BadCredentialsException) {
             ResponseBuilder.response(HttpStatus.BAD_REQUEST, "CURRENT_PASSWORD_MISMATCH")
@@ -442,16 +405,4 @@ class AuthController {
             active = user.active,
             permissions = user.permissions.effectivePermissions().sortedBy { it.ordinal },
         )
-
-    private fun expiredAuthCookies() =
-        listOf("access_token", "refresh_token").map { name ->
-            ResponseCookie
-                .from(name, "")
-                .httpOnly(true)
-                .secure(true)
-                .sameSite("None")
-                .path("/")
-                .maxAge(0)
-                .build()
-        }
 }
