@@ -18,6 +18,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 class SecurityConfig(
     private val tokenProvider: JWTTokenProvider,
     private val redisTemplate: RedisTemplate<String, String>,
+    private val authCookieProvider: AuthCookieProvider,
 ) {
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain =
@@ -97,7 +98,7 @@ class SecurityConfig(
                     .anyRequest()
                     .denyAll()
             }.addFilterBefore(
-                JWTAuthenticationFilter(tokenProvider, redisTemplate),
+                JWTAuthenticationFilter(tokenProvider, redisTemplate, authCookieProvider),
                 UsernamePasswordAuthenticationFilter::class.java,
             ).build()
 

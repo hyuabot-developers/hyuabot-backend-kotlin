@@ -50,7 +50,7 @@ jobs:
           echo "spring.sql.init.mode=always" >> src/main/resources/application-test.properties
           echo "jwt.secret=secret" >> src/main/resources/application-test.properties
           echo "jwt.expiration=3600" >> src/main/resources/application-test.properties
-          echo "jwt.expiration.refresh=604800" >> src/main/resources/application-test.properties
+          echo "jwt.expiration.refresh=7" >> src/main/resources/application-test.properties
           echo "jasypt.encryptor.password=secret" >> src/main/resources/application-test.properties
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

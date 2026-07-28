@@ -38,7 +38,7 @@ class JWTAuthenticationFilterTest {
 
     @BeforeEach
     fun setup() {
-        jwtAuthenticationFilter = JWTAuthenticationFilter(jwtTokenProvider, redisTemplate)
+        jwtAuthenticationFilter = JWTAuthenticationFilter(jwtTokenProvider, redisTemplate, AuthCookieProvider(7))
         SecurityContextHolder.clearContext()
     }
 
