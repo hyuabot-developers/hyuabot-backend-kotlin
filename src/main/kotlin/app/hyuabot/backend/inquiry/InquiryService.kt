@@ -4,10 +4,13 @@ import app.hyuabot.backend.database.entity.InquiryMessage
 import app.hyuabot.backend.database.entity.InquiryThread
 import app.hyuabot.backend.database.repository.InquiryMessageRepository
 import app.hyuabot.backend.database.repository.InquiryThreadRepository
+import app.hyuabot.backend.inquiry.domain.InquiryEvent
+import app.hyuabot.backend.inquiry.domain.toMessageResponse
 import app.hyuabot.backend.inquiry.exception.EmptyInquiryMessageException
 import app.hyuabot.backend.inquiry.exception.InquiryThreadForbiddenException
 import app.hyuabot.backend.inquiry.exception.InquiryThreadNotFoundException
 import app.hyuabot.backend.inquiry.exception.InvalidInquiryStatusException
+import app.hyuabot.backend.inquiry.sse.InquiryEventPublisher
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -18,6 +21,7 @@ import java.util.UUID
 class InquiryService(
     private val threadRepository: InquiryThreadRepository,
     private val messageRepository: InquiryMessageRepository,
+    private val eventPublisher: InquiryEventPublisher,
 ) {
     private fun now(): ZonedDateTime = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone)
 
@@ -55,14 +59,16 @@ class InquiryService(
                     existing.entryScreenName = entryScreenName
                     existing.updatedAt = timestamp
                     threadRepository.save(existing)
-                    messageRepository.save(
-                        InquiryMessage(
-                            threadId = existing.id,
-                            senderType = "SYSTEM",
-                            body = entryScreenSystemMessage(entryScreenName ?: entryScreen),
-                            createdAt = timestamp,
-                        ),
-                    )
+                    val systemMessage =
+                        messageRepository.save(
+                            InquiryMessage(
+                                threadId = existing.id,
+                                senderType = "SYSTEM",
+                                body = entryScreenSystemMessage(entryScreenName ?: entryScreen),
+                                createdAt = timestamp,
+                            ),
+                        )
+                    publishMessage(existing.id, existing.installationId, systemMessage)
                 }
                 return existing
             }
@@ -124,6 +130,7 @@ class InquiryService(
         thread.lastMessageAt = timestamp
         thread.updatedAt = timestamp
         threadRepository.save(thread)
+        publishMessage(threadId, thread.installationId, message)
         return message
     }
 
@@ -132,11 +139,12 @@ class InquiryService(
         threadId: UUID,
         installationId: UUID,
     ) {
-        getOwnedThreadOrThrow(threadId, installationId)
+        val thread = getOwnedThreadOrThrow(threadId, installationId)
         val timestamp = now()
         messageRepository.findByThreadIdAndSenderTypeAndReadAtIsNull(threadId, "ADMIN").forEach {
             it.readAt = timestamp
         }
+        publishRead(threadId, thread.installationId, "USER")
     }
 
     fun adminListThreads(assignedAdminUserId: String?): List<InquiryThread> =
@@ -174,16 +182,18 @@ class InquiryService(
         thread.lastMessageAt = timestamp
         thread.updatedAt = timestamp
         threadRepository.save(thread)
+        publishMessage(threadId, thread.installationId, message)
         return message
     }
 
     @Transactional
     fun adminMarkRead(threadId: UUID) {
-        getThreadOrThrow(threadId)
+        val thread = getThreadOrThrow(threadId)
         val timestamp = now()
         messageRepository.findByThreadIdAndSenderTypeAndReadAtIsNull(threadId, "USER").forEach {
             it.readAt = timestamp
         }
+        publishRead(threadId, thread.installationId, "ADMIN")
     }
 
     @Transactional
@@ -203,12 +213,61 @@ class InquiryService(
             thread.assignedAdminUserId = assignedAdminUserId
         }
         thread.updatedAt = now()
-        return threadRepository.save(thread)
+        val saved = threadRepository.save(thread)
+        publishThread(saved.id, saved.installationId, saved.status)
+        return saved
     }
 
     fun adminCloseThread(threadId: UUID) {
         val thread = getThreadOrThrow(threadId)
+        val installationId = thread.installationId
         threadRepository.delete(thread)
+        publishThread(thread.id, installationId, "CLOSED")
+    }
+
+    private fun publishMessage(
+        threadId: UUID,
+        installationId: UUID,
+        message: InquiryMessage,
+    ) {
+        eventPublisher.publish(
+            InquiryEvent(
+                kind = "message",
+                threadId = threadId.toString(),
+                installationId = installationId.toString(),
+                message = message.toMessageResponse(),
+            ),
+        )
+    }
+
+    private fun publishRead(
+        threadId: UUID,
+        installationId: UUID,
+        reader: String,
+    ) {
+        eventPublisher.publish(
+            InquiryEvent(
+                kind = "read",
+                threadId = threadId.toString(),
+                installationId = installationId.toString(),
+                reader = reader,
+            ),
+        )
+    }
+
+    private fun publishThread(
+        threadId: UUID,
+        installationId: UUID,
+        status: String,
+    ) {
+        eventPublisher.publish(
+            InquiryEvent(
+                kind = "thread",
+                threadId = threadId.toString(),
+                installationId = installationId.toString(),
+                status = status,
+            ),
+        )
     }
 
     companion object {

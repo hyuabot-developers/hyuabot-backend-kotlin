@@ -23,6 +23,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import tools.jackson.databind.ObjectMapper
@@ -335,6 +336,15 @@ class InquiryControllerTest {
             .perform(post("/api/v1/inquiry/threads/$threadId/read").header("X-Installation-Id", installationHeader()))
             .andExpect(status().isNotFound)
             .andExpect(jsonPath("$.message").value("THREAD_NOT_FOUND"))
+    }
+
+    @Test
+    @DisplayName("문의 실시간 스트림 - 200 SSE 연결")
+    fun testStream() {
+        mockMvc
+            .perform(get("/api/v1/inquiry/stream").header("X-Installation-Id", installationHeader()))
+            .andExpect(status().isOk)
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
     }
 
     @Test

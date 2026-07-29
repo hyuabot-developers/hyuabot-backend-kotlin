@@ -1,6 +1,5 @@
 package app.hyuabot.backend.inquiry.controller
 
-import app.hyuabot.backend.database.entity.InquiryMessage
 import app.hyuabot.backend.database.entity.InquiryThread
 import app.hyuabot.backend.inquiry.InquiryService
 import app.hyuabot.backend.inquiry.domain.MessageListResponse
@@ -8,9 +7,11 @@ import app.hyuabot.backend.inquiry.domain.MessageResponse
 import app.hyuabot.backend.inquiry.domain.OpenThreadRequest
 import app.hyuabot.backend.inquiry.domain.SendMessageRequest
 import app.hyuabot.backend.inquiry.domain.ThreadResponse
+import app.hyuabot.backend.inquiry.domain.toMessageResponse
 import app.hyuabot.backend.inquiry.exception.EmptyInquiryMessageException
 import app.hyuabot.backend.inquiry.exception.InquiryThreadForbiddenException
 import app.hyuabot.backend.inquiry.exception.InquiryThreadNotFoundException
+import app.hyuabot.backend.inquiry.sse.InquirySseRegistry
 import app.hyuabot.backend.utility.ResponseBuilder
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -20,6 +21,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter
 import java.util.UUID
 
 @RequestMapping("/api/v1/inquiry")
@@ -36,7 +39,16 @@ import java.util.UUID
 @Tag(name = "Inquiry", description = "문의 채팅(사용자) 관련 API")
 class InquiryController {
     @Autowired private lateinit var service: InquiryService
+
+    @Autowired private lateinit var registry: InquirySseRegistry
     private val logger = LoggerFactory.getLogger(javaClass)
+
+    @GetMapping("/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
+    @Operation(summary = "문의 실시간 스트림(사용자)", description = "설치 ID에 대한 문의 이벤트를 SSE로 수신합니다.")
+    @ApiResponse(responseCode = "200", description = "SSE 연결 성공")
+    fun stream(
+        @RequestHeader("X-Installation-Id") installationId: UUID,
+    ): SseEmitter = registry.registerForInstallation(installationId.toString())
 
     @PostMapping("/threads")
     @Operation(summary = "문의 스레드 생성", description = "활성 스레드가 있으면 반환하고, 없으면 새로 생성합니다.")
@@ -109,7 +121,7 @@ class InquiryController {
             val messages = service.getMessages(id, installationId, after)
             ResponseBuilder.response(
                 HttpStatus.OK,
-                MessageListResponse(messages.map { toMessageResponse(it) }),
+                MessageListResponse(messages.map { it.toMessageResponse() }),
             )
         } catch (_: InquiryThreadForbiddenException) {
             ResponseBuilder.response(HttpStatus.FORBIDDEN, ResponseBuilder.Message("FORBIDDEN"))
@@ -137,7 +149,7 @@ class InquiryController {
     ): ResponseEntity<*> =
         try {
             val message = service.sendUserMessage(id, installationId, request.body)
-            ResponseBuilder.response(HttpStatus.CREATED, toMessageResponse(message))
+            ResponseBuilder.response(HttpStatus.CREATED, message.toMessageResponse())
         } catch (_: InquiryThreadForbiddenException) {
             ResponseBuilder.response(HttpStatus.FORBIDDEN, ResponseBuilder.Message("FORBIDDEN"))
         } catch (_: InquiryThreadNotFoundException) {
@@ -184,14 +196,5 @@ class InquiryController {
             entryScreenName = thread.entryScreenName,
             lastMessageAt = thread.lastMessageAt?.toString(),
             createdAt = thread.createdAt.toString(),
-        )
-
-    private fun toMessageResponse(message: InquiryMessage): MessageResponse =
-        MessageResponse(
-            id = message.id!!,
-            senderType = message.senderType,
-            body = message.body,
-            readAt = message.readAt?.toString(),
-            createdAt = message.createdAt.toString(),
         )
 }

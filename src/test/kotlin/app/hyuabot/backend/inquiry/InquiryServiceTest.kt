@@ -4,10 +4,12 @@ import app.hyuabot.backend.database.entity.InquiryMessage
 import app.hyuabot.backend.database.entity.InquiryThread
 import app.hyuabot.backend.database.repository.InquiryMessageRepository
 import app.hyuabot.backend.database.repository.InquiryThreadRepository
+import app.hyuabot.backend.inquiry.domain.InquiryEvent
 import app.hyuabot.backend.inquiry.exception.EmptyInquiryMessageException
 import app.hyuabot.backend.inquiry.exception.InquiryThreadForbiddenException
 import app.hyuabot.backend.inquiry.exception.InquiryThreadNotFoundException
 import app.hyuabot.backend.inquiry.exception.InvalidInquiryStatusException
+import app.hyuabot.backend.inquiry.sse.InquiryEventPublisher
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -35,6 +37,9 @@ class InquiryServiceTest {
 
     @Mock
     lateinit var messageRepository: InquiryMessageRepository
+
+    @Mock
+    lateinit var eventPublisher: InquiryEventPublisher
 
     @InjectMocks
     lateinit var service: InquiryService
@@ -132,6 +137,7 @@ class InquiryServiceTest {
         whenever(
             threadRepository.findFirstByInstallationIdAndStatusInOrderByCreatedAtDesc(installationId, InquiryService.ACTIVE_STATUSES),
         ).thenReturn(existing)
+        whenever(messageRepository.save(any<InquiryMessage>())).thenAnswer { (it.arguments[0] as InquiryMessage).apply { id = 10L } }
         val result =
             service.openOrGetActiveThread(installationId, "iOS", null, null, null, "shuttle", "셔틀")
         assertSame(existing, result)
@@ -143,6 +149,12 @@ class InquiryServiceTest {
                 senderType == "SYSTEM" && body == InquiryService.entryScreenSystemMessage("셔틀")
             },
         )
+        verify(eventPublisher).publish(
+            argThat<InquiryEvent> {
+                kind == "message" &&
+                    installationId == this@InquiryServiceTest.installationId.toString()
+            },
+        )
     }
 
     @Test
@@ -152,6 +164,7 @@ class InquiryServiceTest {
         whenever(
             threadRepository.findFirstByInstallationIdAndStatusInOrderByCreatedAtDesc(installationId, InquiryService.ACTIVE_STATUSES),
         ).thenReturn(existing)
+        whenever(messageRepository.save(any<InquiryMessage>())).thenAnswer { (it.arguments[0] as InquiryMessage).apply { id = 11L } }
         service.openOrGetActiveThread(installationId, "iOS", null, null, null, "cafeteria", null)
         assertNull(existing.entryScreenName)
         verify(messageRepository).save(
@@ -225,12 +238,13 @@ class InquiryServiceTest {
     fun testSendUserMessage() {
         val target = thread()
         whenever(threadRepository.findById(threadId)).thenReturn(Optional.of(target))
-        whenever(messageRepository.save(any<InquiryMessage>())).thenAnswer { it.arguments[0] as InquiryMessage }
+        whenever(messageRepository.save(any<InquiryMessage>())).thenAnswer { (it.arguments[0] as InquiryMessage).apply { id = 1L } }
         val result = service.sendUserMessage(threadId, installationId, "안녕하세요")
         assertEquals("USER", result.senderType)
         assertEquals("안녕하세요", result.body)
         assertNotNull(target.lastMessageAt)
         verify(threadRepository).save(target)
+        verify(eventPublisher).publish(argThat<InquiryEvent> { kind == "message" && message?.senderType == "USER" })
     }
 
     @Test
@@ -248,6 +262,7 @@ class InquiryServiceTest {
         whenever(messageRepository.findByThreadIdAndSenderTypeAndReadAtIsNull(threadId, "ADMIN")).thenReturn(listOf(unread))
         service.markReadByUser(threadId, installationId)
         assertNotNull(unread.readAt)
+        verify(eventPublisher).publish(argThat<InquiryEvent> { kind == "read" && reader == "USER" })
     }
 
     @Test
@@ -310,12 +325,13 @@ class InquiryServiceTest {
     fun testAdminReply() {
         val target = thread()
         whenever(threadRepository.findById(threadId)).thenReturn(Optional.of(target))
-        whenever(messageRepository.save(any<InquiryMessage>())).thenAnswer { it.arguments[0] as InquiryMessage }
+        whenever(messageRepository.save(any<InquiryMessage>())).thenAnswer { (it.arguments[0] as InquiryMessage).apply { id = 1L } }
         val result = service.adminReply(threadId, "adminUser", "답변입니다")
         assertEquals("ADMIN", result.senderType)
         assertEquals("adminUser", result.senderAdminUserId)
         assertEquals("답변입니다", result.body)
         verify(threadRepository).save(target)
+        verify(eventPublisher).publish(argThat<InquiryEvent> { kind == "message" && message?.senderType == "ADMIN" })
     }
 
     @Test
@@ -333,6 +349,7 @@ class InquiryServiceTest {
         whenever(messageRepository.findByThreadIdAndSenderTypeAndReadAtIsNull(threadId, "USER")).thenReturn(listOf(unread))
         service.adminMarkRead(threadId)
         assertNotNull(unread.readAt)
+        verify(eventPublisher).publish(argThat<InquiryEvent> { kind == "read" && reader == "ADMIN" })
     }
 
     @Test
@@ -360,6 +377,7 @@ class InquiryServiceTest {
         whenever(threadRepository.save(any<InquiryThread>())).thenAnswer { it.arguments[0] as InquiryThread }
         val result = service.adminUpdateThread(threadId, "PENDING", null)
         assertEquals("PENDING", result.status)
+        verify(eventPublisher).publish(argThat<InquiryEvent> { kind == "thread" && status == "PENDING" })
     }
 
     @Test
@@ -386,6 +404,7 @@ class InquiryServiceTest {
         whenever(threadRepository.findById(threadId)).thenReturn(Optional.of(target))
         service.adminCloseThread(threadId)
         verify(threadRepository).delete(target)
+        verify(eventPublisher).publish(argThat<InquiryEvent> { kind == "thread" && status == "CLOSED" })
     }
 
     @Test

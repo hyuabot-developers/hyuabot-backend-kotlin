@@ -27,6 +27,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delet
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import tools.jackson.databind.ObjectMapper
@@ -358,6 +359,16 @@ class InquiryAdminControllerTest {
                     .content(objectMapper.writeValueAsString(PatchThreadRequest(status = "PENDING"))),
             ).andExpect(status().isInternalServerError)
             .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
+    }
+
+    @Test
+    @DisplayName("문의 실시간 스트림(관리자) - 200 SSE 연결")
+    @WithCustomMockUser(username = "adminUser")
+    fun testStream() {
+        mockMvc
+            .perform(get("/api/v1/inquiry/admin/stream"))
+            .andExpect(status().isOk)
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
     }
 
     @Test
