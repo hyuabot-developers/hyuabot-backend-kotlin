@@ -60,4 +60,25 @@ class InquiryMessageTest {
         val entity = InquiryMessage::class.java.getDeclaredConstructor().newInstance()
         assertNotNull(entity)
     }
+
+    @Test
+    fun mutableProperties() {
+        val now = ZonedDateTime.now()
+        val other = UUID.fromString("22222222-2222-2222-2222-222222222222")
+        val entity = create()
+        entity.id = 99L
+        entity.threadId = other
+        entity.senderType = "ADMIN"
+        entity.senderAdminUserId = "admin"
+        entity.body = "답변"
+        entity.readAt = now
+        entity.createdAt = now
+        assertEquals(99L, entity.id)
+        assertEquals(other, entity.threadId)
+        assertEquals("ADMIN", entity.senderType)
+        assertEquals("admin", entity.senderAdminUserId)
+        assertEquals("답변", entity.body)
+        assertEquals(now, entity.readAt)
+        assertEquals(now, entity.createdAt)
+    }
 }

@@ -73,4 +73,34 @@ class InquiryThreadTest {
         val entity = InquiryThread::class.java.getDeclaredConstructor().newInstance()
         assertNotNull(entity)
     }
+
+    @Test
+    fun mutableProperties() {
+        val now = ZonedDateTime.now()
+        val entity = create()
+        entity.installationId = otherId
+        entity.platform = "AOS"
+        entity.appVersion = "2.0.0"
+        entity.status = "PENDING"
+        entity.subject = "제목"
+        entity.contactEmail = "a@b.com"
+        entity.entryScreen = "cafeteria"
+        entity.entryScreenName = "학식"
+        entity.assignedAdminUserId = "admin"
+        entity.lastMessageAt = now
+        entity.createdAt = now
+        entity.updatedAt = now
+        assertEquals(otherId, entity.installationId)
+        assertEquals("AOS", entity.platform)
+        assertEquals("2.0.0", entity.appVersion)
+        assertEquals("PENDING", entity.status)
+        assertEquals("제목", entity.subject)
+        assertEquals("a@b.com", entity.contactEmail)
+        assertEquals("cafeteria", entity.entryScreen)
+        assertEquals("학식", entity.entryScreenName)
+        assertEquals("admin", entity.assignedAdminUserId)
+        assertEquals(now, entity.lastMessageAt)
+        assertEquals(now, entity.createdAt)
+        assertEquals(now, entity.updatedAt)
+    }
 }

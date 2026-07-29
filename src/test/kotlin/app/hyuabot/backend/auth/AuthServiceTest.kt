@@ -163,6 +163,15 @@ class AuthServiceTest {
         assertThrows<InvalidUserInputException> {
             authService.updateProfile("testUser", UpdateProfileRequest("User", " ", ""))
         }
+        assertThrows<InvalidUserInputException> {
+            authService.updateProfile("testUser", UpdateProfileRequest("a".repeat(21), "test@example.com", ""))
+        }
+        assertThrows<InvalidUserInputException> {
+            authService.updateProfile("testUser", UpdateProfileRequest("User", "a".repeat(51), ""))
+        }
+        assertThrows<InvalidUserInputException> {
+            authService.updateProfile("testUser", UpdateProfileRequest("User", "test@example.com", "0".repeat(16)))
+        }
     }
 
     @Test

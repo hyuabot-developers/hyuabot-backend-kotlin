@@ -146,6 +146,22 @@ class InquiryServiceTest {
     }
 
     @Test
+    @DisplayName("openOrGetActiveThread - entryScreen 변경 + 이름 null -> 라우트 id로 시스템 메시지")
+    fun testOpenExistingThreadDifferentEntryScreenWithoutName() {
+        val existing = thread(entryScreen = "home", entryScreenName = "홈")
+        whenever(
+            threadRepository.findFirstByInstallationIdAndStatusInOrderByCreatedAtDesc(installationId, InquiryService.ACTIVE_STATUSES),
+        ).thenReturn(existing)
+        service.openOrGetActiveThread(installationId, "iOS", null, null, null, "cafeteria", null)
+        assertNull(existing.entryScreenName)
+        verify(messageRepository).save(
+            argThat<InquiryMessage> {
+                senderType == "SYSTEM" && body == InquiryService.entryScreenSystemMessage("cafeteria")
+            },
+        )
+    }
+
+    @Test
     @DisplayName("getActiveThread - 값 반환")
     fun testGetActiveThread() {
         val existing = thread()

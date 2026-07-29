@@ -143,6 +143,25 @@ class SubwayTimetableImportServiceTest {
         verify(store).release("subway", "preview")
     }
 
+    @Test
+    fun `preview updates a row when only the terminal station changes`() {
+        val current = listOf(entity("A", "S", "T1", "05:00:00"))
+        val request =
+            SubwayTimetableImportRequest(
+                stationIDs = listOf("A"),
+                entries = listOf(entry("A", "S", "T2", "05:00:00")),
+            )
+        whenever(stationRepository.findByIdIn(any())).thenReturn(stations("A", "S", "T1", "T2"))
+        whenever(timetableRepository.findByStationIDIn(listOf("A"))).thenReturn(current)
+        whenever(store.save(any(), any())).thenReturn(StoredTimetableImport("preview", ZonedDateTime.now().plusMinutes(15)))
+
+        val result = service.preview(request)
+
+        assertEquals(0, result.createCount)
+        assertEquals(1, result.updateCount)
+        assertEquals(0, result.deleteCount)
+    }
+
     private fun entry(
         station: String,
         start: String,

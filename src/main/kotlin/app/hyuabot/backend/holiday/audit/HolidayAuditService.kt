@@ -38,6 +38,7 @@ class HolidayAuditService(
                     service = "holiday",
                     message = "공식 공휴일 동기화가 36시간 이상 완료되지 않았습니다.",
                     path = publicHolidayPath(effectivePermissions),
+                    today = now.toLocalDate(),
                 )
         }
         if (AdminPermission.SHUTTLE in effectivePermissions) {
@@ -112,14 +113,14 @@ class HolidayAuditService(
         service: String,
         message: String,
         path: String,
+        today: LocalDate,
         date: LocalDate? = null,
-        today: LocalDate? = null,
     ) = HolidayAuditIssue(
         code = code,
         service = service,
         date = date,
         message = message,
-        severity = if (date != null && today != null && ChronoUnit.DAYS.between(today, date) <= CRITICAL_DAYS) "ERROR" else "WARNING",
+        severity = if (date != null && ChronoUnit.DAYS.between(today, date) <= CRITICAL_DAYS) "ERROR" else "WARNING",
         managementPath = path,
     )
 

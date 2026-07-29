@@ -134,6 +134,10 @@ class AdminUserServiceTest {
         assertThrows<InvalidUserInputException> { service.createUser(invalid, "creator") }
         assertThrows<InvalidUserInputException> { service.createUser(valid.copy(userID = " "), "creator") }
         assertThrows<InvalidUserInputException> { service.createUser(valid.copy(email = " "), "creator") }
+        assertThrows<InvalidUserInputException> { service.createUser(valid.copy(userID = "a".repeat(21)), "creator") }
+        assertThrows<InvalidUserInputException> { service.createUser(valid.copy(nickname = "a".repeat(21)), "creator") }
+        assertThrows<InvalidUserInputException> { service.createUser(valid.copy(email = "a".repeat(51)), "creator") }
+        assertThrows<InvalidUserInputException> { service.createUser(valid.copy(phone = "0".repeat(16)), "creator") }
     }
 
     @Test
@@ -170,6 +174,19 @@ class AdminUserServiceTest {
         assertFalse(result.active)
         assertEquals(listOf(AdminPermission.BUS), result.permissions)
         verify(userRepository).save(user)
+    }
+
+    @Test
+    fun updateUserLocatesTargetAfterNonMatchingEntry() {
+        val other = user(id = "other")
+        val target = user(id = "user")
+        whenever(userRepository.findAllForPermissionUpdate()).thenReturn(listOf(other, target))
+        whenever(userRepository.save(target)).thenReturn(target)
+
+        val result = service.updateUser("user", UpdateAdminUserRequest(false, setOf(AdminPermission.BUS)))
+
+        assertFalse(result.active)
+        verify(userRepository).save(target)
     }
 
     @Test
@@ -304,6 +321,19 @@ class AdminUserServiceTest {
         assertEquals(AdminUserStatus.DELETED, AdminUserResponse.from(target).status)
         verify(refreshTokenRepository).deleteAllByUserID("user")
         verifyNoInteractions(invitationService)
+    }
+
+    @Test
+    fun deleteUserLocatesTargetAfterNonMatchingEntry() {
+        val other = user(id = "other")
+        val target = user(id = "user")
+        whenever(userRepository.findAllForPermissionUpdate()).thenReturn(listOf(other, target))
+        whenever(invitationRepository.findAllActiveRelatedForUpdate("user")).thenReturn(emptyList())
+
+        service.deleteUser("user", "admin")
+
+        assertFalse(target.active)
+        verify(refreshTokenRepository).deleteAllByUserID("user")
     }
 
     @Test
