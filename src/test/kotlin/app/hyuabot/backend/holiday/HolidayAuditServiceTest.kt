@@ -158,6 +158,57 @@ class HolidayAuditServiceTest {
     }
 
     @Test
+    fun `bus permission flags a stale but previously successful sync`() {
+        val syncState =
+            HolidaySyncState(
+                source = "KASI",
+                lastAttemptAt = now.minusHours(40),
+                lastSuccessAt = now.minusHours(40),
+                rangeStart = now.toLocalDate(),
+                rangeEnd = now.toLocalDate().plusYears(1),
+                lastError = null,
+            )
+        whenever(syncStateRepository.findBySource("KASI")).thenReturn(syncState)
+
+        val result = service().audit(setOf(AdminPermission.BUS), now)
+
+        assertEquals("PUBLIC_HOLIDAY_SYNC_STALE", result.issues.single().code)
+        assertEquals("/bus/holiday", result.issues.single().managementPath)
+    }
+
+    @Test
+    fun `weekend timetable present clears the shuttle weekend issue`() {
+        val date = now.toLocalDate().plusDays(5)
+        val syncState =
+            HolidaySyncState(
+                source = "KASI",
+                lastAttemptAt = now.minusHours(1),
+                lastSuccessAt = now.minusHours(1),
+                rangeStart = now.toLocalDate(),
+                rangeEnd = now.toLocalDate().plusYears(1),
+                lastError = null,
+            )
+        whenever(syncStateRepository.findBySource("KASI")).thenReturn(syncState)
+        whenever(shuttleHolidayRepository.findAll()).thenReturn(emptyList())
+        whenever(publicHolidayRepository.findOfficialHolidaysBetween(any(), any(), any(), any())).thenReturn(
+            listOf(PublicHoliday(1, date, "광복절", "solar")),
+        )
+        whenever(shuttleHolidayRepository.findByDateAndCalendarType(date, "solar")).thenReturn(
+            ShuttleHoliday(1, date, "weekends", "solar"),
+        )
+        whenever(shuttlePeriodService.findShuttlePeriod(date)).thenReturn(
+            app.hyuabot.backend.database.entity
+                .ShuttlePeriod(1, "semester", now.minusDays(1), now.plusDays(30), null),
+        )
+        whenever(shuttleTimetableRepository.existsByPeriodTypeAndWeekday("semester", false)).thenReturn(true)
+
+        val result = service().audit(setOf(AdminPermission.SHUTTLE), now)
+
+        assertTrue(result.issues.isEmpty())
+        verify(shuttleTimetableRepository).existsByPeriodTypeAndWeekday("semester", false)
+    }
+
+    @Test
     fun `permissions limit audit scope and select available management path`() {
         whenever(syncStateRepository.findBySource("KASI")).thenReturn(null)
         val subway = service().audit(setOf(AdminPermission.SUBWAY), now)

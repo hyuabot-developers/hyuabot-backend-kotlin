@@ -66,6 +66,61 @@ class InquiryControllerTest {
 
     private fun installationHeader() = installationId.toString()
 
+    private fun threadWithLastMessage() =
+        InquiryThread(
+            id = threadId,
+            installationId = installationId,
+            platform = "iOS",
+            status = "OPEN",
+            lastMessageAt = ZonedDateTime.now(),
+            createdAt = ZonedDateTime.now(),
+            updatedAt = ZonedDateTime.now(),
+        )
+
+    private fun readMessage() =
+        InquiryMessage(
+            id = 2L,
+            threadId = threadId,
+            senderType = "ADMIN",
+            body = "답변",
+            readAt = ZonedDateTime.now(),
+            createdAt = ZonedDateTime.now(),
+        )
+
+    @Test
+    @DisplayName("문의 스레드 생성 - 플랫폼 헤더/마지막 메시지 시각 포함")
+    fun testOpenThreadWithPlatformHeader() {
+        doReturn(threadWithLastMessage()).whenever(service).openOrGetActiveThread(
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+        )
+        mockMvc
+            .perform(
+                post("/api/v1/inquiry/threads")
+                    .header("X-Installation-Id", installationHeader())
+                    .header("X-App-Platform", "iOS")
+                    .header("X-App-Version", "1.0.0")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(OpenThreadRequest(subject = "제목"))),
+            ).andExpect(status().isCreated)
+            .andExpect(jsonPath("$.lastMessageAt").isNotEmpty)
+    }
+
+    @Test
+    @DisplayName("문의 메시지 목록 조회 - 읽은 메시지 포함")
+    fun testGetMessagesWithReadMessage() {
+        doReturn(listOf(readMessage())).whenever(service).getMessages(anyOrNull(), anyOrNull(), anyOrNull())
+        mockMvc
+            .perform(get("/api/v1/inquiry/threads/$threadId/messages").header("X-Installation-Id", installationHeader()))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.result[0].readAt").isNotEmpty)
+    }
+
     @Test
     @DisplayName("문의 스레드 생성 - 성공")
     fun testOpenThread() {

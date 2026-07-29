@@ -22,6 +22,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZonedDateTime
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class ShuttleDemandWindowServiceTest {
@@ -169,5 +170,47 @@ class ShuttleDemandWindowServiceTest {
         service.demandWindow("station", now)
 
         verify(timetableService, times(1)).getShuttleTimetableBatch(any())
+    }
+
+    @Test
+    fun `recomputes the schedule when the date changes`() {
+        stubOperatingWeekday()
+        stubSchedule(mapOf("station" to listOf(LocalTime.of(11, 0), LocalTime.of(13, 0))))
+
+        service.demandWindow("station", now)
+        // 2026-07-22 is a different date, so the cached entry must be discarded.
+        service.demandWindow("station", Instant.parse("2026-07-22T03:00:00Z"))
+
+        verify(timetableService, times(2)).getShuttleTimetableBatch(any())
+    }
+
+    @Test
+    fun `runs a weekend schedule on a saturday`() {
+        stubOperatingWeekday()
+        stubSchedule(mapOf("station" to listOf(LocalTime.of(11, 0), LocalTime.of(13, 0))))
+
+        // 2026-07-25 is a Saturday (dayOfWeek value 6).
+        val window = service.demandWindow("station", Instant.parse("2026-07-25T03:00:00Z"))
+
+        assertNotNull(window)
+    }
+
+    @Test
+    fun `runs a weekend schedule on a sunday`() {
+        stubOperatingWeekday()
+        stubSchedule(mapOf("station" to listOf(LocalTime.of(11, 0), LocalTime.of(13, 0))))
+
+        // 2026-07-26 is a Sunday (dayOfWeek value 7).
+        val window = service.demandWindow("station", Instant.parse("2026-07-26T03:00:00Z"))
+
+        assertNotNull(window)
+    }
+
+    @Test
+    fun `returns null when the timetable batch has no entry for the stop`() {
+        stubOperatingWeekday()
+        whenever(timetableService.getShuttleTimetableBatch(any())).thenReturn(emptyMap())
+
+        assertNull(service.demandWindow("station", now))
     }
 }

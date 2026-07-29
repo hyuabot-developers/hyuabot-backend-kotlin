@@ -302,6 +302,19 @@ class AdminOverviewServiceTest {
         assertNull(service.getOverview(setOf(AdminPermission.BUS), current).weatherForecast)
     }
 
+    @Test
+    fun `subway permission alone audits holidays and flags jobs that failed without ever succeeding`() {
+        val now = Instant.now()
+        whenever(prometheusClient.getCronJobRuns()).thenReturn(
+            mapOf("subway-realtime-cron-job" to CronJobRun(null, now.minusSeconds(60).toString())),
+        )
+
+        val result = service.getOverview(setOf(AdminPermission.SUBWAY))
+
+        assertEquals("ERROR", result.services.first { it.id == "subway" }.status)
+        assertNotNull(result.services.first { it.id == "holiday-configuration" })
+    }
+
     private fun invitation(expiresAt: ZonedDateTime) =
         AdminUserInvitation(
             uuid = UUID.randomUUID(),

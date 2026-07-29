@@ -68,6 +68,50 @@ class InquiryAdminControllerTest {
             createdAt = ZonedDateTime.now(),
         )
 
+    private fun threadWithLastMessage() =
+        InquiryThread(
+            id = threadId,
+            installationId = installationId,
+            platform = "iOS",
+            status = "OPEN",
+            lastMessageAt = ZonedDateTime.now(),
+            createdAt = ZonedDateTime.now(),
+            updatedAt = ZonedDateTime.now(),
+        )
+
+    private fun readMessage() =
+        InquiryMessage(
+            id = 2L,
+            threadId = threadId,
+            senderType = "USER",
+            body = "문의",
+            readAt = ZonedDateTime.now(),
+            createdAt = ZonedDateTime.now(),
+        )
+
+    @Test
+    @DisplayName("스레드 단건 조회 - 마지막 메시지 시각 포함")
+    @WithCustomMockUser(username = "adminUser")
+    fun testGetThreadWithLastMessage() {
+        doReturn(threadWithLastMessage()).whenever(service).adminGetThread(threadId)
+        mockMvc
+            .perform(get("/api/v1/inquiry/admin/threads/$threadId"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.lastMessageAt").isNotEmpty)
+    }
+
+    @Test
+    @DisplayName("메시지 목록 조회 - 읽은 메시지 포함")
+    @WithCustomMockUser(username = "adminUser")
+    fun testGetMessagesWithReadMessage() {
+        doReturn(thread()).whenever(service).adminGetThread(threadId)
+        doReturn(listOf(readMessage())).whenever(service).getMessagesForAdmin(threadId)
+        mockMvc
+            .perform(get("/api/v1/inquiry/admin/threads/$threadId/messages"))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.result[0].readAt").isNotEmpty)
+    }
+
     @Test
     @DisplayName("스레드 목록 조회 - 배정된 것만")
     @WithCustomMockUser(username = "adminUser")
