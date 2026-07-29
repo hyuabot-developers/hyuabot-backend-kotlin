@@ -70,7 +70,13 @@ class InquiryControllerTest {
     @DisplayName("문의 스레드 생성 - 성공")
     fun testOpenThread() {
         doReturn(thread()).whenever(service).openOrGetActiveThread(
-            anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
         )
         mockMvc
             .perform(
@@ -87,7 +93,13 @@ class InquiryControllerTest {
     @DisplayName("문의 스레드 생성 - 기타 예외")
     fun testOpenThreadError() {
         doThrow(RuntimeException("error")).whenever(service).openOrGetActiveThread(
-            anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(), anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
+            anyOrNull(),
         )
         mockMvc
             .perform(
