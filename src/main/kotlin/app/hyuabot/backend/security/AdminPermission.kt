@@ -10,6 +10,7 @@ enum class AdminPermission {
     CONTACT,
     CALENDAR,
     NOTICE,
+    INQUIRY,
     ;
 
     companion object {

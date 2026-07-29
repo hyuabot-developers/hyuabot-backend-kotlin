@@ -64,6 +64,10 @@ class SecurityConfig(
                         "/actuator/health/**",
                         "/actuator/prometheus",
                     ).permitAll()
+                    .requestMatchers("/api/v1/inquiry/admin/**")
+                    .hasAuthority(AdminPermission.INQUIRY.name)
+                    .requestMatchers("/api/v1/inquiry/**")
+                    .permitAll()
                     .requestMatchers("/api/v1/admin/**")
                     .hasAuthority(AdminPermission.SUPER_ADMIN.name)
                     .requestMatchers("/api/v1/building/**")
