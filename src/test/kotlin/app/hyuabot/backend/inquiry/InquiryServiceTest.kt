@@ -9,6 +9,7 @@ import app.hyuabot.backend.inquiry.exception.EmptyInquiryMessageException
 import app.hyuabot.backend.inquiry.exception.InquiryThreadForbiddenException
 import app.hyuabot.backend.inquiry.exception.InquiryThreadNotFoundException
 import app.hyuabot.backend.inquiry.exception.InvalidInquiryStatusException
+import app.hyuabot.backend.inquiry.push.InquiryPushService
 import app.hyuabot.backend.inquiry.sse.InquiryEventPublisher
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -19,6 +20,7 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -40,6 +42,9 @@ class InquiryServiceTest {
 
     @Mock
     lateinit var eventPublisher: InquiryEventPublisher
+
+    @Mock
+    lateinit var pushService: InquiryPushService
 
     @InjectMocks
     lateinit var service: InquiryService
@@ -332,6 +337,16 @@ class InquiryServiceTest {
         assertEquals("답변입니다", result.body)
         verify(threadRepository).save(target)
         verify(eventPublisher).publish(argThat<InquiryEvent> { kind == "message" && message?.senderType == "ADMIN" })
+    }
+
+    @Test
+    @DisplayName("adminReply - 푸시 실패에도 답변 저장")
+    fun testAdminReplyPushFailure() {
+        val target = thread()
+        whenever(threadRepository.findById(threadId)).thenReturn(Optional.of(target))
+        whenever(messageRepository.save(any<InquiryMessage>())).thenAnswer { (it.arguments[0] as InquiryMessage).apply { id = 1L } }
+        doThrow(RuntimeException("push failure")).whenever(pushService).notifyAdminMessage(any(), any(), any(), any())
+        assertEquals("ADMIN", service.adminReply(threadId, "adminUser", "답변").senderType)
     }
 
     @Test

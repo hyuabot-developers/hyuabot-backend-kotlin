@@ -7,6 +7,7 @@ import app.hyuabot.backend.inquiry.domain.SendMessageRequest
 import app.hyuabot.backend.inquiry.exception.EmptyInquiryMessageException
 import app.hyuabot.backend.inquiry.exception.InquiryThreadForbiddenException
 import app.hyuabot.backend.inquiry.exception.InquiryThreadNotFoundException
+import app.hyuabot.backend.inquiry.push.InquiryPushService
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
@@ -21,6 +22,7 @@ import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
@@ -36,6 +38,9 @@ import java.util.UUID
 class InquiryControllerTest {
     @MockitoBean
     private lateinit var service: InquiryService
+
+    @MockitoBean
+    private lateinit var pushService: InquiryPushService
 
     @Autowired
     private lateinit var mockMvc: MockMvc
@@ -353,6 +358,40 @@ class InquiryControllerTest {
         doThrow(RuntimeException("error")).whenever(service).markReadByUser(anyOrNull(), anyOrNull())
         mockMvc
             .perform(post("/api/v1/inquiry/threads/$threadId/read").header("X-Installation-Id", installationHeader()))
+            .andExpect(status().isInternalServerError)
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
+    }
+
+    @Test
+    @DisplayName("푸시 토큰 등록과 해제 - 204")
+    fun testPushTokenRegistration() {
+        mockMvc
+            .perform(
+                post("/api/v1/inquiry/push-token")
+                    .header("X-Installation-Id", installationHeader())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"provider\":\"FCM\",\"token\":\"token\",\"platform\":\"ANDROID\"}"),
+            ).andExpect(status().isNoContent)
+        mockMvc
+            .perform(delete("/api/v1/inquiry/push-token").queryParam("provider", "FCM").queryParam("token", "token"))
+            .andExpect(status().isNoContent)
+    }
+
+    @Test
+    @DisplayName("푸시 토큰 등록과 해제 - 기타 예외")
+    fun testPushTokenError() {
+        doThrow(RuntimeException("error")).whenever(pushService).registerToken(any(), any(), any(), any())
+        mockMvc
+            .perform(
+                post("/api/v1/inquiry/push-token")
+                    .header("X-Installation-Id", installationHeader())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"provider\":\"FCM\",\"token\":\"token\",\"platform\":\"ANDROID\"}"),
+            ).andExpect(status().isInternalServerError)
+            .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
+        doThrow(RuntimeException("error")).whenever(pushService).unregisterToken(any(), any())
+        mockMvc
+            .perform(delete("/api/v1/inquiry/push-token").queryParam("provider", "FCM").queryParam("token", "token"))
             .andExpect(status().isInternalServerError)
             .andExpect(jsonPath("$.message").value("INTERNAL_SERVER_ERROR"))
     }

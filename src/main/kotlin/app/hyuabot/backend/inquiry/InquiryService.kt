@@ -10,6 +10,7 @@ import app.hyuabot.backend.inquiry.exception.EmptyInquiryMessageException
 import app.hyuabot.backend.inquiry.exception.InquiryThreadForbiddenException
 import app.hyuabot.backend.inquiry.exception.InquiryThreadNotFoundException
 import app.hyuabot.backend.inquiry.exception.InvalidInquiryStatusException
+import app.hyuabot.backend.inquiry.push.InquiryPushService
 import app.hyuabot.backend.inquiry.sse.InquiryEventPublisher
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import org.springframework.stereotype.Service
@@ -22,6 +23,7 @@ class InquiryService(
     private val threadRepository: InquiryThreadRepository,
     private val messageRepository: InquiryMessageRepository,
     private val eventPublisher: InquiryEventPublisher,
+    private val pushService: InquiryPushService,
 ) {
     private fun now(): ZonedDateTime = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone)
 
@@ -183,7 +185,20 @@ class InquiryService(
         thread.updatedAt = timestamp
         threadRepository.save(thread)
         publishMessage(threadId, thread.installationId, message)
+        notifyAdminReply(thread.installationId, threadId, body)
         return message
+    }
+
+    private fun notifyAdminReply(
+        installationId: UUID,
+        threadId: UUID,
+        body: String,
+    ) {
+        try {
+            pushService.notifyAdminMessage(installationId, threadId, PUSH_TITLE, body.take(PUSH_PREVIEW_LIMIT))
+        } catch (e: Exception) {
+            // 푸시 실패는 흐름을 막지 않는다.
+        }
     }
 
     @Transactional
@@ -272,6 +287,8 @@ class InquiryService(
 
     companion object {
         val ACTIVE_STATUSES = listOf("OPEN", "PENDING")
+        const val PUSH_TITLE = "새 답변이 도착했어요"
+        const val PUSH_PREVIEW_LIMIT = 100
 
         fun entryScreenSystemMessage(screen: String): String = "사용자가 '$screen' 화면에서 문의를 시작했습니다."
     }

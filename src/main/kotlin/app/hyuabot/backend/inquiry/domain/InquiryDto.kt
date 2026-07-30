@@ -91,3 +91,12 @@ data class PatchThreadRequest(
     @get:Schema(description = "배정할 관리자 ID", example = "admin")
     val assignedAdminUserId: String? = null,
 )
+
+data class RegisterPushTokenRequest(
+    @get:Schema(description = "푸시 제공자(APNS/FCM)", example = "APNS")
+    val provider: String,
+    @get:Schema(description = "디바이스 토큰", example = "abcdef1234")
+    val token: String,
+    @get:Schema(description = "플랫폼(IOS/ANDROID)", example = "IOS")
+    val platform: String,
+)

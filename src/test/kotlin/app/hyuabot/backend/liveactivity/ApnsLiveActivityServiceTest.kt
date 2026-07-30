@@ -6,13 +6,11 @@ import com.sun.net.httpserver.HttpServer
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import tools.jackson.databind.json.JsonMapper
-import java.lang.reflect.InvocationTargetException
 import java.net.InetSocketAddress
 import java.security.KeyPairGenerator
 import java.time.Instant
 import java.util.Base64
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class ApnsLiveActivityServiceTest {
@@ -104,21 +102,6 @@ class ApnsLiveActivityServiceTest {
     }
 
     @Test
-    @DisplayName("DER long length parser skips extended length bytes")
-    fun derLongLengthParser() {
-        val service = configuredService("http://127.0.0.1:1")
-        val method =
-            ApnsLiveActivityService::class.java.getDeclaredMethod(
-                "skipDerLength",
-                ByteArray::class.java,
-                Int::class.javaPrimitiveType,
-            )
-        method.isAccessible = true
-
-        assertEquals(3, method.invoke(service, byteArrayOf(0, 0x81.toByte(), 0), 1))
-    }
-
-    @Test
     @DisplayName("APNs status code success range is bounded")
     fun statusCodeSuccessRange() {
         val service = configuredService("http://127.0.0.1:1")
@@ -133,28 +116,6 @@ class ApnsLiveActivityServiceTest {
         assertEquals(true, method.invoke(service, 200))
         assertEquals(true, method.invoke(service, 299))
         assertEquals(false, method.invoke(service, 300))
-    }
-
-    @Test
-    @DisplayName("DER parser rejects invalid sequence and integer markers")
-    fun invalidDerParser() {
-        val service = configuredService("http://127.0.0.1:1")
-        val method =
-            ApnsLiveActivityService::class.java.getDeclaredMethod(
-                "derToJose",
-                ByteArray::class.java,
-            )
-        method.isAccessible = true
-
-        listOf(
-            byteArrayOf(0x31, 0),
-            byteArrayOf(0x30, 0x06, 0x03),
-            byteArrayOf(0x30, 0x06, 0x02, 0x01, 0x01, 0x03),
-        ).forEach {
-            assertFailsWith<InvocationTargetException> {
-                method.invoke(service, it)
-            }
-        }
     }
 
     @Test

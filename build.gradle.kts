@@ -73,6 +73,8 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.13.0")
     // Calendar
     implementation("com.github.usingsky:KoreanLunarCalendar:0.3.1")
+    // Firebase Admin SDK (FCM push)
+    implementation("com.google.firebase:firebase-admin:9.4.3")
 }
 
 dependencyManagement {
@@ -144,6 +146,7 @@ tasks.jacocoTestCoverageVerification {
                         "**/app/hyuabot/backend/database/key/**",
                         "**/app/hyuabot/backend/codegen/**",
                         "**/app/hyuabot/backend/config/CacheConfig**",
+                        "**/app/hyuabot/backend/config/FirebaseConfig**",
                     )
                 }
             },
@@ -167,6 +170,7 @@ tasks.jacocoTestReport {
                         "**/app/hyuabot/backend/database/key/**",
                         "**/app/hyuabot/backend/codegen/**",
                         "**/app/hyuabot/backend/config/CacheConfig**",
+                        "**/app/hyuabot/backend/config/FirebaseConfig**",
                     )
                 }
             },
