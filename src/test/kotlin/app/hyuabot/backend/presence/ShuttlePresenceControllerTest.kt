@@ -21,6 +21,22 @@ class ShuttlePresenceControllerTest {
         )
 
     @Test
+    fun `returns all visible viewer counts without recording a heartbeat`() {
+        val counts =
+            ShuttlePresenceCountsResponse(
+                stops = listOf(ShuttlePresenceCountsResponse.StopViewerCount("station", 4L, true)),
+                updatedAt = Instant.parse("2026-07-21T03:00:00Z"),
+            )
+        whenever(service.getViewerCounts()).thenReturn(counts)
+
+        val response = controller.getViewerCounts()
+
+        assertEquals(200, response.statusCode.value())
+        assertEquals(counts, response.body)
+        verify(service).getViewerCounts()
+    }
+
+    @Test
     fun `returns the presence response for a valid heartbeat`() {
         val presence =
             ShuttlePresenceResponse(
