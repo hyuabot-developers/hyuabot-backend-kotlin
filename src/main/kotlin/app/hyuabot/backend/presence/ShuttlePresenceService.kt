@@ -62,6 +62,27 @@ class ShuttlePresenceService(
         return responseFor(count, now, nowEpoch - window.startEpoch)
     }
 
+    fun getViewerCounts(): ShuttlePresenceCountsResponse {
+        val now = Instant.now(watchAnalyticsClock)
+        val nowEpoch = now.epochSecond
+        val counts =
+            Stop.entries.map { stop ->
+                val window = shuttleDemandWindowService.demandWindow(stop.value, now)
+                val count =
+                    if (window == null) {
+                        0L
+                    } else {
+                        redisTemplate
+                            .opsForZSet()
+                            .count("presence:shuttle:${stop.value}", window.startEpoch.toDouble(), Double.POSITIVE_INFINITY) ?: 0L
+                    }
+                val activeWindowSeconds = window?.let { nowEpoch - it.startEpoch } ?: 0L
+                val response = responseFor(count, now, activeWindowSeconds)
+                ShuttlePresenceCountsResponse.StopViewerCount(stop.value, response.viewerCount, response.visible)
+            }
+        return ShuttlePresenceCountsResponse(stops = counts, updatedAt = now)
+    }
+
     internal fun responseFor(
         count: Long,
         now: Instant,

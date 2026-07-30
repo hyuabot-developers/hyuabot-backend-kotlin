@@ -8,3 +8,14 @@ data class ShuttlePresenceResponse(
     val updatedAt: Instant,
     val activeWindowSeconds: Long,
 )
+
+data class ShuttlePresenceCountsResponse(
+    val stops: List<StopViewerCount>,
+    val updatedAt: Instant,
+) {
+    data class StopViewerCount(
+        val stopId: String,
+        val viewerCount: Long?,
+        val visible: Boolean,
+    )
+}
