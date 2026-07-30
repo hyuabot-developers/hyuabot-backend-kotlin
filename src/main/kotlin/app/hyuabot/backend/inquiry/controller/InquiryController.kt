@@ -5,12 +5,14 @@ import app.hyuabot.backend.inquiry.InquiryService
 import app.hyuabot.backend.inquiry.domain.MessageListResponse
 import app.hyuabot.backend.inquiry.domain.MessageResponse
 import app.hyuabot.backend.inquiry.domain.OpenThreadRequest
+import app.hyuabot.backend.inquiry.domain.RegisterPushTokenRequest
 import app.hyuabot.backend.inquiry.domain.SendMessageRequest
 import app.hyuabot.backend.inquiry.domain.ThreadResponse
 import app.hyuabot.backend.inquiry.domain.toMessageResponse
 import app.hyuabot.backend.inquiry.exception.EmptyInquiryMessageException
 import app.hyuabot.backend.inquiry.exception.InquiryThreadForbiddenException
 import app.hyuabot.backend.inquiry.exception.InquiryThreadNotFoundException
+import app.hyuabot.backend.inquiry.push.InquiryPushService
 import app.hyuabot.backend.inquiry.sse.InquirySseRegistry
 import app.hyuabot.backend.utility.ResponseBuilder
 import io.swagger.v3.oas.annotations.Operation
@@ -23,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -41,6 +44,8 @@ class InquiryController {
     @Autowired private lateinit var service: InquiryService
 
     @Autowired private lateinit var registry: InquirySseRegistry
+
+    @Autowired private lateinit var pushService: InquiryPushService
     private val logger = LoggerFactory.getLogger(javaClass)
 
     @GetMapping("/stream", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
@@ -180,6 +185,42 @@ class InquiryController {
             ResponseBuilder.response(HttpStatus.NOT_FOUND, ResponseBuilder.Message("THREAD_NOT_FOUND"))
         } catch (e: Exception) {
             logger.error("Failed to mark inquiry messages read", e)
+            ResponseBuilder.response(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                ResponseBuilder.Message("INTERNAL_SERVER_ERROR"),
+            )
+        }
+
+    @PostMapping("/push-token")
+    @Operation(summary = "푸시 토큰 등록", description = "설치 ID에 대한 디바이스 푸시 토큰을 등록/갱신합니다.")
+    @ApiResponse(responseCode = "204", description = "푸시 토큰 등록 성공")
+    fun registerPushToken(
+        @RequestHeader("X-Installation-Id") installationId: UUID,
+        @RequestBody request: RegisterPushTokenRequest,
+    ): ResponseEntity<*> =
+        try {
+            pushService.registerToken(installationId, request.provider, request.token, request.platform)
+            ResponseBuilder.response(HttpStatus.NO_CONTENT, null)
+        } catch (e: Exception) {
+            logger.error("Failed to register push token", e)
+            ResponseBuilder.response(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                ResponseBuilder.Message("INTERNAL_SERVER_ERROR"),
+            )
+        }
+
+    @DeleteMapping("/push-token")
+    @Operation(summary = "푸시 토큰 해제", description = "제공자와 토큰이 일치하는 등록을 삭제합니다.")
+    @ApiResponse(responseCode = "204", description = "푸시 토큰 해제 성공")
+    fun unregisterPushToken(
+        @RequestParam("provider") provider: String,
+        @RequestParam("token") token: String,
+    ): ResponseEntity<*> =
+        try {
+            pushService.unregisterToken(provider, token)
+            ResponseBuilder.response(HttpStatus.NO_CONTENT, null)
+        } catch (e: Exception) {
+            logger.error("Failed to unregister push token", e)
             ResponseBuilder.response(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 ResponseBuilder.Message("INTERNAL_SERVER_ERROR"),
