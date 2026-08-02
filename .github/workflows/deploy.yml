@@ -62,8 +62,8 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
         with:
-          keep-state: true
-          cleanup: false
+          keep-state: false
+          cleanup: true
       - name: Build image
         uses: docker/build-push-action@v7
         with:
