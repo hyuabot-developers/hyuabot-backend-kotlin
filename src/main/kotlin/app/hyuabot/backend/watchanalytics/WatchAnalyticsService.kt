@@ -3,11 +3,13 @@ package app.hyuabot.backend.watchanalytics
 import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.data.redis.core.RedisTemplate
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import java.time.Clock
 import java.time.Duration
 import java.time.LocalDate
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 @Service
 class WatchAnalyticsService(
@@ -15,9 +17,20 @@ class WatchAnalyticsService(
     private val meterRegistry: MeterRegistry,
     private val watchAnalyticsClock: Clock,
 ) {
+    private val activeInstallationCounts = ConcurrentHashMap<String, Double>()
+
     init {
-        Platform.entries.forEach { platform -> registerActiveInstallationGauge(platform.value) }
-        registerActiveInstallationGauge(ALL_PLATFORMS)
+        val platforms = Platform.entries.map { it.value } + ALL_PLATFORMS
+        platforms.forEach { activeInstallationCounts[it] = 0.0 }
+        platforms.forEach { platform -> registerActiveInstallationGauge(platform) }
+    }
+
+    @Scheduled(fixedDelay = ACTIVE_INSTALLATION_REFRESH_INTERVAL_MS, initialDelay = 0)
+    internal fun refreshActiveInstallationCounts() {
+        activeInstallationCounts.keys.forEach { platform ->
+            activeInstallationCounts[platform] =
+                redisTemplate.opsForHyperLogLog().size(*activeInstallationKeys(platform).toTypedArray()).toDouble()
+        }
     }
 
     fun record(request: WatchAnalyticsEventRequest) {
@@ -62,9 +75,8 @@ class WatchAnalyticsService(
 
     private fun registerActiveInstallationGauge(platform: String) {
         Gauge
-            .builder("hyuabot.watch.active.installations") {
-                redisTemplate.opsForHyperLogLog().size(*activeInstallationKeys(platform).toTypedArray()).toDouble()
-            }.description("Estimated distinct Watch installations active during the rolling window")
+            .builder("hyuabot.watch.active.installations") { activeInstallationCounts.getValue(platform) }
+            .description("Estimated distinct Watch installations active during the rolling window")
             .tag("platform", platform)
             .tag("window", "${ACTIVE_WINDOW_DAYS}d")
             .register(meterRegistry)
@@ -131,6 +143,7 @@ class WatchAnalyticsService(
         private const val ACTIVE_WINDOW_DAYS = 28
         private const val ALL_PLATFORMS = "all"
         private const val NONE = "none"
+        private const val ACTIVE_INSTALLATION_REFRESH_INTERVAL_MS = 300_000L
         private val ACTIVE_KEY_TTL = Duration.ofDays(35)
         private val APP_VERSION_REGEX = Regex("[0-9A-Za-z][0-9A-Za-z.+_-]{0,31}")
     }
