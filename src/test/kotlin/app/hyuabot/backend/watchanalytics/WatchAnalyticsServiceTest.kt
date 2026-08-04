@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.data.redis.core.HyperLogLogOperations
@@ -121,18 +122,49 @@ class WatchAnalyticsServiceTest {
     }
 
     @Test
-    fun `reports rolling active installations through the platform gauge`() {
-        val gauge =
-            meterRegistry
-                .get("hyuabot.watch.active.installations")
-                .tag("platform", "watchos")
-                .tag("window", "28d")
-                .gauge()
-
-        assertEquals(0.0, gauge.value())
-        verify(hyperLogLogOperations).size(
+    fun `gauge starts at zero before the scheduled refresh runs`() {
+        listOf("watchos", "wear_os", "all").forEach { platform ->
+            assertEquals(
+                0.0,
+                meterRegistry
+                    .get("hyuabot.watch.active.installations")
+                    .tag("platform", platform)
+                    .tag("window", "28d")
+                    .gauge()
+                    .value(),
+            )
+        }
+        verify(hyperLogLogOperations, never()).size(
             *service.activeInstallationKeys("watchos", LocalDate.of(2026, 7, 13)).toTypedArray(),
         )
+    }
+
+    @Test
+    fun `refreshes gauges from redis on schedule`() {
+        val today = LocalDate.of(2026, 7, 13)
+        val watchosKeys = service.activeInstallationKeys("watchos", today).toTypedArray()
+        val wearOsKeys = service.activeInstallationKeys("wear_os", today).toTypedArray()
+        val allKeys = service.activeInstallationKeys("all", today).toTypedArray()
+        whenever(hyperLogLogOperations.size(*watchosKeys)).thenReturn(7L)
+        whenever(hyperLogLogOperations.size(*wearOsKeys)).thenReturn(7L)
+        whenever(hyperLogLogOperations.size(*allKeys)).thenReturn(7L)
+
+        service.refreshActiveInstallationCounts()
+
+        listOf("watchos", "wear_os", "all").forEach { platform ->
+            assertEquals(
+                7.0,
+                meterRegistry
+                    .get("hyuabot.watch.active.installations")
+                    .tag("platform", platform)
+                    .tag("window", "28d")
+                    .gauge()
+                    .value(),
+            )
+        }
+        verify(hyperLogLogOperations).size(*watchosKeys)
+        verify(hyperLogLogOperations).size(*wearOsKeys)
+        verify(hyperLogLogOperations).size(*allKeys)
     }
 
     private fun validRequest(

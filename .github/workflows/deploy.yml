@@ -92,9 +92,8 @@ jobs:
           image: ${{ env.IMAGE_NAME }}
 
   deploy:
-    # Merged pull requests publish and sync the immutable SHA image only.
-    # Production rollout remains an explicit manual action.
-    if: github.event_name == 'workflow_dispatch'
+    # Runs on workflow_dispatch, and automatically after a pull request merges to main.
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     needs: sync
     runs-on: [self-hosted, ARM64, Linux, 1st]
     environment: production
