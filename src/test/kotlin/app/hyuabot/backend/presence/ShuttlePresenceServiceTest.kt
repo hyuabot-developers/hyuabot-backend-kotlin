@@ -64,6 +64,10 @@ class ShuttlePresenceServiceTest {
             ),
             response.stops,
         )
+        val firstStop = response.stops.first()
+        assertEquals("dormitory_o", firstStop.stopId)
+        assertEquals(5L, firstStop.viewerCount)
+        assertTrue(firstStop.visible)
     }
 
     @Test
