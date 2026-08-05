@@ -3675,6 +3675,74 @@ class BusServiceTest {
     }
 
     @Test
+    @DisplayName("배차 간격 추정 - 시간표 항목이 1개 이하면 null")
+    fun testEstimateHeadwayMinutesNotEnoughData() {
+        assertEquals(null, realtimeService.estimateHeadwayMinutes(emptyList()))
+        assertEquals(null, realtimeService.estimateHeadwayMinutes(listOf(LocalTime.parse("08:00:00"))))
+    }
+
+    @Test
+    @DisplayName("배차 간격 추정 - 모든 시각이 동일하면(간격 0) null")
+    fun testEstimateHeadwayMinutesAllSameTime() {
+        val result =
+            realtimeService.estimateHeadwayMinutes(
+                listOf(LocalTime.parse("08:00:00"), LocalTime.parse("08:00:00")),
+            )
+        assertEquals(null, result)
+    }
+
+    @Test
+    @DisplayName("배차 간격 추정 - 홀수 개 간격의 중앙값")
+    fun testEstimateHeadwayMinutesOddGapCount() {
+        // gaps: 10, 20, 30 (odd count) -> median = 20
+        val result =
+            realtimeService.estimateHeadwayMinutes(
+                listOf(
+                    LocalTime.parse("08:00:00"),
+                    LocalTime.parse("08:10:00"),
+                    LocalTime.parse("08:30:00"),
+                    LocalTime.parse("09:00:00"),
+                ),
+            )
+        assertEquals(20, result)
+    }
+
+    @Test
+    @DisplayName("배차 간격 추정 - 짝수 개 간격의 중앙값(평균)")
+    fun testEstimateHeadwayMinutesEvenGapCount() {
+        // gaps: 10, 20 (even count) -> median = (10 + 20) / 2 = 15
+        val result =
+            realtimeService.estimateHeadwayMinutes(
+                listOf(LocalTime.parse("08:00:00"), LocalTime.parse("08:10:00"), LocalTime.parse("08:30:00")),
+            )
+        assertEquals(15, result)
+    }
+
+    @Test
+    @DisplayName("클러스터링 임계값 - 배차 간격 정보 없으면 기본값(4분) 사용")
+    fun testClusterThresholdMinutesFallback() {
+        assertEquals(4, realtimeService.clusterThresholdMinutes(null))
+    }
+
+    @Test
+    @DisplayName("클러스터링 임계값 - 배차 간격이 좁으면 하한(2분)으로 clamp")
+    fun testClusterThresholdMinutesLowerClamp() {
+        assertEquals(2, realtimeService.clusterThresholdMinutes(3))
+    }
+
+    @Test
+    @DisplayName("클러스터링 임계값 - 배차 간격이 넓으면 상한(12분)으로 clamp")
+    fun testClusterThresholdMinutesUpperClamp() {
+        assertEquals(12, realtimeService.clusterThresholdMinutes(100))
+    }
+
+    @Test
+    @DisplayName("클러스터링 임계값 - clamp 범위 내에서는 배차 간격 / 3")
+    fun testClusterThresholdMinutesNormalRange() {
+        assertEquals(10, realtimeService.clusterThresholdMinutes(30))
+    }
+
+    @Test
     @DisplayName("버스 도착 정보 배치 조회 - 도착 로그가 cutoff 이내로 필터링됨 (시간표 fallback 사용)")
     fun testGetArrivalBatchLogFilteredByCutoff() {
         val fixedNow = LocalDateTime.of(2025, 3, 3, 7, 0)
