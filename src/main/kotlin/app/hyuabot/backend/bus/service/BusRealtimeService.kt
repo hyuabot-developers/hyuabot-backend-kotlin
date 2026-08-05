@@ -40,6 +40,24 @@ class BusRealtimeService(
         return if (seconds >= threshold) seconds else seconds + 24 * 60 * 60
     }
 
+    /** Median gap (minutes) between consecutive scheduled departures — this route's typical dispatch interval. */
+    internal fun estimateHeadwayMinutes(departureTimes: List<LocalTime>): Int? {
+        if (departureTimes.size < 2) return null
+        val sortedSeconds = departureTimes.map { toServiceSeconds(it) }.sorted()
+        val gapMinutes = sortedSeconds.zipWithNext { a, b -> (b - a) / 60 }.filter { it > 0 }
+        if (gapMinutes.isEmpty()) return null
+        val sortedGaps = gapMinutes.sorted()
+        val mid = sortedGaps.size / 2
+        return if (sortedGaps.size % 2 == 0) (sortedGaps[mid - 1] + sortedGaps[mid]) / 2 else sortedGaps[mid]
+    }
+
+    /**
+     * Departure-log clustering window: a fraction of the route's own headway, so frequent routes
+     * (short headway) don't blur two distinct dispatches together, while infrequent routes get more
+     * slack to absorb day-to-day timing jitter.
+     */
+    internal fun clusterThresholdMinutes(headwayMinutes: Int?): Int = (((headwayMinutes ?: 12) / 3).coerceIn(2, 12))
+
     internal fun clusterDepartureTimes(
         times: List<LocalTime>,
         thresholdMinutes: Int = 3,
@@ -137,15 +155,16 @@ class BusRealtimeService(
                         isRealtime = true,
                     )
                 }
+            val timetableEntries = timetableGrouped[key.routeID to key.startStopID] ?: emptyList()
+            val headwayMinutes = estimateHeadwayMinutes(timetableEntries.map { it.departureTime })
             val rawLogTimes =
                 (logGrouped[key.routeID to key.stopID] ?: emptyList())
                     .map { it.departureTime }
             val logArrivals =
-                clusterDepartureTimes(rawLogTimes)
+                clusterDepartureTimes(rawLogTimes, clusterThresholdMinutes(headwayMinutes))
                     .filter { time -> (toServiceSeconds(time) - toServiceSeconds(currentTime)) / 60 > cutoffMinutes }
                     .map { logTime ->
                         val estimatedTerminalTime = logTime.minusMinutes(key.minuteFromStart.toLong())
-                        val timetableEntries = timetableGrouped[key.routeID to key.startStopID] ?: emptyList()
                         var terminalTime = estimatedTerminalTime
                         var bestDiff = Int.MAX_VALUE
                         for (entry in timetableEntries) {
@@ -159,7 +178,7 @@ class BusRealtimeService(
                     }.sortedBy { toServiceSeconds(it.time!!) }
             val scheduledArrivals =
                 if (logArrivals.isEmpty()) {
-                    (timetableGrouped[key.routeID to key.startStopID] ?: emptyList())
+                    timetableEntries
                         .filter { timetable ->
                             val estimatedArrival = timetable.departureTime.plusMinutes(key.minuteFromStart.toLong())
                             (toServiceSeconds(estimatedArrival) - toServiceSeconds(currentTime)) / 60 > cutoffMinutes
