@@ -18,6 +18,16 @@ class SubwayStationNameService(
             ?: fallback
     }
 
+    fun displayNameByKoreanName(
+        koreanName: String,
+        language: String?,
+    ): String {
+        val normalizedLanguage = normalizeLanguage(language)
+        return repository.findNameByKoreanName(koreanName, normalizedLanguage)
+            ?: repository.findNameByKoreanName(koreanName, DEFAULT_LANGUAGE)
+            ?: koreanName
+    }
+
     internal fun normalizeLanguage(language: String?): String {
         val tag =
             language

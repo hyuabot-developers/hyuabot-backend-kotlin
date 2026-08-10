@@ -55,6 +55,9 @@ class SubwayDataFetcherTest {
         whenever(subwayStationNameService.displayName(any(), anyOrNull(), any())).thenAnswer { invocation ->
             invocation.getArgument(2)
         }
+        whenever(subwayStationNameService.displayNameByKoreanName(any(), anyOrNull())).thenAnswer { invocation ->
+            invocation.getArgument(0)
+        }
     }
 
     private fun createRoute(
@@ -214,6 +217,7 @@ class SubwayDataFetcherTest {
     @DisplayName("전철 도착 정보 조회 (정상, 역 정보 + 실시간 정보 + 시간표 + 도착 정보)")
     fun testSubwayFullInfo() {
         whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
+        whenever(subwayStationNameService.displayNameByKoreanName("중앙", "en-US")).thenReturn("Jungang")
         whenever(subwayService.getRealtimeList(station.id, directions = listOf("up", "0"))).thenReturn(
             listOf(
                 createRealtime(
@@ -272,6 +276,7 @@ class SubwayDataFetcherTest {
                 """
                 {
                     subway(input: {
+                        language: "en-US",
                         keys: [{
                             stationID: "K449",
                             direction: ["up"],
@@ -318,6 +323,11 @@ class SubwayDataFetcherTest {
         assertEquals("K449", result[0]["stationID"])
         assertEquals("한대앞", result[0]["name"])
         assertEquals(49, result[0]["order"])
+        val realtime = result[0]["realtime"] as List<*>
+        assertEquals("Jungang", (realtime[0] as Map<*, *>)["location"])
+        val arrival = result[0]["arrival"] as List<*>
+        val arrivalEntries = ((arrival[0] as Map<*, *>)["entries"] as List<*>)
+        assertEquals("Jungang", (arrivalEntries[0] as Map<*, *>)["location"])
     }
 
     @Test

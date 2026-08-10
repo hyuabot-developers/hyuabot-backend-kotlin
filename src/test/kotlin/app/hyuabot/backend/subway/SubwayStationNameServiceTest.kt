@@ -57,4 +57,30 @@ class SubwayStationNameServiceTest {
         whenever(repository.findName("S07", "ko")).thenReturn(null)
         assertEquals("일산", service.displayName("S07", "en-US", "일산"))
     }
+
+    @Test
+    fun `returns translated name from Korean realtime location`() {
+        val service = SubwayStationNameService(repository)
+        whenever(repository.findNameByKoreanName("중앙", "en")).thenReturn("Jungang")
+
+        assertEquals("Jungang", service.displayNameByKoreanName("중앙", "en-US"))
+    }
+
+    @Test
+    fun `falls back to source realtime location`() {
+        val service = SubwayStationNameService(repository)
+        whenever(repository.findNameByKoreanName("임시역", "ja")).thenReturn(null)
+        whenever(repository.findNameByKoreanName("임시역", "ko")).thenReturn(null)
+
+        assertEquals("임시역", service.displayNameByKoreanName("임시역", "ja-JP"))
+    }
+
+    @Test
+    fun `falls back to Korean realtime location translation`() {
+        val service = SubwayStationNameService(repository)
+        whenever(repository.findNameByKoreanName("중앙", "ja")).thenReturn(null)
+        whenever(repository.findNameByKoreanName("중앙", "ko")).thenReturn("중앙")
+
+        assertEquals("중앙", service.displayNameByKoreanName("중앙", "ja-JP"))
+    }
 }

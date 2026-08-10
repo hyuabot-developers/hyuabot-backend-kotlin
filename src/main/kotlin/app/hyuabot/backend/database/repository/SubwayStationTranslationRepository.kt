@@ -22,4 +22,25 @@ class SubwayStationTranslationRepository(
                 stationID,
                 language,
             ).firstOrNull()
+
+    fun findNameByKoreanName(
+        koreanName: String,
+        language: String,
+    ): String? =
+        jdbcTemplate
+            .queryForList(
+                """
+                SELECT target.name
+                FROM subway_station_translation source
+                JOIN subway_station_translation target ON target.station_id = source.station_id
+                WHERE source.language = 'ko'
+                  AND source.name = ?
+                  AND target.language = ?
+                ORDER BY target.station_id
+                LIMIT 1
+                """.trimIndent(),
+                String::class.java,
+                koreanName,
+                language,
+            ).firstOrNull()
 }
