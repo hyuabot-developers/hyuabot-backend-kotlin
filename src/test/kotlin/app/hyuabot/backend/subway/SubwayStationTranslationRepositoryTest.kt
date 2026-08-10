@@ -41,4 +41,18 @@ class SubwayStationTranslationRepositoryTest {
 
         assertNull(repository.findName("K453", "en"))
     }
+
+    @Test
+    fun `returns translated station name by Korean name`() {
+        whenever(
+            jdbcTemplate.queryForList(
+                any<String>(),
+                eq(String::class.java),
+                eq("중앙"),
+                eq("en"),
+            ),
+        ).thenReturn(listOf("Jungang"))
+
+        assertEquals("Jungang", repository.findNameByKoreanName("중앙", "en"))
+    }
 }

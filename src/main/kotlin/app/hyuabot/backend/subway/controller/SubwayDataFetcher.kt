@@ -92,7 +92,7 @@ class SubwayDataFetcher(
         return entries.map {
             SubwayRealtime(
                 order = it.order,
-                location = it.location,
+                location = localizedLocation(it.location, dfe)!!,
                 stops = it.remainingStop,
                 minutes = it.remainingTime.toMinutes().toInt(),
                 direction = normalizeSubwayDirection(it.heading),
@@ -149,6 +149,7 @@ class SubwayDataFetcher(
                         weekday = weekday,
                         limit = null,
                     ).flatMap { it.entries }
+                    .map { it.withLocalizedLocation(dfe) }
                     .distinctBy {
                         listOf(
                             it.isRealtime,
@@ -166,6 +167,31 @@ class SubwayDataFetcher(
             )
         }
     }
+
+    private fun SubwayArrival.withLocalizedLocation(dfe: DgsDataFetchingEnvironment) =
+        SubwayArrival(
+            minutes = minutes,
+            origin = origin,
+            terminal = terminal,
+            isRealtime = isRealtime,
+            location = localizedLocation(location, dfe),
+            stops = stops,
+            trainNumber = trainNumber,
+            isExpress = isExpress,
+            isLast = isLast,
+            status = status,
+        )
+
+    private fun localizedLocation(
+        location: String?,
+        dfe: DgsDataFetchingEnvironment,
+    ): String? =
+        location?.let {
+            subwayStationNameService.displayNameByKoreanName(
+                it,
+                dfe.graphQlContext.get("subwayLanguage"),
+            )
+        }
 
     private fun SubwayRouteStation.toSubwayStation() =
         SubwayOriginTerminal(
