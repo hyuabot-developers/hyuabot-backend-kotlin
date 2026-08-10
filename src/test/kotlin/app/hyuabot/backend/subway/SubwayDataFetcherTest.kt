@@ -12,12 +12,15 @@ import app.hyuabot.backend.subway.controller.SubwayDataFetcher
 import app.hyuabot.backend.subway.controller.SubwayTimetableDataLoader
 import app.hyuabot.backend.subway.domain.SubwayTimetableKey
 import app.hyuabot.backend.subway.service.SubwayService
+import app.hyuabot.backend.subway.service.SubwayStationNameService
 import app.hyuabot.backend.utility.ScalarRegistration
 import com.netflix.graphql.dgs.DgsQueryExecutor
 import com.netflix.graphql.dgs.test.EnableDgsTest
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.assertNotNull
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.whenever
@@ -44,6 +47,15 @@ class SubwayDataFetcherTest {
     @MockitoBean private lateinit var subwayService: SubwayService
 
     @MockitoBean private lateinit var publicHolidayService: PublicHolidayService
+
+    @MockitoBean private lateinit var subwayStationNameService: SubwayStationNameService
+
+    @BeforeEach
+    fun configureStationNameFallback() {
+        whenever(subwayStationNameService.displayName(any(), anyOrNull(), any())).thenAnswer { invocation ->
+            invocation.getArgument(2)
+        }
+    }
 
     private fun createRoute(
         id: Int = 1004,
@@ -175,6 +187,7 @@ class SubwayDataFetcherTest {
                 """
                 {
                     subway(input: {
+                        language: "en-US",
                         keys: [{
                             stationID: "K449",
                             direction: ["up"],
@@ -913,7 +926,7 @@ class SubwayDataFetcherTest {
     @Test
     @DisplayName("전철 도착 정보 필터 - 실시간이 없으면 원본 목록 반환")
     fun testFilterKeepsTimetableWhenRealtimeIsEmpty() {
-        val fetcher = SubwayDataFetcher(subwayService, publicHolidayService)
+        val fetcher = SubwayDataFetcher(subwayService, publicHolidayService, subwayStationNameService)
         val method =
             SubwayDataFetcher::class.java.getDeclaredMethod(
                 "filterTimetableAfterRealtime",
@@ -940,7 +953,7 @@ class SubwayDataFetcherTest {
     @Test
     @DisplayName("전철 도착 정보 필터 - 첫 실시간 값이 최대여도 시간표 간격 적용")
     fun testFilterUsesFirstRealtimeWhenItIsMaximum() {
-        val fetcher = SubwayDataFetcher(subwayService, publicHolidayService)
+        val fetcher = SubwayDataFetcher(subwayService, publicHolidayService, subwayStationNameService)
         val method =
             SubwayDataFetcher::class.java.getDeclaredMethod(
                 "filterTimetableAfterRealtime",

@@ -310,6 +310,7 @@ type BusArrival {
 # 전철 정보를 반환하는 쿼리입니다.
 input SubwayInput {
     keys: [SubwayStationInput!]!
+    language: String
 }
 
 input SubwayStationInput {
