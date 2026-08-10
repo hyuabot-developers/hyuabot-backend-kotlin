@@ -11,6 +11,7 @@ import app.hyuabot.backend.database.entity.SubwayRouteStation
 import app.hyuabot.backend.holiday.service.PublicHolidayService
 import app.hyuabot.backend.subway.domain.SubwayTimetableKey
 import app.hyuabot.backend.subway.service.SubwayService
+import app.hyuabot.backend.subway.service.SubwayStationNameService
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsData
@@ -24,6 +25,7 @@ import java.util.concurrent.CompletableFuture
 class SubwayDataFetcher(
     private val subwayService: SubwayService,
     private val publicHolidayService: PublicHolidayService,
+    private val subwayStationNameService: SubwayStationNameService,
 ) {
     @DgsQuery
     fun subway(
@@ -46,12 +48,33 @@ class SubwayDataFetcher(
                 it.stationID to it.limit
             }
         dfe.graphQlContext.put("limitMap", limitMap)
+        input.language?.let { dfe.graphQlContext.put("subwayLanguage", it) }
         // distinct + sorted so the cache key is insensitive to request order/duplicates
         return subwayService.getStationViews(
             input.keys
                 .map { it.stationID }
                 .distinct()
                 .sorted(),
+        )
+    }
+
+    @DgsData(parentType = "SubwayStation", field = "name")
+    fun stationName(dfe: DgsDataFetchingEnvironment): String {
+        val station = dfe.getSource<SubwayStation>()!!
+        return subwayStationNameService.displayName(
+            station.stationID,
+            dfe.graphQlContext.get("subwayLanguage"),
+            station.name,
+        )
+    }
+
+    @DgsData(parentType = "SubwayOriginTerminal", field = "name")
+    fun terminalName(dfe: DgsDataFetchingEnvironment): String {
+        val station = dfe.getSource<SubwayOriginTerminal>()!!
+        return subwayStationNameService.displayName(
+            station.stationID,
+            dfe.graphQlContext.get("subwayLanguage"),
+            station.name,
         )
     }
 
