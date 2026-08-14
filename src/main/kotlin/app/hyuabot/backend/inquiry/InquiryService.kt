@@ -133,6 +133,7 @@ class InquiryService(
         thread.updatedAt = timestamp
         threadRepository.save(thread)
         publishMessage(threadId, thread.installationId, message)
+        pushService.notifyAdminInquiry(threadId, body)
         return message
     }
 
@@ -151,9 +152,13 @@ class InquiryService(
 
     fun adminListThreads(assignedAdminUserId: String?): List<InquiryThread> =
         if (assignedAdminUserId != null) {
-            threadRepository.findByAssignedAdminUserIdAndStatusInOrderByLastMessageAtDesc(assignedAdminUserId, ACTIVE_STATUSES)
+            threadRepository
+                .findByAssignedAdminUserIdAndStatusInAndLastMessageAtNotNullOrderByLastMessageAtDesc(
+                    assignedAdminUserId,
+                    ACTIVE_STATUSES,
+                )
         } else {
-            threadRepository.findByStatusInOrderByLastMessageAtDesc(ACTIVE_STATUSES)
+            threadRepository.findByStatusInAndLastMessageAtNotNullOrderByLastMessageAtDesc(ACTIVE_STATUSES)
         }
 
     fun adminGetThread(threadId: UUID): InquiryThread = getThreadOrThrow(threadId)

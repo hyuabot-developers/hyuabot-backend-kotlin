@@ -1,5 +1,6 @@
 package app.hyuabot.backend.inquiry.push
 
+import app.hyuabot.backend.adminpush.NotifierClient
 import app.hyuabot.backend.database.entity.DevicePushToken
 import app.hyuabot.backend.database.repository.DevicePushTokenRepository
 import org.junit.jupiter.api.DisplayName
@@ -25,6 +26,8 @@ class InquiryPushServiceTest {
     @Mock lateinit var apnsSender: ApnsInquirySender
 
     @Mock lateinit var fcmWrapper: FirebaseMessagingWrapper
+
+    @Mock lateinit var notifierClient: NotifierClient
 
     @InjectMocks lateinit var service: InquiryPushService
 
@@ -112,6 +115,27 @@ class InquiryPushServiceTest {
         whenever(apnsSender.sendAlert(any(), any(), any(), any())).thenThrow(RuntimeException("apns-fail"))
         whenever(fcmWrapper.send(any(), any(), any(), any())).thenThrow(RuntimeException("fcm-fail"))
         service.notifyAdminMessage(installationId, threadId, "t", "b")
+    }
+
+    @Test
+    @DisplayName("notifyAdminInquiry sends a web push notification")
+    fun notifyAdminInquiry() {
+        service.notifyAdminInquiry(threadId, "문의 내용")
+        verify(notifierClient).notifyInquiry(
+            argThat {
+                title == "새 문의가 도착했어요" &&
+                    body == "문의 내용" &&
+                    url == "/inquiry?threadId=$threadId" &&
+                    tag == "inquiry:$threadId"
+            },
+        )
+    }
+
+    @Test
+    @DisplayName("notifyAdminInquiry swallows notifier exceptions")
+    fun notifyAdminInquirySwallowException() {
+        whenever(notifierClient.notifyInquiry(any())).thenThrow(RuntimeException("push-fail"))
+        service.notifyAdminInquiry(threadId, "문의 내용")
     }
 
     private fun token(

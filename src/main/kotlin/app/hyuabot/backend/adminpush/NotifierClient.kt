@@ -3,6 +3,7 @@ package app.hyuabot.backend.adminpush
 import app.hyuabot.backend.adminpush.domain.AdminPushPublicKeyResponse
 import app.hyuabot.backend.adminpush.domain.AdminPushSubscriptionRequest
 import app.hyuabot.backend.adminpush.domain.AdminPushSubscriptionStatusResponse
+import app.hyuabot.backend.adminpush.domain.NotifierInquiryNotification
 import app.hyuabot.backend.adminpush.domain.NotifierSubscriptionDeleteRequest
 import app.hyuabot.backend.adminpush.domain.NotifierSubscriptionRequest
 import org.springframework.beans.factory.annotation.Value
@@ -70,6 +71,15 @@ class NotifierClient(
             .method(HttpMethod.DELETE)
             .uri("/api/v1/push/subscriptions")
             .body(NotifierSubscriptionDeleteRequest(userID, endpoint))
+            .retrieve()
+            .toBodilessEntity()
+    }
+
+    fun notifyInquiry(notification: NotifierInquiryNotification) {
+        restClient
+            .post()
+            .uri("/api/v1/push/inquiry")
+            .body(notification)
             .retrieve()
             .toBodilessEntity()
     }

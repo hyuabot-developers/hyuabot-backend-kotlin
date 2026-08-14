@@ -250,6 +250,7 @@ class InquiryServiceTest {
         assertNotNull(target.lastMessageAt)
         verify(threadRepository).save(target)
         verify(eventPublisher).publish(argThat<InquiryEvent> { kind == "message" && message?.senderType == "USER" })
+        verify(pushService).notifyAdminInquiry(threadId, "안녕하세요")
     }
 
     @Test
@@ -282,7 +283,11 @@ class InquiryServiceTest {
     fun testAdminListThreadsAssigned() {
         val threads = listOf(thread())
         whenever(
-            threadRepository.findByAssignedAdminUserIdAndStatusInOrderByLastMessageAtDesc("adminUser", InquiryService.ACTIVE_STATUSES),
+            threadRepository
+                .findByAssignedAdminUserIdAndStatusInAndLastMessageAtNotNullOrderByLastMessageAtDesc(
+                    "adminUser",
+                    InquiryService.ACTIVE_STATUSES,
+                ),
         ).thenReturn(threads)
         assertEquals(threads, service.adminListThreads("adminUser"))
     }
@@ -291,7 +296,9 @@ class InquiryServiceTest {
     @DisplayName("adminListThreads - 전체")
     fun testAdminListThreadsAll() {
         val threads = listOf(thread())
-        whenever(threadRepository.findByStatusInOrderByLastMessageAtDesc(InquiryService.ACTIVE_STATUSES)).thenReturn(threads)
+        whenever(
+            threadRepository.findByStatusInAndLastMessageAtNotNullOrderByLastMessageAtDesc(InquiryService.ACTIVE_STATUSES),
+        ).thenReturn(threads)
         assertEquals(threads, service.adminListThreads(null))
     }
 

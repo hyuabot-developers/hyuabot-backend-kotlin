@@ -2,6 +2,7 @@ package app.hyuabot.backend.adminpush
 
 import app.hyuabot.backend.adminpush.domain.AdminPushSubscriptionKeys
 import app.hyuabot.backend.adminpush.domain.AdminPushSubscriptionRequest
+import app.hyuabot.backend.adminpush.domain.NotifierInquiryNotification
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -28,15 +29,17 @@ class NotifierClientTest {
                 )
             client.subscribe("jil8885", "Safari", request)
             client.unsubscribe("jil8885", request.endpoint)
+            client.notifyInquiry(NotifierInquiryNotification("새 문의", "본문", "/inquiry?threadId=1", "inquiry:1"))
         }
 
-        assertEquals(listOf("GET", "GET", "POST", "DELETE"), requests.map { it.method })
+        assertEquals(listOf("GET", "GET", "POST", "DELETE", "POST"), requests.map { it.method })
         assertTrue(requests.all { it.authorization == "Bearer secret-token" })
         assertTrue(URLDecoder.decode(requests[1].query, StandardCharsets.UTF_8).contains("userId=jil8885"))
         assertTrue(URLDecoder.decode(requests[1].query, StandardCharsets.UTF_8).contains("endpoint=https://push.example/device"))
         assertTrue(requests[2].body.contains("\"userId\":\"jil8885\""))
         assertTrue(requests[2].body.contains("\"userAgent\":\"Safari\""))
         assertTrue(requests[3].body.contains("\"endpoint\":\"https://push.example/device\""))
+        assertTrue(requests[4].body.contains("\"title\":\"새 문의\""))
     }
 
     @Test

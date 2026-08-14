@@ -10,9 +10,9 @@ interface InquiryThreadRepository : JpaRepository<InquiryThread, UUID> {
         status: Collection<String>,
     ): InquiryThread?
 
-    fun findByStatusInOrderByLastMessageAtDesc(status: Collection<String>): List<InquiryThread>
+    fun findByStatusInAndLastMessageAtNotNullOrderByLastMessageAtDesc(status: Collection<String>): List<InquiryThread>
 
-    fun findByAssignedAdminUserIdAndStatusInOrderByLastMessageAtDesc(
+    fun findByAssignedAdminUserIdAndStatusInAndLastMessageAtNotNullOrderByLastMessageAtDesc(
         adminUserId: String,
         status: Collection<String>,
     ): List<InquiryThread>
