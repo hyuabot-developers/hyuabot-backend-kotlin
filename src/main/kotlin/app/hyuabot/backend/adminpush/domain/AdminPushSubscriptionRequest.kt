@@ -33,3 +33,10 @@ internal data class NotifierSubscriptionDeleteRequest(
     val userId: String,
     val endpoint: String,
 )
+
+data class NotifierInquiryNotification(
+    val title: String,
+    val body: String,
+    val url: String,
+    val tag: String,
+)

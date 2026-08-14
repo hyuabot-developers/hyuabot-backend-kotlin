@@ -1,5 +1,7 @@
 package app.hyuabot.backend.inquiry.push
 
+import app.hyuabot.backend.adminpush.NotifierClient
+import app.hyuabot.backend.adminpush.domain.NotifierInquiryNotification
 import app.hyuabot.backend.database.entity.DevicePushToken
 import app.hyuabot.backend.database.repository.DevicePushTokenRepository
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
@@ -14,6 +16,7 @@ class InquiryPushService(
     private val tokenRepository: DevicePushTokenRepository,
     private val apnsSender: ApnsInquirySender,
     private val fcmWrapper: FirebaseMessagingWrapper,
+    private val notifierClient: NotifierClient,
 ) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
@@ -79,6 +82,24 @@ class InquiryPushService(
             } catch (e: Exception) {
                 logger.warn("Failed to send inquiry push (provider={} token={}): {}", record.provider, record.token, e.message)
             }
+        }
+    }
+
+    fun notifyAdminInquiry(
+        threadId: UUID,
+        body: String,
+    ) {
+        try {
+            notifierClient.notifyInquiry(
+                NotifierInquiryNotification(
+                    title = "새 문의가 도착했어요",
+                    body = body.take(100),
+                    url = "/inquiry?threadId=$threadId",
+                    tag = "inquiry:$threadId",
+                ),
+            )
+        } catch (e: Exception) {
+            logger.warn("Failed to send admin inquiry push: {}", e.message)
         }
     }
 }
