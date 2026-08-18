@@ -6,4 +6,5 @@ data class BusArrivalKey(
     val startStopID: Int,
     val minuteFromStart: Int,
     val limit: Int?,
+    val destinationStopID: Int? = null,
 )

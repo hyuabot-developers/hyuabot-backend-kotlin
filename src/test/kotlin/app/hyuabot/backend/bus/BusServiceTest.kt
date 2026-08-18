@@ -50,8 +50,10 @@ import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
+import org.springframework.cache.CacheManager
 import org.springframework.data.domain.Sort
 import java.time.Duration
 import java.time.LocalDate
@@ -83,6 +85,9 @@ class BusServiceTest {
 
     @Mock
     private lateinit var publicHolidayService: PublicHolidayService
+
+    @Mock
+    private lateinit var cacheManager: CacheManager
 
     @InjectMocks
     private lateinit var routeService: BusRouteService
@@ -3049,6 +3054,181 @@ class BusServiceTest {
         assertEquals(true, arrivals[0].isRealtime)
         assertEquals(true, arrivals[1].isRealtime)
         assertEquals(false, arrivals[2].isRealtime)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 목적지 정류장별 도착 예정 시간 계산 및 캐시")
+    fun testGetArrivalBatchWithDestinationArrivalTime() {
+        val fixedNow = LocalDateTime.of(2025, 3, 3, 4, 0)
+        val spyService = spy(realtimeService)
+        doReturn(fixedNow).whenever(spyService).currentTime()
+        val key =
+            BusArrivalKey(
+                routeID = 1,
+                stopID = 10,
+                startStopID = 100,
+                minuteFromStart = 0,
+                limit = null,
+                destinationStopID = 20,
+            )
+        val noMatchKey = key.copy(destinationStopID = 30)
+        whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(
+            listOf(
+                BusRealtime(
+                    routeID = 1,
+                    stopID = 10,
+                    order = 1,
+                    remainingTime = Duration.ofMinutes(5),
+                    remainingStop = 1,
+                    remainingSeat = 10,
+                    isLowFloor = false,
+                    updatedAt = ZonedDateTime.now(),
+                    routeStop = null,
+                ),
+            ),
+        )
+        val sourceLog =
+            BusDepartureLog(
+                routeID = 1,
+                stopID = 10,
+                departureDate = LocalDate.of(2025, 2, 24),
+                departureTime = LocalTime.of(4, 0),
+                vehicleID = "vehicle-1",
+                routeStop = null,
+            )
+        val destinationLog =
+            BusDepartureLog(
+                routeID = 1,
+                stopID = 20,
+                departureDate = LocalDate.of(2025, 2, 24),
+                departureTime = LocalTime.of(5, 0),
+                vehicleID = "vehicle-1",
+                routeStop = null,
+            )
+        val sameTimeSourceLog =
+            BusDepartureLog(
+                routeID = 1,
+                stopID = 10,
+                departureDate = LocalDate.of(2025, 2, 24),
+                departureTime = LocalTime.of(6, 0),
+                vehicleID = "vehicle-2",
+                routeStop = null,
+            )
+        val sameTimeDestinationLog =
+            BusDepartureLog(
+                routeID = 1,
+                stopID = 20,
+                departureDate = LocalDate.of(2025, 2, 24),
+                departureTime = LocalTime.of(6, 0, 30),
+                vehicleID = "vehicle-2",
+                routeStop = null,
+            )
+        val longSourceLog =
+            BusDepartureLog(
+                routeID = 1,
+                stopID = 10,
+                departureDate = LocalDate.of(2025, 2, 24),
+                departureTime = LocalTime.of(7, 0),
+                vehicleID = "vehicle-3",
+                routeStop = null,
+            )
+        val longDestinationLog =
+            BusDepartureLog(
+                routeID = 1,
+                stopID = 20,
+                departureDate = LocalDate.of(2025, 2, 24),
+                departureTime = LocalTime.of(10, 0),
+                vehicleID = "vehicle-3",
+                routeStop = null,
+            )
+        val lateSourceLog =
+            BusDepartureLog(
+                routeID = 1,
+                stopID = 10,
+                departureDate = LocalDate.of(2025, 2, 24),
+                departureTime = LocalTime.of(8, 0),
+                vehicleID = "vehicle-4",
+                routeStop = null,
+            )
+        val earlyDestinationLog =
+            BusDepartureLog(
+                routeID = 1,
+                stopID = 20,
+                departureDate = LocalDate.of(2025, 2, 24),
+                departureTime = LocalTime.of(7, 0),
+                vehicleID = "vehicle-4",
+                routeStop = null,
+            )
+        val wrongVehicleDestinationLog =
+            BusDepartureLog(
+                routeID = 1,
+                stopID = 20,
+                departureDate = LocalDate.of(2025, 2, 24),
+                departureTime = LocalTime.of(4, 30),
+                vehicleID = "other-vehicle",
+                routeStop = null,
+            )
+        whenever(logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any())).thenAnswer { invocation ->
+            if (invocation.getArgument<List<Int>>(1) == listOf(10)) {
+                listOf(sourceLog, sameTimeSourceLog, longSourceLog, lateSourceLog)
+            } else {
+                listOf(destinationLog, sameTimeDestinationLog, longDestinationLog, earlyDestinationLog, wrongVehicleDestinationLog)
+            }
+        }
+        whenever(timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(any(), any(), any(), any(), any()))
+            .thenReturn(emptyList())
+
+        val result = spyService.getArrivalBatch(setOf(key, noMatchKey))
+        val arrivals = result[key]!!
+
+        assertEquals(true, arrivals.isNotEmpty())
+        assertEquals(LocalTime.of(5, 5), arrivals.first().destinationArrivalTime)
+        assertEquals(null, result[noMatchKey]!!.first().destinationArrivalTime)
+        assertEquals(LocalTime.of(5, 5), spyService.getArrivalBatch(setOf(key))[key]!!.first().destinationArrivalTime)
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 목적지 로그가 없으면 도착 예정 시간 없음")
+    fun testGetArrivalBatchWithoutDestinationArrivalTime() {
+        val fixedNow = LocalDateTime.of(2025, 3, 3, 4, 0)
+        val spyService = spy(realtimeService)
+        doReturn(fixedNow).whenever(spyService).currentTime()
+        val key = BusArrivalKey(routeID = 1, stopID = 10, startStopID = 100, minuteFromStart = 0, limit = 1, destinationStopID = 20)
+        whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
+        whenever(logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any())).thenReturn(emptyList())
+        whenever(timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(any(), any(), any(), any(), any()))
+            .thenReturn(emptyList())
+
+        assertEquals(emptyList(), spyService.getArrivalBatch(setOf(key))[key])
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 목적지 ETA 캐시가 없으면 실패")
+    fun testGetArrivalBatchWithoutTravelTimeCache() {
+        val cacheManagerWithoutTravelTime = mock<CacheManager>()
+        whenever(cacheManagerWithoutTravelTime.getCache("busTravelTime")).thenReturn(null)
+        realtimeService.setCacheManager(cacheManagerWithoutTravelTime)
+        val key = BusArrivalKey(routeID = 1, stopID = 10, startStopID = 100, minuteFromStart = 0, limit = 1, destinationStopID = 20)
+        whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(
+            listOf(
+                BusRealtime(
+                    routeID = 1,
+                    stopID = 10,
+                    order = 1,
+                    remainingTime = Duration.ofMinutes(5),
+                    remainingStop = 1,
+                    remainingSeat = 10,
+                    isLowFloor = false,
+                    updatedAt = ZonedDateTime.now(),
+                    routeStop = null,
+                ),
+            ),
+        )
+        whenever(logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any())).thenReturn(emptyList())
+        whenever(timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(any(), any(), any(), any(), any()))
+            .thenReturn(emptyList())
+
+        assertThrows<IllegalStateException> { realtimeService.getArrivalBatch(setOf(key)) }
     }
 
     @Test

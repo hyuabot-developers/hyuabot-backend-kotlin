@@ -8,6 +8,9 @@ import app.hyuabot.backend.database.repository.BusRealtimeRepository
 import app.hyuabot.backend.database.repository.BusTimetableRepository
 import app.hyuabot.backend.holiday.service.PublicHolidayService
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.cache.CacheManager
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.time.DayOfWeek
@@ -23,6 +26,13 @@ class BusRealtimeService(
     private val timetableRepository: BusTimetableRepository,
     private val publicHolidayService: PublicHolidayService,
 ) {
+    private var cacheManager: CacheManager = ConcurrentMapCacheManager("busTravelTime")
+
+    @Autowired
+    fun setCacheManager(cacheManager: CacheManager) {
+        this.cacheManager = cacheManager
+    }
+
     private val serviceStartTime: LocalTime = LocalTime.of(4, 0)
 
     internal fun resolveWeekday(date: LocalDate): String {
@@ -121,6 +131,22 @@ class BusRealtimeService(
             departureLogRepository
                 .findByRouteIDInAndStopIDInAndDepartureDateIn(routeIDs, stopIDs, sameDayDates)
                 .groupBy { it.routeID to it.stopID }
+        val destinationLogGrouped =
+            keys
+                .mapNotNull { key -> key.destinationStopID?.let { key.routeID to it } }
+                .distinct()
+                .let { destinationKeys ->
+                    if (destinationKeys.isEmpty()) {
+                        emptyMap()
+                    } else {
+                        departureLogRepository
+                            .findByRouteIDInAndStopIDInAndDepartureDateIn(
+                                destinationKeys.map { it.first }.distinct(),
+                                destinationKeys.map { it.second }.distinct(),
+                                sameDayDates,
+                            ).groupBy { it.routeID to it.stopID }
+                    }
+                }
         val sort = Sort.by(Sort.Order.asc("routeID"), Sort.Order.asc("startStopID"), Sort.Order.asc("departureTime"))
         val timetableGrouped =
             timetableRepository
@@ -189,7 +215,86 @@ class BusRealtimeService(
                 } else {
                     logArrivals
                 }
-            (realtimeArrivals + scheduledArrivals).take(key.limit ?: Int.MAX_VALUE)
+            val arrivals = (realtimeArrivals + scheduledArrivals).take(key.limit ?: Int.MAX_VALUE)
+            val destinationStopID = key.destinationStopID ?: return@associateWith arrivals
+            val sourceLogs = logGrouped[key.routeID to key.stopID].orEmpty()
+            val destinationLogs = destinationLogGrouped[key.routeID to destinationStopID].orEmpty()
+            arrivals.map { arrival ->
+                val primaryTime = arrival.arrivalTime ?: currentTime.plusMinutes(arrival.minutes!!.toLong())
+                arrival.copy(
+                    destinationArrivalTime =
+                        estimateDestinationArrivalTime(
+                            key = key,
+                            destinationStopID = destinationStopID,
+                            primaryTime = primaryTime,
+                            sourceLogs = sourceLogs,
+                            destinationLogs = destinationLogs,
+                        ),
+                )
+            }
         }
+    }
+
+    private fun estimateDestinationArrivalTime(
+        key: BusArrivalKey,
+        destinationStopID: Int,
+        primaryTime: LocalTime,
+        sourceLogs: List<app.hyuabot.backend.database.entity.BusDepartureLog>,
+        destinationLogs: List<app.hyuabot.backend.database.entity.BusDepartureLog>,
+    ): LocalTime? {
+        val durations = cachedTravelDurations(key.routeID, key.stopID, destinationStopID, sourceLogs, destinationLogs)
+        if (durations.isEmpty()) return null
+        val targetBucket = primaryTime.toSecondOfDay() / TRAVEL_TIME_BUCKET_SECONDS
+        val duration =
+            listOf(0, 1, -1, 2, -2, 3, -3, 4, -4)
+                .asSequence()
+                .mapNotNull { offset -> durations[targetBucket + offset] }
+                .firstOrNull()
+                ?: return null
+        return primaryTime.plusMinutes(duration.toLong())
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun cachedTravelDurations(
+        routeID: Int,
+        sourceStopID: Int,
+        destinationStopID: Int,
+        sourceLogs: List<app.hyuabot.backend.database.entity.BusDepartureLog>,
+        destinationLogs: List<app.hyuabot.backend.database.entity.BusDepartureLog>,
+    ): Map<Int, Int> {
+        val cacheKey =
+            listOf(routeID, sourceStopID, destinationStopID, sourceLogs.map { it.departureDate }.distinct().sorted())
+                .joinToString(":")
+        val cache = checkNotNull(cacheManager.getCache("busTravelTime"))
+        val cached = cache.get(cacheKey)?.get() as? Map<Int, Int>
+        if (cached != null) return cached
+        val destinationByDate = destinationLogs.groupBy { it.departureDate }
+        val samples =
+            sourceLogs.mapNotNull { source ->
+                destinationByDate[source.departureDate]
+                    .orEmpty()
+                    .filter { destination -> destination.vehicleID == source.vehicleID && destination.departureTime > source.departureTime }
+                    .minByOrNull { it.departureTime }
+                    ?.let { destination ->
+                        val duration =
+                            java.time.Duration
+                                .between(source.departureTime, destination.departureTime)
+                                .toMinutes()
+                                .toInt()
+                        if (duration in 1 until MAX_TRAVEL_TIME_MINUTES) {
+                            source.departureTime.toSecondOfDay() / TRAVEL_TIME_BUCKET_SECONDS to duration
+                        } else {
+                            null
+                        }
+                    }
+            }
+        val durations = samples.groupBy({ it.first }, { it.second }).mapValues { (_, values) -> values.average().toInt() }
+        cache.put(cacheKey, durations)
+        return durations
+    }
+
+    private companion object {
+        const val TRAVEL_TIME_BUCKET_SECONDS = 30 * 60
+        const val MAX_TRAVEL_TIME_MINUTES = 180
     }
 }

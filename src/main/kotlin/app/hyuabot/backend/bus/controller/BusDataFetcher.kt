@@ -55,10 +55,15 @@ class BusDataFetcher(
             input.associate { key ->
                 (key.route to key.stop) to key.after
             }
+        val destinationStopMap =
+            input.associate { key ->
+                (key.route to key.stop) to key.destinationStop
+            }
         dfe.graphQlContext.put("datesMap", datesMap)
         dfe.graphQlContext.put("weekdaysMap", weekdaysMap)
         dfe.graphQlContext.put("limitMap", limitMap)
         dfe.graphQlContext.put("afterMap", afterMap)
+        dfe.graphQlContext.put("destinationStopMap", destinationStopMap)
         return routeService.fetchRouteStops(input).map {
             BusRouteStop(
                 route =
@@ -211,6 +216,7 @@ class BusDataFetcher(
     fun arrival(dfe: DataFetchingEnvironment): CompletableFuture<List<BusArrival>> {
         val routeStop = dfe.getSource<BusRouteStop>()!!
         val limitMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, Int>>("limitMap")
+        val destinationStopMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, Int?>>("destinationStopMap")
         val key =
             BusArrivalKey(
                 routeID = routeStop.route.seq,
@@ -218,6 +224,7 @@ class BusDataFetcher(
                 startStopID = routeStop.startStop.seq,
                 minuteFromStart = routeStop.minutes,
                 limit = limitMap[routeStop.route.seq to routeStop.stop.seq],
+                destinationStopID = destinationStopMap[routeStop.route.seq to routeStop.stop.seq],
             )
         val dataLoader = dfe.getDataLoader<BusArrivalKey, List<BusArrival>>("busArrivalDataLoader")!!
         return dataLoader.load(key)
