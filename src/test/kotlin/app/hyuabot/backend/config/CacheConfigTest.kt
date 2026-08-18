@@ -25,7 +25,11 @@ class CacheConfigTest {
         val connectionFactory = mock<RedisConnectionFactory>()
         val cacheManager: RedisCacheManager = cacheConfig.cacheManager(connectionFactory)
         cacheManager.afterPropertiesSet()
-        assert(cacheManager.cacheNames.containsAll(listOf("cafeteriaMenu", "subwayStation", "subwayTimetable", "busTravelTime")))
+        assert(
+            cacheManager.cacheNames.containsAll(
+                listOf("cafeteriaMenu", "subwayStation", "subwayStationTranslation", "subwayTimetable", "busTravelTime"),
+            ),
+        )
     }
 
     @Test
@@ -38,8 +42,8 @@ class CacheConfigTest {
         val meterRegistry = SimpleMeterRegistry()
         val binder: SmartInitializingSingleton = cacheConfig.redisCacheMetricsBinder(meterRegistry, cacheManager)
         binder.afterSingletonsInstantiated()
-        // 4 caches × 4 counters (cache.gets hit/miss, cache.puts, cache.removals) = 16
-        assert(meterRegistry.meters.size == 16)
+        // 5 caches × 4 counters (cache.gets hit/miss, cache.puts, cache.removals) = 20
+        assert(meterRegistry.meters.size == 20)
         // invoke each counter's lambda to cover the ToDoubleFunction bodies
         meterRegistry.meters.filterIsInstance<FunctionCounter>().forEach { it.count() }
     }

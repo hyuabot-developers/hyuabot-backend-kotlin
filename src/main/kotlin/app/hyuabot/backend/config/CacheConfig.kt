@@ -67,6 +67,7 @@ class CacheConfig {
             mapOf(
                 "cafeteriaMenu" to defaults.entryTtl(Duration.ofHours(1)),
                 "subwayStation" to defaults,
+                "subwayStationTranslation" to defaults,
                 "subwayTimetable" to defaults,
                 "busTravelTime" to defaults,
             )

@@ -1286,11 +1286,7 @@ class BusServiceTest {
                 BusDepartureLogKey(routeID = 216000068, stopID = 216000358, dates = listOf(LocalDate.parse("2025-03-01"))),
             )
         whenever(
-            logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(
-                listOf(216000068),
-                listOf(216000138, 216000358),
-                listOf(LocalDate.parse("2025-03-01"), LocalDate.parse("2025-03-02")),
-            ),
+            logRepository.findByRouteStopAndDepartureDates(keys),
         ).thenReturn(
             listOf(
                 BusDepartureLog(
@@ -1341,11 +1337,7 @@ class BusServiceTest {
                 BusDepartureLogKey(routeID = 216000068, stopID = 216000999, dates = listOf(LocalDate.parse("2025-03-01"))),
             )
         whenever(
-            logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(
-                listOf(216000068),
-                listOf(216000999),
-                listOf(LocalDate.parse("2025-03-01")),
-            ),
+            logRepository.findByRouteStopAndDepartureDates(keys),
         ).thenReturn(emptyList())
 
         val result = routeService.getBusDepartureLogBatch(keys)
@@ -1366,11 +1358,7 @@ class BusServiceTest {
                 BusDepartureLogKey(routeID = 216000068, stopID = 216000138, dates = dates),
             )
         whenever(
-            logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(
-                listOf(216000068),
-                listOf(216000138),
-                dates,
-            ),
+            logRepository.findByRouteStopAndDepartureDates(keys),
         ).thenReturn(
             listOf(
                 BusDepartureLog(
@@ -3010,7 +2998,7 @@ class BusServiceTest {
             ),
         )
         whenever(
-            logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any()),
+            logRepository.findByRouteStopAndDepartureDates(any()),
         ).thenReturn(emptyList())
         whenever(
             timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
@@ -3168,13 +3156,19 @@ class BusServiceTest {
                 vehicleID = "other-vehicle",
                 routeStop = null,
             )
-        whenever(logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any())).thenAnswer { invocation ->
-            if (invocation.getArgument<List<Int>>(1) == listOf(10)) {
-                listOf(sourceLog, sameTimeSourceLog, longSourceLog, lateSourceLog)
-            } else {
-                listOf(destinationLog, sameTimeDestinationLog, longDestinationLog, earlyDestinationLog, wrongVehicleDestinationLog)
-            }
-        }
+        whenever(logRepository.findByRouteStopAndDepartureDates(any())).thenReturn(
+            listOf(
+                sourceLog,
+                sameTimeSourceLog,
+                longSourceLog,
+                lateSourceLog,
+                destinationLog,
+                sameTimeDestinationLog,
+                longDestinationLog,
+                earlyDestinationLog,
+                wrongVehicleDestinationLog,
+            ),
+        )
         whenever(timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(any(), any(), any(), any(), any()))
             .thenReturn(emptyList())
 
@@ -3195,7 +3189,7 @@ class BusServiceTest {
         doReturn(fixedNow).whenever(spyService).currentTime()
         val key = BusArrivalKey(routeID = 1, stopID = 10, startStopID = 100, minuteFromStart = 0, limit = 1, destinationStopID = 20)
         whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
-        whenever(logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any())).thenReturn(emptyList())
+        whenever(logRepository.findByRouteStopAndDepartureDates(any())).thenReturn(emptyList())
         whenever(timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(any(), any(), any(), any(), any()))
             .thenReturn(emptyList())
 
@@ -3224,7 +3218,7 @@ class BusServiceTest {
                 ),
             ),
         )
-        whenever(logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any())).thenReturn(emptyList())
+        whenever(logRepository.findByRouteStopAndDepartureDates(any())).thenReturn(emptyList())
         whenever(timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(any(), any(), any(), any(), any()))
             .thenReturn(emptyList())
 
@@ -3278,7 +3272,7 @@ class BusServiceTest {
             ),
         )
         whenever(
-            logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any()),
+            logRepository.findByRouteStopAndDepartureDates(any()),
         ).thenReturn(emptyList())
         whenever(
             timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
@@ -3326,7 +3320,7 @@ class BusServiceTest {
             ),
         ).thenReturn(emptyList())
         whenever(
-            logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any()),
+            logRepository.findByRouteStopAndDepartureDates(any()),
         ).thenReturn(emptyList())
         whenever(
             timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
@@ -3395,7 +3389,7 @@ class BusServiceTest {
             ),
         )
         whenever(
-            logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any()),
+            logRepository.findByRouteStopAndDepartureDates(any()),
         ).thenReturn(emptyList())
         whenever(
             timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
@@ -3430,7 +3424,7 @@ class BusServiceTest {
 
         val key = BusArrivalKey(routeID = 216000068, stopID = 216000138, startStopID = 216000358, minuteFromStart = 0, limit = null)
         whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
-        whenever(logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any())).thenReturn(emptyList())
+        whenever(logRepository.findByRouteStopAndDepartureDates(any())).thenReturn(emptyList())
         whenever(
             timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
                 any(),
@@ -3483,7 +3477,7 @@ class BusServiceTest {
 
         val key = BusArrivalKey(routeID = 216000068, stopID = 216000138, startStopID = 216000358, minuteFromStart = 0, limit = null)
         whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
-        whenever(logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any())).thenReturn(emptyList())
+        whenever(logRepository.findByRouteStopAndDepartureDates(any())).thenReturn(emptyList())
         whenever(
             timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
                 any(),
@@ -3528,7 +3522,7 @@ class BusServiceTest {
 
         val key = BusArrivalKey(routeID = 216000068, stopID = 216000138, startStopID = 216000358, minuteFromStart = 0, limit = 1)
         whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
-        whenever(logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any())).thenReturn(emptyList())
+        whenever(logRepository.findByRouteStopAndDepartureDates(any())).thenReturn(emptyList())
         whenever(
             timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
                 any(),
@@ -3573,7 +3567,7 @@ class BusServiceTest {
 
         val key = BusArrivalKey(routeID = 216000068, stopID = 216000138, startStopID = 216000358, minuteFromStart = 0, limit = null)
         whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
-        whenever(logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any())).thenReturn(emptyList())
+        whenever(logRepository.findByRouteStopAndDepartureDates(any())).thenReturn(emptyList())
         whenever(
             timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
                 any(),
@@ -3643,7 +3637,7 @@ class BusServiceTest {
                 listOf(216000138),
             ),
         ).thenReturn(emptyList())
-        whenever(logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any())).thenReturn(emptyList())
+        whenever(logRepository.findByRouteStopAndDepartureDates(any())).thenReturn(emptyList())
         whenever(
             timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
                 any(),
@@ -3716,7 +3710,7 @@ class BusServiceTest {
         whenever(
             realtimeRepository.findByRouteIDInAndStopIDIn(any(), any()),
         ).thenReturn(emptyList())
-        whenever(logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any())).thenReturn(emptyList())
+        whenever(logRepository.findByRouteStopAndDepartureDates(any())).thenReturn(emptyList())
         whenever(
             timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
                 any(),
@@ -3771,7 +3765,7 @@ class BusServiceTest {
         whenever(
             realtimeRepository.findByRouteIDInAndStopIDIn(any(), any()),
         ).thenReturn(emptyList())
-        whenever(logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any())).thenReturn(emptyList())
+        whenever(logRepository.findByRouteStopAndDepartureDates(any())).thenReturn(emptyList())
         whenever(
             timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
                 any(),
@@ -3956,7 +3950,7 @@ class BusServiceTest {
         )
         // cutoffMinutes = 20 + 10 = 30; log at 07:25 is only 25 min away → filtered out
         whenever(
-            logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any()),
+            logRepository.findByRouteStopAndDepartureDates(any()),
         ).thenReturn(
             listOf(
                 BusDepartureLog(
@@ -4017,7 +4011,7 @@ class BusServiceTest {
             )
         whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
         whenever(
-            logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any()),
+            logRepository.findByRouteStopAndDepartureDates(any()),
         ).thenReturn(
             listOf(
                 BusDepartureLog(
@@ -4087,7 +4081,7 @@ class BusServiceTest {
             )
         whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
         whenever(
-            logRepository.findByRouteIDInAndStopIDInAndDepartureDateIn(any(), any(), any()),
+            logRepository.findByRouteStopAndDepartureDates(any()),
         ).thenReturn(
             listOf(
                 BusDepartureLog(
