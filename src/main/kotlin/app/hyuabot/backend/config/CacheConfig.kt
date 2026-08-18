@@ -68,6 +68,7 @@ class CacheConfig {
                 "cafeteriaMenu" to defaults.entryTtl(Duration.ofHours(1)),
                 "subwayStation" to defaults,
                 "subwayTimetable" to defaults,
+                "busTravelTime" to defaults,
             )
         return RedisCacheManager
             .builder(connectionFactory)

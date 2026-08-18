@@ -217,6 +217,7 @@ type Menu {
 input BusRouteStopInput {
     route: Int!
     stop: Int!
+    destinationStop: Int
     after: LocalTime
     limit: Int
     dates: [Date!]
@@ -305,6 +306,7 @@ type BusArrival {
     isRealtime: Boolean!
     time: LocalTime
     arrivalTime: LocalTime
+    destinationArrivalTime: LocalTime
 }
 
 # 전철 정보를 반환하는 쿼리입니다.
