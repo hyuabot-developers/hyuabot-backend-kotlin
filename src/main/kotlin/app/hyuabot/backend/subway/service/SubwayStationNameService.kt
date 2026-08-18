@@ -1,12 +1,14 @@
 package app.hyuabot.backend.subway.service
 
 import app.hyuabot.backend.database.repository.SubwayStationTranslationRepository
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 
 @Service
 class SubwayStationNameService(
     private val repository: SubwayStationTranslationRepository,
 ) {
+    @Cacheable(cacheNames = ["subwayStationTranslation"], key = "#stationID + ':' + (#language ?: '') + ':' + #fallback")
     fun displayName(
         stationID: String,
         language: String?,
@@ -18,6 +20,7 @@ class SubwayStationNameService(
             ?: fallback
     }
 
+    @Cacheable(cacheNames = ["subwayStationTranslation"], key = "'name:' + #koreanName + ':' + (#language ?: '')")
     fun displayNameByKoreanName(
         koreanName: String,
         language: String?,

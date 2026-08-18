@@ -1,5 +1,6 @@
 package app.hyuabot.backend.database.repository
 
+import app.hyuabot.backend.bus.domain.BusDepartureLogKey
 import app.hyuabot.backend.database.entity.BusDepartureLog
 import app.hyuabot.backend.database.entity.BusRealtime
 import app.hyuabot.backend.database.entity.BusRoute
@@ -327,5 +328,22 @@ class BusRepositoryTest {
             assert(log.routeStop!!.routeID == log.routeID)
             assert(log.routeStop!!.stopID == log.stopID)
         }
+    }
+
+    @Test
+    @DisplayName("노선·정류장·날짜 조합별 버스 출발 기록 조회")
+    fun testBusDepartureLogFindByRouteStopAndDepartureDates() {
+        val keys =
+            setOf(
+                BusDepartureLogKey(1, stops[0].id, listOf(LocalDate.now())),
+                BusDepartureLogKey(1, stops[1].id, listOf(LocalDate.now())),
+                BusDepartureLogKey(1, stops[2].id, emptyList()),
+            )
+
+        val foundLogs = busDepartureLogRepository.findByRouteStopAndDepartureDates(keys)
+
+        assert(foundLogs.isNotEmpty())
+        assert(foundLogs.all { it.routeID == 1 && it.stopID in setOf(stops[0].id, stops[1].id) })
+        assert(busDepartureLogRepository.findByRouteStopAndDepartureDates(setOf(keys.last())).isEmpty())
     }
 }

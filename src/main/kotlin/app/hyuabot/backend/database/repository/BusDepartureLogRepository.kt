@@ -4,7 +4,9 @@ import app.hyuabot.backend.database.entity.BusDepartureLog
 import org.springframework.data.jpa.repository.JpaRepository
 import java.time.LocalDate
 
-interface BusDepartureLogRepository : JpaRepository<BusDepartureLog, Int> {
+interface BusDepartureLogRepository :
+    JpaRepository<BusDepartureLog, Int>,
+    BusDepartureLogRepositoryCustom {
     fun findByRouteIDAndStopID(
         routeID: Int,
         stopID: Int,

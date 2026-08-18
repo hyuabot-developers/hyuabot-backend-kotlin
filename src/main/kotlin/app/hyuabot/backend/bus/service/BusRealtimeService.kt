@@ -1,6 +1,7 @@
 package app.hyuabot.backend.bus.service
 
 import app.hyuabot.backend.bus.domain.BusArrivalKey
+import app.hyuabot.backend.bus.domain.BusDepartureLogKey
 import app.hyuabot.backend.codegen.types.BusArrival
 import app.hyuabot.backend.database.entity.BusRealtime
 import app.hyuabot.backend.database.repository.BusDepartureLogRepository
@@ -127,26 +128,16 @@ class BusRealtimeService(
             if (currentTime.isBefore(serviceStartTime)) now.toLocalDate().minusDays(1) else now.toLocalDate()
         val weekday = resolveWeekday(serviceDate)
         val sameDayDates = (1..4).map { serviceDate.minusWeeks(it.toLong()) }
-        val logGrouped =
-            departureLogRepository
-                .findByRouteIDInAndStopIDInAndDepartureDateIn(routeIDs, stopIDs, sameDayDates)
-                .groupBy { it.routeID to it.stopID }
-        val destinationLogGrouped =
+        val logKeys =
             keys
-                .mapNotNull { key -> key.destinationStopID?.let { key.routeID to it } }
-                .distinct()
-                .let { destinationKeys ->
-                    if (destinationKeys.isEmpty()) {
-                        emptyMap()
-                    } else {
-                        departureLogRepository
-                            .findByRouteIDInAndStopIDInAndDepartureDateIn(
-                                destinationKeys.map { it.first }.distinct(),
-                                destinationKeys.map { it.second }.distinct(),
-                                sameDayDates,
-                            ).groupBy { it.routeID to it.stopID }
+                .flatMap { key ->
+                    buildList {
+                        add(BusDepartureLogKey(key.routeID, key.stopID, sameDayDates))
+                        key.destinationStopID?.let { add(BusDepartureLogKey(key.routeID, it, sameDayDates)) }
                     }
                 }
+        val allLogs = departureLogRepository.findByRouteStopAndDepartureDates(logKeys.toSet())
+        val logGrouped = allLogs.groupBy { it.routeID to it.stopID }
         val sort = Sort.by(Sort.Order.asc("routeID"), Sort.Order.asc("startStopID"), Sort.Order.asc("departureTime"))
         val timetableGrouped =
             timetableRepository
@@ -218,7 +209,7 @@ class BusRealtimeService(
             val arrivals = (realtimeArrivals + scheduledArrivals).take(key.limit ?: Int.MAX_VALUE)
             val destinationStopID = key.destinationStopID ?: return@associateWith arrivals
             val sourceLogs = logGrouped[key.routeID to key.stopID].orEmpty()
-            val destinationLogs = destinationLogGrouped[key.routeID to destinationStopID].orEmpty()
+            val destinationLogs = logGrouped[key.routeID to destinationStopID].orEmpty()
             arrivals.map { arrival ->
                 val primaryTime = arrival.arrivalTime ?: currentTime.plusMinutes(arrival.minutes!!.toLong())
                 arrival.copy(
