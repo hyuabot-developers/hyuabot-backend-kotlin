@@ -9,6 +9,7 @@ import app.hyuabot.backend.database.repository.BusRealtimeRepository
 import app.hyuabot.backend.database.repository.BusTimetableRepository
 import app.hyuabot.backend.holiday.service.PublicHolidayService
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.cache.CacheManager
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager
@@ -27,6 +28,8 @@ class BusRealtimeService(
     private val timetableRepository: BusTimetableRepository,
     private val publicHolidayService: PublicHolidayService,
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     private var cacheManager: CacheManager = ConcurrentMapCacheManager("busTravelTime")
 
     @Autowired
@@ -234,14 +237,38 @@ class BusRealtimeService(
         destinationLogs: List<app.hyuabot.backend.database.entity.BusDepartureLog>,
     ): LocalTime? {
         val durations = cachedTravelDurations(key.routeID, key.stopID, destinationStopID, sourceLogs, destinationLogs)
-        if (durations.isEmpty()) return null
+        if (durations.isEmpty()) {
+            logger.info(
+                "Bus destination ETA diagnostic route={} sourceStop={} destinationStop={} " +
+                    "primaryTime={} reason=empty_durations sourceLogs={} destinationLogs={}",
+                key.routeID,
+                key.stopID,
+                destinationStopID,
+                primaryTime,
+                sourceLogs.size,
+                destinationLogs.size,
+            )
+            return null
+        }
         val targetBucket = primaryTime.toSecondOfDay() / TRAVEL_TIME_BUCKET_SECONDS
         val duration =
             listOf(0, 1, -1, 2, -2, 3, -3, 4, -4)
                 .asSequence()
                 .mapNotNull { offset -> durations[targetBucket + offset] }
                 .firstOrNull()
-                ?: return null
+                ?: run {
+                    logger.info(
+                        "Bus destination ETA diagnostic route={} sourceStop={} destinationStop={} " +
+                            "primaryTime={} targetBucket={} reason=target_bucket_missing durationBuckets={}",
+                        key.routeID,
+                        key.stopID,
+                        destinationStopID,
+                        primaryTime,
+                        targetBucket,
+                        durations.keys.sorted(),
+                    )
+                    return null
+                }
         return primaryTime.plusMinutes(duration.toLong())
     }
 
@@ -258,7 +285,18 @@ class BusRealtimeService(
                 .joinToString(":")
         val cache = checkNotNull(cacheManager.getCache("busTravelTime"))
         val cached = cache.get(cacheKey)?.get() as? Map<Int, Int>
-        if (cached != null) return cached
+        if (cached != null) {
+            logger.debug(
+                "Bus destination ETA cache hit route={} sourceStop={} destinationStop={} " +
+                    "cacheKey={} durationBuckets={}",
+                routeID,
+                sourceStopID,
+                destinationStopID,
+                cacheKey,
+                cached.keys.sorted(),
+            )
+            return cached
+        }
         val destinationByDate = destinationLogs.groupBy { it.departureDate }
         val samples =
             sourceLogs.mapNotNull { source ->
@@ -280,6 +318,18 @@ class BusRealtimeService(
                     }
             }
         val durations = samples.groupBy({ it.first }, { it.second }).mapValues { (_, values) -> values.average().toInt() }
+        logger.info(
+            "Bus destination ETA cache miss route={} sourceStop={} destinationStop={} " +
+                "cacheKey={} sourceLogs={} destinationLogs={} samples={} durationBuckets={}",
+            routeID,
+            sourceStopID,
+            destinationStopID,
+            cacheKey,
+            sourceLogs.size,
+            destinationLogs.size,
+            samples.size,
+            durations.keys.sorted(),
+        )
         cache.put(cacheKey, durations)
         return durations
     }
