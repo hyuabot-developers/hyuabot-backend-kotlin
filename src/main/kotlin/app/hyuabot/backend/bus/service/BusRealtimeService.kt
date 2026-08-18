@@ -284,8 +284,25 @@ class BusRealtimeService(
             listOf(routeID, sourceStopID, destinationStopID, sourceLogs.map { it.departureDate }.distinct().sorted())
                 .joinToString(":")
         val cache = checkNotNull(cacheManager.getCache("busTravelTime"))
-        val cached = cache.get(cacheKey)?.get() as? Map<Int, Int>
+        val cached = cache.get(cacheKey)?.get() as? Map<*, *>
         if (cached != null) {
+            val normalized =
+                cached.entries
+                    .mapNotNull { entry ->
+                        val bucket =
+                            when (val key = entry.key) {
+                                is Number -> key.toInt()
+                                is String -> key.toIntOrNull()
+                                else -> null
+                            }
+                        val duration =
+                            when (val value = entry.value) {
+                                is Number -> value.toInt()
+                                is String -> value.toIntOrNull()
+                                else -> null
+                            }
+                        if (bucket != null && duration != null) bucket to duration else null
+                    }.toMap()
             logger.debug(
                 "Bus destination ETA cache hit route={} sourceStop={} destinationStop={} " +
                     "cacheKey={} durationBuckets={}",
@@ -293,9 +310,9 @@ class BusRealtimeService(
                 sourceStopID,
                 destinationStopID,
                 cacheKey,
-                cached.keys.sorted(),
+                normalized.keys.sorted(),
             )
-            return cached
+            return normalized
         }
         val destinationByDate = destinationLogs.groupBy { it.departureDate }
         val samples =
