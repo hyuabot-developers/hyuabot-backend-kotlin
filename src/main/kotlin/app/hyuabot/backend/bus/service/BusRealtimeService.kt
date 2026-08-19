@@ -3,6 +3,7 @@ package app.hyuabot.backend.bus.service
 import app.hyuabot.backend.bus.domain.BusArrivalKey
 import app.hyuabot.backend.bus.domain.BusDepartureLogKey
 import app.hyuabot.backend.codegen.types.BusArrival
+import app.hyuabot.backend.codegen.types.BusDestinationTravelMinutes
 import app.hyuabot.backend.database.entity.BusRealtime
 import app.hyuabot.backend.database.repository.BusDepartureLogRepository
 import app.hyuabot.backend.database.repository.BusRealtimeRepository
@@ -136,7 +137,9 @@ class BusRealtimeService(
                 .flatMap { key ->
                     buildList {
                         add(BusDepartureLogKey(key.routeID, key.stopID, sameDayDates))
-                        key.destinationStopID?.let { add(BusDepartureLogKey(key.routeID, it, sameDayDates)) }
+                        (key.destinationStopIDs + listOfNotNull(key.destinationStopID)).forEach { destinationStopID ->
+                            add(BusDepartureLogKey(key.routeID, destinationStopID, sameDayDates))
+                        }
                     }
                 }
         val allLogs = departureLogRepository.findByRouteStopAndDepartureDates(logKeys.toSet())
@@ -173,6 +176,7 @@ class BusRealtimeService(
                         minutes = it.remainingTime.toMinutes().toInt(),
                         lowFloor = it.isLowFloor,
                         isRealtime = true,
+                        destinationTravelMinutes = emptyList(),
                     )
                 }
             val timetableEntries = timetableGrouped[key.routeID to key.startStopID] ?: emptyList()
@@ -194,7 +198,12 @@ class BusRealtimeService(
                                 terminalTime = entry.departureTime
                             }
                         }
-                        BusArrival(isRealtime = false, time = terminalTime, arrivalTime = logTime)
+                        BusArrival(
+                            isRealtime = false,
+                            time = terminalTime,
+                            arrivalTime = logTime,
+                            destinationTravelMinutes = emptyList(),
+                        )
                     }.sortedBy { toServiceSeconds(it.time!!) }
             val scheduledArrivals =
                 if (logArrivals.isEmpty()) {
@@ -204,38 +213,55 @@ class BusRealtimeService(
                             (toServiceSeconds(estimatedArrival) - toServiceSeconds(currentTime)) / 60 > cutoffMinutes
                         }.map { timetable ->
                             val estimatedArrival = timetable.departureTime.plusMinutes(key.minuteFromStart.toLong())
-                            BusArrival(isRealtime = false, time = timetable.departureTime, arrivalTime = estimatedArrival)
+                            BusArrival(
+                                isRealtime = false,
+                                time = timetable.departureTime,
+                                arrivalTime = estimatedArrival,
+                                destinationTravelMinutes = emptyList(),
+                            )
                         }.sortedBy { toServiceSeconds(it.arrivalTime!!) }
                 } else {
                     logArrivals
                 }
             val arrivals = (realtimeArrivals + scheduledArrivals).take(key.limit ?: Int.MAX_VALUE)
-            val destinationStopID = key.destinationStopID ?: return@associateWith arrivals
             val sourceLogs = logGrouped[key.routeID to key.stopID].orEmpty()
-            val destinationLogs = logGrouped[key.routeID to destinationStopID].orEmpty()
+            val destinationStopIDs = (key.destinationStopIDs + listOfNotNull(key.destinationStopID)).distinct()
             arrivals.map { arrival ->
                 val primaryTime = arrival.arrivalTime ?: currentTime.plusMinutes(arrival.minutes!!.toLong())
-                arrival.copy(
-                    destinationArrivalTime =
-                        estimateDestinationArrivalTime(
+                val destinationTravelMinutes =
+                    destinationStopIDs.mapNotNull { destinationStopID ->
+                        estimateDestinationTravelMinutes(
                             key = key,
                             destinationStopID = destinationStopID,
                             primaryTime = primaryTime,
                             sourceLogs = sourceLogs,
-                            destinationLogs = destinationLogs,
-                        ),
+                            destinationLogs = logGrouped[key.routeID to destinationStopID].orEmpty(),
+                        )?.let { minutes ->
+                            BusDestinationTravelMinutes(
+                                destinationStopId = destinationStopID,
+                                minutes = minutes,
+                            )
+                        }
+                    }
+                arrival.copy(
+                    destinationArrivalTime =
+                        destinationTravelMinutes
+                            .firstOrNull { it.destinationStopId == key.destinationStopID }
+                            ?.minutes
+                            ?.let { primaryTime.plusMinutes(it.toLong()) },
+                    destinationTravelMinutes = destinationTravelMinutes,
                 )
             }
         }
     }
 
-    private fun estimateDestinationArrivalTime(
+    private fun estimateDestinationTravelMinutes(
         key: BusArrivalKey,
         destinationStopID: Int,
         primaryTime: LocalTime,
         sourceLogs: List<app.hyuabot.backend.database.entity.BusDepartureLog>,
         destinationLogs: List<app.hyuabot.backend.database.entity.BusDepartureLog>,
-    ): LocalTime? {
+    ): Int? {
         val durations = cachedTravelDurations(key.routeID, key.stopID, destinationStopID, sourceLogs, destinationLogs)
         if (durations.isEmpty()) {
             logger.info(
@@ -269,7 +295,7 @@ class BusRealtimeService(
                     )
                     return null
                 }
-        return primaryTime.plusMinutes(duration.toLong())
+        return duration
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -289,18 +315,8 @@ class BusRealtimeService(
             val normalized =
                 cached.entries
                     .mapNotNull { entry ->
-                        val bucket =
-                            when (val key = entry.key) {
-                                is Number -> key.toInt()
-                                is String -> key.toIntOrNull()
-                                else -> null
-                            }
-                        val duration =
-                            when (val value = entry.value) {
-                                is Number -> value.toInt()
-                                is String -> value.toIntOrNull()
-                                else -> null
-                            }
+                        val bucket = entry.key.toString().toIntOrNull()
+                        val duration = entry.value.toString().toIntOrNull()
                         if (bucket != null && duration != null) bucket to duration else null
                     }.toMap()
             logger.debug(

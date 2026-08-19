@@ -13,6 +13,7 @@ import app.hyuabot.backend.bus.service.BusRouteService
 import app.hyuabot.backend.bus.service.BusStopService
 import app.hyuabot.backend.bus.service.BusTimetableService
 import app.hyuabot.backend.codegen.types.BusArrival
+import app.hyuabot.backend.codegen.types.BusDestinationTravelMinutes
 import app.hyuabot.backend.database.entity.BusDepartureLog
 import app.hyuabot.backend.database.entity.BusRealtime
 import app.hyuabot.backend.database.entity.BusRoute
@@ -503,12 +504,38 @@ class BusDataFetcherTest {
                     startStopID = startStop.id,
                     minuteFromStart = 1,
                     limit = null,
+                    destinationStopIDs = setOf(20, 30),
                 ) to
                     listOf(
-                        BusArrival(stops = 1, seats = 41, minutes = 2, lowFloor = false, isRealtime = true),
-                        BusArrival(stops = 11, seats = 41, minutes = 25, lowFloor = false, isRealtime = true),
-                        BusArrival(stops = 21, seats = 41, minutes = 45, lowFloor = false, isRealtime = true),
-                        BusArrival(time = LocalTime.parse("10:00"), isRealtime = false),
+                        BusArrival(
+                            stops = 1,
+                            seats = 41,
+                            minutes = 2,
+                            lowFloor = false,
+                            isRealtime = true,
+                            destinationTravelMinutes = listOf(BusDestinationTravelMinutes(destinationStopId = 20, minutes = 32)),
+                        ),
+                        BusArrival(
+                            stops = 11,
+                            seats = 41,
+                            minutes = 25,
+                            lowFloor = false,
+                            isRealtime = true,
+                            destinationTravelMinutes = emptyList(),
+                        ),
+                        BusArrival(
+                            stops = 21,
+                            seats = 41,
+                            minutes = 45,
+                            lowFloor = false,
+                            isRealtime = true,
+                            destinationTravelMinutes = emptyList(),
+                        ),
+                        BusArrival(
+                            time = LocalTime.parse("10:00"),
+                            isRealtime = false,
+                            destinationTravelMinutes = emptyList(),
+                        ),
                     ),
             ),
         )
@@ -517,7 +544,7 @@ class BusDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    bus(input: [{ route: 1, stop: 1 }]) {
+                    bus(input: [{ route: 1, stop: 1, destinationStops: [20, 30] }]) {
                         arrival {
                             stops
                             seats
@@ -525,6 +552,10 @@ class BusDataFetcherTest {
                             lowFloor
                             isRealtime
                             time
+                            destinationTravelMinutes {
+                                destinationStopId
+                                minutes
+                            }
                         }
                     }
                 }
@@ -533,6 +564,12 @@ class BusDataFetcherTest {
             )
 
         assertNotNull(result)
+        val destinationTravelMinutes =
+            ((result[0]["arrival"] as List<*>)[0] as Map<*, *>) ["destinationTravelMinutes"] as List<*>
+        assertEquals(
+            mapOf("destinationStopId" to 20, "minutes" to 32),
+            destinationTravelMinutes[0],
+        )
         val arrivals = result[0]["arrival"] as List<*>
         assertEquals(4, arrivals.size)
         arrivals.forEach {
@@ -562,8 +599,22 @@ class BusDataFetcherTest {
                     limit = 2,
                 ) to
                     listOf(
-                        BusArrival(stops = 1, seats = 41, minutes = 2, lowFloor = false, isRealtime = true),
-                        BusArrival(stops = 11, seats = 41, minutes = 25, lowFloor = false, isRealtime = true),
+                        BusArrival(
+                            stops = 1,
+                            seats = 41,
+                            minutes = 2,
+                            lowFloor = false,
+                            isRealtime = true,
+                            destinationTravelMinutes = emptyList(),
+                        ),
+                        BusArrival(
+                            stops = 11,
+                            seats = 41,
+                            minutes = 25,
+                            lowFloor = false,
+                            isRealtime = true,
+                            destinationTravelMinutes = emptyList(),
+                        ),
                     ),
             ),
         )
