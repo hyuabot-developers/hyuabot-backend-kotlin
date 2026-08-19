@@ -59,11 +59,20 @@ class BusDataFetcher(
             input.associate { key ->
                 (key.route to key.stop) to key.destinationStop
             }
+        val destinationStopsMap =
+            input
+                .groupBy { it.route to it.stop }
+                .mapValues { (_, keys) ->
+                    keys
+                        .flatMap { key -> key.destinationStops.orEmpty() + listOfNotNull(key.destinationStop) }
+                        .distinct()
+                }
         dfe.graphQlContext.put("datesMap", datesMap)
         dfe.graphQlContext.put("weekdaysMap", weekdaysMap)
         dfe.graphQlContext.put("limitMap", limitMap)
         dfe.graphQlContext.put("afterMap", afterMap)
         dfe.graphQlContext.put("destinationStopMap", destinationStopMap)
+        dfe.graphQlContext.put("destinationStopsMap", destinationStopsMap)
         return routeService.fetchRouteStops(input).map {
             BusRouteStop(
                 route =
@@ -217,6 +226,8 @@ class BusDataFetcher(
         val routeStop = dfe.getSource<BusRouteStop>()!!
         val limitMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, Int>>("limitMap")
         val destinationStopMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, Int?>>("destinationStopMap")
+        val destinationStopsMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, List<Int>>>("destinationStopsMap")
+        val destinationStopID = destinationStopMap[routeStop.route.seq to routeStop.stop.seq]
         val key =
             BusArrivalKey(
                 routeID = routeStop.route.seq,
@@ -224,7 +235,11 @@ class BusDataFetcher(
                 startStopID = routeStop.startStop.seq,
                 minuteFromStart = routeStop.minutes,
                 limit = limitMap[routeStop.route.seq to routeStop.stop.seq],
-                destinationStopID = destinationStopMap[routeStop.route.seq to routeStop.stop.seq],
+                destinationStopID = destinationStopID,
+                destinationStopIDs =
+                    destinationStopsMap
+                        .getOrDefault(routeStop.route.seq to routeStop.stop.seq, emptyList())
+                        .toSet(),
             )
         val dataLoader = dfe.getDataLoader<BusArrivalKey, List<BusArrival>>("busArrivalDataLoader")!!
         return dataLoader.load(key)

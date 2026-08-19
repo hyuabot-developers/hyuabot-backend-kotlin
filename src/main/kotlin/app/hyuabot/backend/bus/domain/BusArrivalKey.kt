@@ -7,4 +7,5 @@ data class BusArrivalKey(
     val minuteFromStart: Int,
     val limit: Int?,
     val destinationStopID: Int? = null,
+    val destinationStopIDs: Set<Int> = emptySet(),
 )

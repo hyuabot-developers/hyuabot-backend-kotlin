@@ -54,6 +54,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.springframework.cache.CacheManager
+import org.springframework.cache.concurrent.ConcurrentMapCache
 import org.springframework.data.domain.Sort
 import java.time.Duration
 import java.time.LocalDate
@@ -3060,6 +3061,16 @@ class BusServiceTest {
                 destinationStopID = 20,
             )
         val noMatchKey = key.copy(destinationStopID = 30)
+        val multiDestinationKey =
+            key.copy(
+                destinationStopID = null,
+                destinationStopIDs = setOf(20, 30),
+            )
+        val mismatchedDestinationKey =
+            key.copy(
+                destinationStopID = 99,
+                destinationStopIDs = setOf(20),
+            )
         whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(
             listOf(
                 BusRealtime(
@@ -3172,12 +3183,30 @@ class BusServiceTest {
         whenever(timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(any(), any(), any(), any(), any()))
             .thenReturn(emptyList())
 
-        val result = spyService.getArrivalBatch(setOf(key, noMatchKey))
+        val result =
+            spyService.getArrivalBatch(
+                setOf(key, noMatchKey, multiDestinationKey, mismatchedDestinationKey),
+            )
         val arrivals = result[key]!!
 
         assertEquals(true, arrivals.isNotEmpty())
         assertEquals(LocalTime.of(5, 5), arrivals.first().destinationArrivalTime)
+        assertEquals(1, arrivals.first().destinationTravelMinutes.size)
+        val destinationTravel = arrivals.first().destinationTravelMinutes.first()
+        assertEquals(
+            20,
+            destinationTravel.destinationStopId,
+        )
+        assertEquals(
+            60,
+            destinationTravel.minutes,
+        )
         assertEquals(null, result[noMatchKey]!!.first().destinationArrivalTime)
+        assertEquals(
+            listOf(20),
+            result[multiDestinationKey]!!.first().destinationTravelMinutes.map { it.destinationStopId },
+        )
+        assertEquals(null, result[mismatchedDestinationKey]!!.first().destinationArrivalTime)
         assertEquals(LocalTime.of(5, 5), spyService.getArrivalBatch(setOf(key))[key]!!.first().destinationArrivalTime)
     }
 
@@ -3223,6 +3252,71 @@ class BusServiceTest {
             .thenReturn(emptyList())
 
         assertThrows<IllegalStateException> { realtimeService.getArrivalBatch(setOf(key)) }
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 캐시된 목적지 이동 시간 형식 정규화")
+    fun testCachedTravelDurationsNormalizesLegacyValues() {
+        val cache = ConcurrentMapCache("busTravelTime")
+        cache.put(
+            "1:10:20:[]",
+            mapOf<Any, Any>(
+                10 to 20,
+                "11" to "21",
+                "12" to "invalid-duration",
+                "invalid-bucket" to "22",
+                true to 30,
+                "invalid" to "invalid",
+            ),
+        )
+        val cacheManager = mock<CacheManager>()
+        whenever(cacheManager.getCache("busTravelTime")).thenReturn(cache)
+        realtimeService.setCacheManager(cacheManager)
+
+        val method =
+            BusRealtimeService::class.java.getDeclaredMethod(
+                "cachedTravelDurations",
+                Int::class.java,
+                Int::class.java,
+                Int::class.java,
+                List::class.java,
+                List::class.java,
+            )
+        method.isAccessible = true
+
+        val result = method.invoke(realtimeService, 1, 10, 20, emptyList<BusDepartureLog>(), emptyList<BusDepartureLog>())
+
+        assertEquals(mapOf(10 to 20, 11 to 21), result)
+
+        cache.clear()
+        val sourceLog =
+            BusDepartureLog(
+                routeID = 1,
+                stopID = 10,
+                departureDate = LocalDate.of(2025, 2, 24),
+                departureTime = LocalTime.of(4, 0),
+                vehicleID = "vehicle-1",
+                routeStop = null,
+            )
+        val destinationLog =
+            BusDepartureLog(
+                routeID = 1,
+                stopID = 20,
+                departureDate = LocalDate.of(2025, 2, 24),
+                departureTime = LocalTime.of(5, 0),
+                vehicleID = "vehicle-1",
+                routeStop = null,
+            )
+        val calculated =
+            method.invoke(
+                realtimeService,
+                1,
+                10,
+                20,
+                listOf(sourceLog),
+                listOf(destinationLog),
+            ) as Map<*, *>
+        assertEquals(60, calculated.values.single())
     }
 
     @Test
