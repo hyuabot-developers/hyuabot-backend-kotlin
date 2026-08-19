@@ -235,6 +235,7 @@ type BusRouteStop {
     timetable: [BusTimetable!]!
     arrival: [BusArrival!]!
     log: [BusDepartureLog!]!
+    minimumDispatchIntervals: [BusMinimumDispatchInterval!]!
 }
 
 type BusRoute {
@@ -290,6 +291,11 @@ type BusTimetable {
     seq: Int!
     time: LocalTime!
     weekday: String!
+}
+
+type BusMinimumDispatchInterval {
+    weekday: String!
+    minutes: Int!
 }
 
 type BusDepartureLog {

@@ -7,6 +7,7 @@ import app.hyuabot.backend.bus.service.BusRouteService
 import app.hyuabot.backend.codegen.types.BusArrival
 import app.hyuabot.backend.codegen.types.BusCompany
 import app.hyuabot.backend.codegen.types.BusDepartureLog
+import app.hyuabot.backend.codegen.types.BusMinimumDispatchInterval
 import app.hyuabot.backend.codegen.types.BusRealtime
 import app.hyuabot.backend.codegen.types.BusRoute
 import app.hyuabot.backend.codegen.types.BusRouteStop
@@ -154,6 +155,7 @@ class BusDataFetcher(
                 timetable = emptyList(),
                 log = emptyList(),
                 arrival = emptyList(),
+                minimumDispatchIntervals = emptyList(),
             )
         }
     }
@@ -218,6 +220,19 @@ class BusDataFetcher(
                     vehicle = it.vehicleID,
                 )
             }
+        }
+    }
+
+    @DgsData(parentType = "BusRouteStop")
+    fun minimumDispatchIntervals(dfe: DataFetchingEnvironment): CompletableFuture<List<BusMinimumDispatchInterval>> {
+        val routeStop = dfe.getSource<BusRouteStop>()!!
+        val key = routeStop.route.seq to routeStop.startStop.seq
+        val dataLoader =
+            dfe.getDataLoader<Pair<Int, Int>, List<app.hyuabot.backend.bus.domain.MinimumDispatchInterval>>(
+                "busMinimumDispatchIntervalDataLoader",
+            )!!
+        return dataLoader.load(key).thenApply { intervals ->
+            intervals.map { BusMinimumDispatchInterval(weekday = it.weekday, minutes = it.minutes) }
         }
     }
 

@@ -3,11 +3,13 @@ package app.hyuabot.backend.bus
 import app.hyuabot.backend.bus.controller.BusArrivalDataLoader
 import app.hyuabot.backend.bus.controller.BusDataFetcher
 import app.hyuabot.backend.bus.controller.BusDepartureLogDataLoader
+import app.hyuabot.backend.bus.controller.BusMinimumDispatchIntervalDataLoader
 import app.hyuabot.backend.bus.controller.BusRealtimeDataLoader
 import app.hyuabot.backend.bus.controller.BusTimetableDataLoader
 import app.hyuabot.backend.bus.domain.BusArrivalKey
 import app.hyuabot.backend.bus.domain.BusDepartureLogKey
 import app.hyuabot.backend.bus.domain.BusTimetableKey
+import app.hyuabot.backend.bus.domain.MinimumDispatchInterval
 import app.hyuabot.backend.bus.service.BusRealtimeService
 import app.hyuabot.backend.bus.service.BusRouteService
 import app.hyuabot.backend.bus.service.BusStopService
@@ -45,6 +47,7 @@ import kotlin.test.Test
     BusRealtimeDataLoader::class,
     BusTimetableDataLoader::class,
     BusDepartureLogDataLoader::class,
+    BusMinimumDispatchIntervalDataLoader::class,
     BusArrivalDataLoader::class,
     ScalarRegistration::class,
 )
@@ -277,6 +280,45 @@ class BusDataFetcherTest {
         val busStop = busRouteStop["stop"] as Map<*, *>
         assertEquals(1, busStop["seq"])
         assertEquals("Test Bus Stop", busStop["name"])
+    }
+
+    @Test
+    @DisplayName("버스 종점 최소 배차 간격 조회")
+    fun testBusMinimumDispatchIntervals() {
+        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
+        whenever(timetableService.getMinimumDispatchIntervalsBatch(any())).thenReturn(
+            mapOf(
+                route.id to startStop.id to
+                    listOf(
+                        MinimumDispatchInterval("weekdays", 20),
+                        MinimumDispatchInterval("saturday", 30),
+                    ),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    bus(input: [{ route: 1, stop: 1 }]) {
+                        minimumDispatchIntervals {
+                            weekday
+                            minutes
+                        }
+                    }
+                }
+                """.trimIndent(),
+                "data.bus",
+            )
+
+        val intervals = result[0]["minimumDispatchIntervals"] as List<*>
+        assertEquals(
+            listOf(
+                mapOf("weekday" to "weekdays", "minutes" to 20),
+                mapOf("weekday" to "saturday", "minutes" to 30),
+            ),
+            intervals,
+        )
     }
 
     @Test
