@@ -2,6 +2,7 @@ package app.hyuabot.backend.bus.service
 
 import app.hyuabot.backend.bus.domain.BusTimetableKey
 import app.hyuabot.backend.bus.domain.BusTimetableRequest
+import app.hyuabot.backend.bus.domain.MinimumDispatchInterval
 import app.hyuabot.backend.bus.exception.BusRouteNotFoundException
 import app.hyuabot.backend.bus.exception.BusStartStopNotFoundException
 import app.hyuabot.backend.bus.exception.BusTimetableNotFoundException
@@ -182,6 +183,40 @@ class BusTimetableService(
                     }
                 }
             filtered.sortedBy { it.departureTime.toServiceMinutes() }
+        }
+    }
+
+    fun getMinimumDispatchIntervalsBatch(keys: Set<Pair<Int, Int>>): Map<Pair<Int, Int>, List<MinimumDispatchInterval>> {
+        if (keys.isEmpty()) return emptyMap()
+        val routeIDs = keys.map { it.first }.distinct()
+        val startStopIDs = keys.map { it.second }.distinct()
+        val sort =
+            Sort.by(
+                Sort.Order.asc("routeID"),
+                Sort.Order.asc("startStopID"),
+                Sort.Order.asc("departureTime"),
+            )
+        val grouped =
+            timetableRepository
+                .findByRouteIDInAndStartStopIDInAndDepartureTimeAfter(
+                    routeIDs,
+                    startStopIDs,
+                    LocalTime.MIN,
+                    sort,
+                ).groupBy { it.routeID to it.startStopID }
+        return keys.associateWith { key ->
+            grouped[key]
+                .orEmpty()
+                .groupBy { it.weekday }
+                .mapNotNull { (weekday, entries) ->
+                    val times = entries.map { it.departureTime.toServiceMinutes() }.sorted()
+                    val minimumGap =
+                        times
+                            .zipWithNext { first, second -> (second - first) / 60 }
+                            .filter { it > 0 }
+                            .minOrNull()
+                    minimumGap?.let { MinimumDispatchInterval(weekday, it) }
+                }.sortedBy { it.weekday }
         }
     }
 

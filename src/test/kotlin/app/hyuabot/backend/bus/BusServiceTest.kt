@@ -7,6 +7,7 @@ import app.hyuabot.backend.bus.domain.BusTimetableKey
 import app.hyuabot.backend.bus.domain.BusTimetableRequest
 import app.hyuabot.backend.bus.domain.CreateBusRouteRequest
 import app.hyuabot.backend.bus.domain.CreateBusStopRequest
+import app.hyuabot.backend.bus.domain.MinimumDispatchInterval
 import app.hyuabot.backend.bus.domain.UpdateBusRouteRequest
 import app.hyuabot.backend.bus.domain.UpdateBusStopRequest
 import app.hyuabot.backend.bus.exception.BusEndStopNotFoundException
@@ -4207,5 +4208,39 @@ class BusServiceTest {
         // no timetable → falls back to estimated terminal time (08:00 - 10min = 07:50)
         assertEquals(LocalTime.parse("07:50:00"), arrivals[0].time)
         assertEquals(LocalTime.parse("08:00:00"), arrivals[0].arrivalTime)
+    }
+
+    @Test
+    @DisplayName("버스 종점 시간표 기반 최소 배차 간격 계산")
+    fun testGetMinimumDispatchIntervalsBatch() {
+        assertEquals(emptyMap(), timetableService.getMinimumDispatchIntervalsBatch(emptySet()))
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndDepartureTimeAfter(
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(1, 1, 2, "weekdays", LocalTime.parse("08:00:00")),
+                BusTimetable(2, 1, 2, "weekdays", LocalTime.parse("08:20:00")),
+                BusTimetable(3, 1, 2, "weekdays", LocalTime.parse("08:20:00")),
+                BusTimetable(4, 1, 2, "saturday", LocalTime.parse("23:50:00")),
+                BusTimetable(5, 1, 2, "saturday", LocalTime.parse("00:10:00")),
+                BusTimetable(6, 1, 2, "sunday", LocalTime.parse("09:00:00")),
+            ),
+        )
+
+        val result = timetableService.getMinimumDispatchIntervalsBatch(setOf(1 to 2, 9 to 9))
+
+        assertEquals(
+            listOf(
+                MinimumDispatchInterval("saturday", 20),
+                MinimumDispatchInterval("weekdays", 20),
+            ),
+            result[1 to 2],
+        )
+        assertEquals(emptyList(), result[9 to 9])
     }
 }
