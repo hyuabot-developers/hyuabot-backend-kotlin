@@ -474,7 +474,7 @@ class BusDataFetcherTest {
         val result =
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
-                {
+                query BusDepartureLogObservation {
                     bus(input: [{ route: 1, stop: 1, dates: ["2025-03-01"] }]) {
                         log {
                             seq

@@ -23,6 +23,8 @@ import com.netflix.graphql.dgs.DgsData
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
 import graphql.schema.DataFetchingEnvironment
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.concurrent.CompletableFuture
@@ -33,6 +35,7 @@ import app.hyuabot.backend.database.entity.BusTimetable as BusTimetableEntity
 @DgsComponent
 class BusDataFetcher(
     private val routeService: BusRouteService,
+    private val meterRegistry: MeterRegistry = SimpleMeterRegistry(),
 ) {
     @DgsQuery
     fun bus(
@@ -210,6 +213,7 @@ class BusDataFetcher(
         val stopID = routeStop.stop.seq
         val dates = datesMap[routeID to stopID]!!
         val limit = limitMap[routeID to stopID]
+        recordDepartureLogRequest(dfe, limit)
 
         val key = BusDepartureLogKey(routeID = routeID, stopID = stopID, dates = dates, limit = limit)
         val dataLoader = dfe.getDataLoader<BusDepartureLogKey, List<BusDepartureLogEntity>>("busDepartureLogDataLoader")!!
@@ -245,6 +249,7 @@ class BusDataFetcher(
         val destinationStopMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, Int?>>("destinationStopMap")
         val destinationStopsMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, List<Int>>>("destinationStopsMap")
         val destinationStopID = destinationStopMap[routeStop.route.seq to routeStop.stop.seq]
+        recordArrivalRequest(dfe, limitMap[routeStop.route.seq to routeStop.stop.seq])
         val key =
             BusArrivalKey(
                 routeID = routeStop.route.seq,
@@ -260,5 +265,36 @@ class BusDataFetcher(
             )
         val dataLoader = dfe.getDataLoader<BusArrivalKey, List<BusArrival>>("busArrivalDataLoader")!!
         return dataLoader.load(key)
+    }
+
+    private fun recordDepartureLogRequest(
+        dfe: DataFetchingEnvironment,
+        limit: Int?,
+    ) {
+        recordRequestMetric(dfe, "log", limit)
+    }
+
+    private fun recordArrivalRequest(
+        dfe: DataFetchingEnvironment,
+        limit: Int?,
+    ) {
+        recordRequestMetric(dfe, "arrival", limit)
+    }
+
+    private fun recordRequestMetric(
+        dfe: DataFetchingEnvironment,
+        field: String,
+        limit: Int?,
+    ) {
+        meterRegistry
+            .counter(
+                "hyuabot.bus.requests",
+                "field",
+                field,
+                "operation",
+                dfe.operationDefinition.name ?: "anonymous",
+                "mode",
+                if (limit == null) "unlimited" else "limited",
+            ).increment()
     }
 }

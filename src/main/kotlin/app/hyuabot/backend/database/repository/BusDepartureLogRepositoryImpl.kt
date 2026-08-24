@@ -2,13 +2,17 @@ package app.hyuabot.backend.database.repository
 
 import app.hyuabot.backend.bus.domain.BusDepartureLogKey
 import app.hyuabot.backend.database.entity.BusDepartureLog
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import jakarta.persistence.EntityManager
 import jakarta.persistence.PersistenceContext
 import org.springframework.stereotype.Repository
+import java.time.Duration
 
 @Repository
 class BusDepartureLogRepositoryImpl(
     @PersistenceContext private val entityManager: EntityManager,
+    private val meterRegistry: MeterRegistry = SimpleMeterRegistry(),
 ) : BusDepartureLogRepositoryCustom {
     override fun findByRouteStopAndDepartureDates(keys: Set<BusDepartureLogKey>): List<BusDepartureLog> {
         val effectiveKeys = keys.filter { it.dates.isNotEmpty() }
@@ -16,7 +20,27 @@ class BusDepartureLogRepositoryImpl(
 
         val limitedKeys = effectiveKeys.filter { it.limit != null }
         val unlimitedKeys = effectiveKeys.filter { it.limit == null }
-        return findUnlimited(unlimitedKeys) + findLimited(limitedKeys)
+        return recordQuery("unlimited", unlimitedKeys) { findUnlimited(unlimitedKeys) } +
+            recordQuery("limited", limitedKeys) { findLimited(limitedKeys) }
+    }
+
+    private fun recordQuery(
+        mode: String,
+        keys: List<BusDepartureLogKey>,
+        query: () -> List<BusDepartureLog>,
+    ): List<BusDepartureLog> {
+        val startedAt = System.nanoTime()
+        val result = query()
+        meterRegistry
+            .timer("hyuabot.bus.departure.log.query", "mode", mode)
+            .record(Duration.ofNanos(System.nanoTime() - startedAt))
+        meterRegistry
+            .counter("hyuabot.bus.departure.log.query.keys", "mode", mode)
+            .increment(keys.size.toDouble())
+        meterRegistry
+            .counter("hyuabot.bus.departure.log.query.rows", "mode", mode)
+            .increment(result.size.toDouble())
+        return result
     }
 
     private fun findUnlimited(keys: List<BusDepartureLogKey>): List<BusDepartureLog> {
