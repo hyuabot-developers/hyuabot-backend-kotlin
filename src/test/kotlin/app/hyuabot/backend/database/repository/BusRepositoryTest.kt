@@ -21,6 +21,7 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZonedDateTime
+import kotlin.test.assertEquals
 
 @ActiveProfiles("test")
 @DataJpaTest
@@ -345,5 +346,21 @@ class BusRepositoryTest {
         assert(foundLogs.isNotEmpty())
         assert(foundLogs.all { it.routeID == 1 && it.stopID in setOf(stops[0].id, stops[1].id) })
         assert(busDepartureLogRepository.findByRouteStopAndDepartureDates(setOf(keys.last())).isEmpty())
+    }
+
+    @Test
+    @DisplayName("노선·정류장·날짜 조합별 버스 출발 기록 조회 - limit")
+    fun testBusDepartureLogFindByRouteStopAndDepartureDatesWithLimit() {
+        val keys =
+            setOf(
+                BusDepartureLogKey(1, stops[0].id, listOf(LocalDate.now()), limit = 2),
+                BusDepartureLogKey(1, stops[1].id, listOf(LocalDate.now()), limit = 1),
+            )
+
+        val foundLogs = busDepartureLogRepository.findByRouteStopAndDepartureDates(keys)
+
+        assertEquals(3, foundLogs.size)
+        assertEquals(2, foundLogs.count { it.stopID == stops[0].id })
+        assertEquals(1, foundLogs.count { it.stopID == stops[1].id })
     }
 }

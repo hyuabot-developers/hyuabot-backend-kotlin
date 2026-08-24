@@ -213,7 +213,9 @@ class BusRouteService(
                 .findByRouteStopAndDepartureDates(keys)
                 .groupBy { Triple(it.routeID, it.stopID, it.departureDate) }
         return keys.associateWith { key ->
-            key.dates.flatMap { date -> grouped[Triple(key.routeID, key.stopID, date)] ?: emptyList() }
+            key.dates
+                .flatMap { date -> grouped[Triple(key.routeID, key.stopID, date)] ?: emptyList() }
+                .let { logs -> key.limit?.let(logs::take) ?: logs }
         }
     }
 }
