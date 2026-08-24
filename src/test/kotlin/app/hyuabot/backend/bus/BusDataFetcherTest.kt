@@ -718,4 +718,34 @@ class BusDataFetcherTest {
         val arrivals = result[0]["arrival"] as List<*>
         assertEquals(0, arrivals.size)
     }
+
+    @Test
+    @DisplayName("버스 출발 기록 조회 - 입력 limit 전달")
+    fun testBusDepartureLogLimit() {
+        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
+        whenever(routeService.getBusDepartureLogBatch(any())).thenReturn(
+            mapOf(
+                BusDepartureLogKey(
+                    routeID = route.id,
+                    stopID = stop.id,
+                    dates = listOf(LocalDate.parse("2025-03-01")),
+                    limit = 1,
+                ) to listOf(createBusDepartureLog()),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    bus(input: [{ route: 1, stop: 1, limit: 1, dates: ["2025-03-01"] }]) {
+                        log { seq }
+                    }
+                }
+                """.trimIndent(),
+                "data.bus",
+            )
+
+        assertEquals(1, (result[0]["log"] as List<*>).size)
+    }
 }

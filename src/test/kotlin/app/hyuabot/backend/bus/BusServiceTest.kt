@@ -1332,6 +1332,40 @@ class BusServiceTest {
     }
 
     @Test
+    @DisplayName("버스 출발 로그 배치 조회 - limit 적용")
+    fun testGetBusDepartureLogBatchWithLimit() {
+        val dates = listOf(LocalDate.parse("2025-03-01"))
+        val key = BusDepartureLogKey(routeID = 216000068, stopID = 216000138, dates = dates, limit = 1)
+        whenever(logRepository.findByRouteStopAndDepartureDates(setOf(key))).thenReturn(
+            listOf(
+                BusDepartureLog(
+                    seq = 1,
+                    routeID = 216000068,
+                    stopID = 216000138,
+                    departureDate = dates[0],
+                    departureTime = LocalTime.parse("05:30:00"),
+                    vehicleID = "123가4567",
+                    routeStop = null,
+                ),
+                BusDepartureLog(
+                    seq = 2,
+                    routeID = 216000068,
+                    stopID = 216000138,
+                    departureDate = dates[0],
+                    departureTime = LocalTime.parse("06:00:00"),
+                    vehicleID = "234나5678",
+                    routeStop = null,
+                ),
+            ),
+        )
+
+        val result = routeService.getBusDepartureLogBatch(setOf(key))
+
+        assertEquals(1, result[key]?.size)
+        assertEquals("123가4567", result[key]?.single()?.vehicleID)
+    }
+
+    @Test
     @DisplayName("버스 출발 로그 배치 조회 - 결과 없음")
     fun testGetBusDepartureLogBatchNoResult() {
         val keys =
@@ -3308,6 +3342,15 @@ class BusServiceTest {
                 vehicleID = "vehicle-1",
                 routeStop = null,
             )
+        val laterDestinationLog =
+            BusDepartureLog(
+                routeID = 1,
+                stopID = 20,
+                departureDate = LocalDate.of(2025, 2, 24),
+                departureTime = LocalTime.of(5, 30),
+                vehicleID = "vehicle-1",
+                routeStop = null,
+            )
         val calculated =
             method.invoke(
                 realtimeService,
@@ -3315,9 +3358,21 @@ class BusServiceTest {
                 10,
                 20,
                 listOf(sourceLog),
-                listOf(destinationLog),
+                listOf(destinationLog, laterDestinationLog),
             ) as Map<*, *>
         assertEquals(60, calculated.values.single())
+
+        cache.clear()
+        val withoutDestination =
+            method.invoke(
+                realtimeService,
+                1,
+                10,
+                20,
+                listOf(sourceLog),
+                emptyList<BusDepartureLog>(),
+            ) as Map<*, *>
+        assertEquals(emptyMap<Any, Any>(), withoutDestination)
     }
 
     @Test

@@ -6,4 +6,5 @@ data class BusDepartureLogKey(
     val routeID: Int,
     val stopID: Int,
     val dates: List<LocalDate>,
+    val limit: Int? = null,
 )

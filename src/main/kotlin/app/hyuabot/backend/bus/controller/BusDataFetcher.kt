@@ -205,11 +205,13 @@ class BusDataFetcher(
     fun log(dfe: DataFetchingEnvironment): CompletableFuture<List<BusDepartureLog>> {
         val routeStop = dfe.getSource<BusRouteStop>()!!
         val datesMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, List<LocalDate>>>("datesMap")
+        val limitMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, Int>>("limitMap")
         val routeID = routeStop.route.seq
         val stopID = routeStop.stop.seq
         val dates = datesMap[routeID to stopID]!!
+        val limit = limitMap[routeID to stopID]
 
-        val key = BusDepartureLogKey(routeID = routeID, stopID = stopID, dates = dates)
+        val key = BusDepartureLogKey(routeID = routeID, stopID = stopID, dates = dates, limit = limit)
         val dataLoader = dfe.getDataLoader<BusDepartureLogKey, List<BusDepartureLogEntity>>("busDepartureLogDataLoader")!!
         return dataLoader.load(key).thenApply { logList ->
             logList.map {
