@@ -3342,6 +3342,15 @@ class BusServiceTest {
                 vehicleID = "vehicle-1",
                 routeStop = null,
             )
+        val laterDestinationLog =
+            BusDepartureLog(
+                routeID = 1,
+                stopID = 20,
+                departureDate = LocalDate.of(2025, 2, 24),
+                departureTime = LocalTime.of(5, 30),
+                vehicleID = "vehicle-1",
+                routeStop = null,
+            )
         val calculated =
             method.invoke(
                 realtimeService,
@@ -3349,9 +3358,21 @@ class BusServiceTest {
                 10,
                 20,
                 listOf(sourceLog),
-                listOf(destinationLog),
+                listOf(destinationLog, laterDestinationLog),
             ) as Map<*, *>
         assertEquals(60, calculated.values.single())
+
+        cache.clear()
+        val withoutDestination =
+            method.invoke(
+                realtimeService,
+                1,
+                10,
+                20,
+                listOf(sourceLog),
+                emptyList<BusDepartureLog>(),
+            ) as Map<*, *>
+        assertEquals(emptyMap<Any, Any>(), withoutDestination)
     }
 
     @Test
