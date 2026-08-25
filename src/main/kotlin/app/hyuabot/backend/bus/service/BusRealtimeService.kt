@@ -189,7 +189,11 @@ class BusRealtimeService(
                     .map { it.departureTime }
             val logArrivals =
                 clusterDepartureTimes(rawLogTimes, clusterThresholdMinutes(headwayMinutes))
-                    .filter { time -> (toServiceSeconds(time) - toServiceSeconds(currentTime)) / 60 > cutoffMinutes }
+                    .filter { time ->
+                        val remainingSeconds = toServiceSeconds(time) - toServiceSeconds(currentTime)
+                        remainingSeconds / 60 > cutoffMinutes &&
+                            remainingSeconds >= key.minuteFromStart * 60
+                    }
                     .map { logTime ->
                         val estimatedTerminalTime = logTime.minusMinutes(key.minuteFromStart.toLong())
                         var terminalTime = estimatedTerminalTime
@@ -213,7 +217,9 @@ class BusRealtimeService(
                     timetableEntries
                         .filter { timetable ->
                             val estimatedArrival = timetable.departureTime.plusMinutes(key.minuteFromStart.toLong())
-                            (toServiceSeconds(estimatedArrival) - toServiceSeconds(currentTime)) / 60 > cutoffMinutes
+                            val remainingSeconds = toServiceSeconds(estimatedArrival) - toServiceSeconds(currentTime)
+                            remainingSeconds / 60 > cutoffMinutes &&
+                                remainingSeconds >= key.minuteFromStart * 60
                         }.map { timetable ->
                             val estimatedArrival = timetable.departureTime.plusMinutes(key.minuteFromStart.toLong())
                             BusArrival(

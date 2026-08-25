@@ -4275,6 +4275,56 @@ class BusServiceTest {
     }
 
     @Test
+    @DisplayName("비실시간 도착 정보 - 종점부터 현재 정류장까지 소요 시간보다 짧게 남은 항목 제외")
+    fun testGetArrivalBatchExcludesScheduledArrivalWithInsufficientTravelTime() {
+        val fixedNow = LocalDateTime.of(2025, 3, 3, 7, 0)
+        val spyService = spy(realtimeService)
+        doReturn(fixedNow).whenever(spyService).currentTime()
+
+        val key =
+            BusArrivalKey(
+                routeID = 216000068,
+                stopID = 216000138,
+                startStopID = 216000358,
+                minuteFromStart = 10,
+                limit = null,
+            )
+        whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
+        whenever(logRepository.findByRouteStopAndDepartureDates(any())).thenReturn(emptyList())
+        whenever(
+            timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(
+                any(),
+                any(),
+                any(),
+                any(),
+                any(),
+            ),
+        ).thenReturn(
+            listOf(
+                BusTimetable(
+                    seq = 1,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("06:55:00"),
+                ),
+                BusTimetable(
+                    seq = 2,
+                    routeID = 216000068,
+                    startStopID = 216000358,
+                    weekday = "weekdays",
+                    departureTime = LocalTime.parse("07:30:00"),
+                ),
+            ),
+        )
+
+        val arrivals = spyService.getArrivalBatch(setOf(key))[key]!!
+
+        assertEquals(1, arrivals.size)
+        assertEquals(LocalTime.parse("07:30:00"), arrivals[0].time)
+    }
+
+    @Test
     @DisplayName("버스 종점 시간표 기반 최소 배차 간격 계산")
     fun testGetMinimumDispatchIntervalsBatch() {
         assertEquals(emptyMap(), timetableService.getMinimumDispatchIntervalsBatch(emptySet()))
