@@ -131,7 +131,10 @@ class BusRealtimeService(
         val serviceDate =
             if (currentTime.isBefore(serviceStartTime)) now.toLocalDate().minusDays(1) else now.toLocalDate()
         val weekday = resolveWeekday(serviceDate)
-        val sameDayDates = (1..4).map { serviceDate.minusWeeks(it.toLong()) }
+        // Include the current service day so arrival can use the same-day departure
+        // logs that the realtime screen receives through the log field. Keep three
+        // comparable prior weeks for fallback and travel-time estimation.
+        val sameDayDates = (0..3).map { serviceDate.minusWeeks(it.toLong()) }
         val logKeys =
             keys
                 .flatMap { key ->

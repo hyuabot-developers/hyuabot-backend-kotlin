@@ -4142,6 +4142,15 @@ class BusServiceTest {
         assertEquals(true, arrivals[0].isRealtime)
         assertEquals(false, arrivals[1].isRealtime)
         assertEquals(LocalTime.parse("08:00:00"), arrivals[1].time)
+        verify(logRepository).findByRouteStopAndDepartureDates(
+            argThat { keys ->
+                keys.any { candidate ->
+                    candidate.routeID == 216000068 &&
+                        candidate.stopID == 216000138 &&
+                        candidate.dates.contains(LocalDate.of(2025, 3, 3))
+                }
+            },
+        )
     }
 
     @Test
@@ -4168,7 +4177,7 @@ class BusServiceTest {
                     seq = 1,
                     routeID = 216000068,
                     stopID = 216000138,
-                    departureDate = LocalDate.of(2025, 2, 24),
+                    departureDate = LocalDate.of(2025, 3, 3),
                     departureTime = LocalTime.parse("08:00:00"),
                     vehicleID = "1000001",
                     routeStop = null,
