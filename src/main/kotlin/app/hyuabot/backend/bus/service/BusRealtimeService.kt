@@ -171,6 +171,8 @@ class BusRealtimeService(
                         .toInt()
                 }
             val cutoffMinutes = lastRealtimeMinutes + 10
+            val minimumArrivalLeadSeconds =
+                maxOf((cutoffMinutes + 1) * 60, key.minuteFromStart * 60)
             val realtimeArrivals =
                 sortedRealtimes.map {
                     BusArrival(
@@ -191,10 +193,8 @@ class BusRealtimeService(
                 clusterDepartureTimes(rawLogTimes, clusterThresholdMinutes(headwayMinutes))
                     .filter { time ->
                         val remainingSeconds = toServiceSeconds(time) - toServiceSeconds(currentTime)
-                        remainingSeconds / 60 > cutoffMinutes &&
-                            remainingSeconds >= key.minuteFromStart * 60
-                    }
-                    .map { logTime ->
+                        remainingSeconds >= minimumArrivalLeadSeconds
+                    }.map { logTime ->
                         val estimatedTerminalTime = logTime.minusMinutes(key.minuteFromStart.toLong())
                         var terminalTime = estimatedTerminalTime
                         var bestDiff = Int.MAX_VALUE
@@ -218,8 +218,7 @@ class BusRealtimeService(
                         .filter { timetable ->
                             val estimatedArrival = timetable.departureTime.plusMinutes(key.minuteFromStart.toLong())
                             val remainingSeconds = toServiceSeconds(estimatedArrival) - toServiceSeconds(currentTime)
-                            remainingSeconds / 60 > cutoffMinutes &&
-                                remainingSeconds >= key.minuteFromStart * 60
+                            remainingSeconds >= minimumArrivalLeadSeconds
                         }.map { timetable ->
                             val estimatedArrival = timetable.departureTime.plusMinutes(key.minuteFromStart.toLong())
                             BusArrival(
