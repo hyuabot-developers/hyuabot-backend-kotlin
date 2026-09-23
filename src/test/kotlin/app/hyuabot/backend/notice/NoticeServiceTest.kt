@@ -20,6 +20,7 @@ import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.ZonedDateTime
@@ -751,5 +752,16 @@ class NoticeServiceTest {
 
         assertEquals(listOf("버스"), result.map { it.name })
         verify(noticeRepository).findByCategoryIDInAndExpiredAtAfter(listOf(1), now)
+    }
+
+    @Test
+    @DisplayName("공지사항 조회 - 일치하는 카테고리가 없으면 공지를 조회하지 않음")
+    fun shouldSkipNoticeQueryWhenNoCategoryMatches() {
+        whenever(categoryRepository.findAll()).thenReturn(listOf(NoticeCategory(id = 1, name = "버스", notice = mutableListOf())))
+
+        val result = service.fetchNotices("셔틀", null, null, ZonedDateTime.now())
+
+        assertEquals(0, result.size)
+        verify(noticeRepository, never()).findByCategoryIDInAndExpiredAtAfter(any(), any())
     }
 }

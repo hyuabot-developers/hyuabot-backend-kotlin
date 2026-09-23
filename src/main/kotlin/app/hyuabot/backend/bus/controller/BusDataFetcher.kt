@@ -238,8 +238,8 @@ class BusDataFetcher(
     }
 }
 
-private fun DataFetchingEnvironment.busQueryContext(): BusQueryContext =
-    requireNotNull(getLocalContext<BusQueryContext>()) { "BusRouteStop fields require the Query.bus local context" }
+/** Set by `Query.bus` on every returned BusRouteStop. */
+private fun DataFetchingEnvironment.busQueryContext(): BusQueryContext = getLocalContext<BusQueryContext>()!!
 
 /** Argument state belongs to one root field, including when the query uses bus aliases. */
 private class BusQueryContext(

@@ -25,6 +25,9 @@ class PublicHolidayService(
      */
     private val holidayCache = ConcurrentHashMap<LocalDate, Pair<Long, PublicHoliday?>>()
 
+    /** Monotonic clock for the cache TTL; replaceable in tests. */
+    internal var nanoClock: () -> Long = System::nanoTime
+
     fun getPublicHolidayList() = publicHolidayRepository.findAll().sortedBy { it.date }
 
     fun createPublicHoliday(payload: PublicHolidayRequest): PublicHoliday {
@@ -86,7 +89,7 @@ class PublicHolidayService(
     }
 
     fun findPublicHoliday(date: LocalDate): PublicHoliday? {
-        val now = System.nanoTime()
+        val now = nanoClock()
         holidayCache[date]?.let { (cachedAt, holiday) -> if (now - cachedAt < HOLIDAY_CACHE_TTL_NANOS) return holiday }
         return lookupPublicHoliday(date).also { holidayCache[date] = now to it }
     }

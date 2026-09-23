@@ -255,4 +255,22 @@ class PublicHolidayServiceTest {
         service.findPublicHoliday(solarDate)
         verify(repository, times(2)).findBySolarDateOrLunarDate(eq(solarDate), any())
     }
+
+    @Test
+    @DisplayName("공휴일 검색 - 캐시 유효 시간이 지나면 다시 조회")
+    fun testFindPublicHolidayCacheExpires() {
+        val solarDate = LocalDate.of(2025, 3, 4)
+        var now = 0L
+        service.nanoClock = { now }
+        whenever(repository.findBySolarDateOrLunarDate(eq(solarDate), any())).thenReturn(null)
+
+        service.findPublicHoliday(solarDate)
+        now =
+            java.time.Duration
+                .ofMinutes(2)
+                .toNanos()
+        service.findPublicHoliday(solarDate)
+
+        verify(repository, times(2)).findBySolarDateOrLunarDate(eq(solarDate), any())
+    }
 }

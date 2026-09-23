@@ -773,4 +773,26 @@ class BusDataFetcherTest {
 
         assertEquals(1, (result[0]["log"] as List<*>).size)
     }
+
+    @Test
+    fun `log without dates returns an empty list instead of failing`() {
+        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
+        whenever(routeService.getBusDepartureLogBatch(any())).thenReturn(
+            mapOf(BusDepartureLogKey(routeID = route.id, stopID = stop.id, dates = emptyList()) to emptyList()),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    bus(input: [{ route: 1, stop: 1 }]) {
+                        log { seq }
+                    }
+                }
+                """.trimIndent(),
+                "data.bus",
+            )
+
+        assertEquals(emptyList<Any>(), result[0]["log"])
+    }
 }

@@ -66,7 +66,7 @@ class SubwayDataFetcher(
     @DgsData(parentType = "SubwayStation", field = "name")
     fun stationName(dfe: DgsDataFetchingEnvironment): String {
         val station = dfe.getSource<SubwayStation>()!!
-        val language = dfe.getLocalContext<SubwayQueryContext>()?.language
+        val language = dfe.subwayQueryContext().language
         return dfe.memoizedStationName("id:${station.stationID}:$language:${station.name}") {
             subwayStationNameService.displayName(station.stationID, language, station.name)
         }
@@ -75,7 +75,7 @@ class SubwayDataFetcher(
     @DgsData(parentType = "SubwayOriginTerminal", field = "name")
     fun terminalName(dfe: DgsDataFetchingEnvironment): String {
         val station = dfe.getSource<SubwayOriginTerminal>()!!
-        val language = dfe.getLocalContext<SubwayQueryContext>()?.language
+        val language = dfe.subwayQueryContext().language
         return dfe.memoizedStationName("id:${station.stationID}:$language:${station.name}") {
             subwayStationNameService.displayName(station.stationID, language, station.name)
         }
@@ -190,7 +190,7 @@ class SubwayDataFetcher(
         dfe: DgsDataFetchingEnvironment,
     ): String? =
         location?.let {
-            val language = dfe.getLocalContext<SubwayQueryContext>()?.language
+            val language = dfe.subwayQueryContext().language
             dfe.memoizedStationName("name:$it:$language") { subwayStationNameService.displayNameByKoreanName(it, language) }
         }
 
@@ -236,8 +236,8 @@ private data class SubwayQueryContext(
     val language: String?,
 )
 
-private fun DataFetchingEnvironment.subwayQueryContext(): SubwayQueryContext =
-    requireNotNull(getLocalContext<SubwayQueryContext>()) { "SubwayStation fields require the Query.subway local context" }
+/** Set by `Query.subway` and inherited by nested station fields. */
+private fun DataFetchingEnvironment.subwayQueryContext(): SubwayQueryContext = getLocalContext<SubwayQueryContext>()!!
 
 private const val STATION_NAME_MEMO_KEY = "subwayStationNameMemo"
 
