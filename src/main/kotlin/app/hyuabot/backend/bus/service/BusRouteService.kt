@@ -123,12 +123,8 @@ class BusRouteService(
 
     fun fetchRouteStops(keys: List<BusRouteStopInput>): List<BusRouteStop> {
         if (keys.isEmpty()) return emptyList()
-        val routes = keys.map { it.route }.distinct()
-        val stops = keys.map { it.stop }.distinct()
         val keySet = keys.map { it.route to it.stop }.toSet()
-        return routeStopRepository.fetchBusRouteStops(routes, stops).filter { rs ->
-            (rs.routeID to rs.stopID) in keySet
-        }
+        return routeStopRepository.fetchBusRouteStopPairs(keySet)
     }
 
     fun createBusRouteStop(
@@ -151,8 +147,6 @@ class BusRouteService(
                 route = null,
                 stop = null,
                 startStop = null,
-                log = mutableListOf(),
-                realtime = mutableListOf(),
             ),
         )
     }

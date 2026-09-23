@@ -6,9 +6,6 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.IdClass
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.JoinColumns
-import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
 import org.hibernate.annotations.Type
@@ -40,12 +37,6 @@ class BusRealtime(
     var isLowFloor: Boolean,
     @Column(name = "last_updated_time", columnDefinition = "timestamptz", nullable = false)
     var updatedAt: ZonedDateTime,
-    @ManyToOne
-    @JoinColumns(
-        JoinColumn(name = "route_id", referencedColumnName = "route_id", insertable = false, updatable = false),
-        JoinColumn(name = "stop_id", referencedColumnName = "stop_id", insertable = false, updatable = false),
-    )
-    val routeStop: BusRouteStop?,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

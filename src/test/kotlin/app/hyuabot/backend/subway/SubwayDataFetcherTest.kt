@@ -160,6 +160,32 @@ class SubwayDataFetcherTest {
         )
 
     @Test
+    fun subwayAliasesKeepIndependentDirectionsAndLanguages() {
+        whenever(subwayService.getStationViews(listOf(station.id))).thenReturn(listOf(createStationView()))
+        whenever(subwayStationNameService.displayName(station.id, "en", station.name)).thenReturn("Hanyang Univ.")
+        whenever(subwayStationNameService.displayName(station.id, "ko", station.name)).thenReturn("한대앞")
+        whenever(subwayService.getArrival(any(), any(), any(), anyOrNull(), any())).thenReturn(emptyList())
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<Map<String, List<Map<String, Any>>>>(
+                """
+                {
+                    arrivals: subway(input: { language: "en", keys: [
+                        {stationID: "K449", direction: ["up"], weekdays: ["weekdays"], limit: 1}
+                    ]}) { name arrival { direction } }
+                    transfer: subway(input: { language: "ko", keys: [
+                        {stationID: "K449", direction: ["down"], weekdays: ["weekends"], limit: 4}
+                    ]}) { name arrival { direction } }
+                }
+                """.trimIndent(),
+                "data",
+            )
+        assertEquals("Hanyang Univ.", result["arrivals"]!!.single()["name"])
+        assertEquals("한대앞", result["transfer"]!!.single()["name"])
+        assertEquals(listOf(mapOf("direction" to "up")), result["arrivals"]!!.single()["arrival"])
+        assertEquals(listOf(mapOf("direction" to "down")), result["transfer"]!!.single()["arrival"])
+    }
+
+    @Test
     @DisplayName("전철 도착 정보 조회 - 빈 키")
     fun testSubwayWithEmptyKeys() {
         val result =

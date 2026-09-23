@@ -17,8 +17,6 @@ class BusRouteStopTest {
             route = null,
             stop = null,
             startStop = null,
-            log = mutableListOf(),
-            realtime = mutableListOf(),
         )
 
     @Test

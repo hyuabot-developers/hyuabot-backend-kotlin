@@ -21,7 +21,6 @@ class BusRealtimeTest {
         remainingTime = Duration.ofMinutes(1),
         isLowFloor = false,
         updatedAt = ZonedDateTime.now(),
-        routeStop = null,
     )
 
     @Test

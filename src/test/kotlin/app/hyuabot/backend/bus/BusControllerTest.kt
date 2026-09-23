@@ -131,8 +131,6 @@ class BusControllerTest {
                 startStopID = TEST_STOP_1.id,
                 minuteFromStart = 0,
                 startStop = TEST_STOP_1,
-                log = mutableListOf(),
-                realtime = mutableListOf(),
             )
         val TEST_ROUTE_STOP_2 =
             BusRouteStop(
@@ -145,8 +143,6 @@ class BusControllerTest {
                 startStopID = TEST_STOP_1.id,
                 minuteFromStart = 10,
                 startStop = TEST_STOP_1,
-                log = mutableListOf(),
-                realtime = mutableListOf(),
             )
     }
 
@@ -749,8 +745,6 @@ class BusControllerTest {
                 startStopID = TEST_STOP_1.id,
                 minuteFromStart = 20,
                 startStop = TEST_STOP_1,
-                log = mutableListOf(),
-                realtime = mutableListOf(),
             )
         val payload =
             BusRouteStopRequest(
@@ -895,8 +889,6 @@ class BusControllerTest {
                 startStopID = TEST_STOP_1.id,
                 minuteFromStart = 30,
                 startStop = TEST_STOP_1,
-                log = mutableListOf(),
-                realtime = mutableListOf(),
             )
         val payload =
             BusRouteStopRequest(
@@ -1116,7 +1108,6 @@ class BusControllerTest {
                     departureDate = LocalDate.parse("2021-03-15"),
                     departureTime = LocalTime.parse("14:30:00"),
                     vehicleID = "123가4567",
-                    routeStop = null,
                 ),
                 BusDepartureLog(
                     seq = 2,
@@ -1125,7 +1116,6 @@ class BusControllerTest {
                     departureDate = LocalDate.parse("2021-03-15"),
                     departureTime = LocalTime.parse("15:00:00"),
                     vehicleID = "234나5678",
-                    routeStop = null,
                 ),
             ),
         ).whenever(routeService).getBusDepartureLogByRouteStop(TEST_ROUTE_1.id, TEST_STOP_1.id)
@@ -1967,7 +1957,6 @@ class BusControllerTest {
                     remainingSeat = 40,
                     isLowFloor = true,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
                 BusRealtime(
                     routeID = 216000068,
@@ -1978,7 +1967,6 @@ class BusControllerTest {
                     remainingSeat = 20,
                     isLowFloor = false,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
             ),
         )

@@ -179,8 +179,6 @@ class BusServiceTest {
                 startStopID = TEST_STOP_1.id,
                 minuteFromStart = 0,
                 startStop = TEST_STOP_1,
-                log = mutableListOf(),
-                realtime = mutableListOf(),
             )
         val TEST_ROUTE_STOP_2 =
             BusRouteStop(
@@ -193,8 +191,6 @@ class BusServiceTest {
                 startStopID = TEST_STOP_1.id,
                 minuteFromStart = 10,
                 startStop = TEST_STOP_1,
-                log = mutableListOf(),
-                realtime = mutableListOf(),
             )
     }
 
@@ -778,9 +774,8 @@ class BusServiceTest {
                 ),
             )
         whenever(
-            routeStopRepository.fetchBusRouteStops(
-                listOf(TEST_ROUTE_1.id),
-                listOf(TEST_ROUTE_STOP_1.stopID, TEST_ROUTE_STOP_2.stopID),
+            routeStopRepository.fetchBusRouteStopPairs(
+                setOf(TEST_ROUTE_1.id to TEST_ROUTE_STOP_1.stopID, TEST_ROUTE_1.id to TEST_ROUTE_STOP_2.stopID),
             ),
         ).thenReturn(
             listOf(TEST_ROUTE_STOP_1, TEST_ROUTE_STOP_2),
@@ -853,8 +848,6 @@ class BusServiceTest {
                 route = null,
                 stop = null,
                 startStop = null,
-                log = mutableListOf(),
-                realtime = mutableListOf(),
             ),
         )
         val result =
@@ -989,8 +982,6 @@ class BusServiceTest {
                 route = TEST_ROUTE_STOP_2.route,
                 stop = TEST_ROUTE_STOP_2.stop,
                 startStop = TEST_ROUTE_STOP_2.startStop,
-                log = TEST_ROUTE_STOP_2.log,
-                realtime = TEST_ROUTE_STOP_2.realtime,
             )
         whenever(routeRepository.findById(216000068)).thenReturn(Optional.of(TEST_ROUTE_1))
         whenever(routeStopRepository.findByRouteIDAndSeq(216000068, 2)).thenReturn(TEST_ROUTE_STOP_2)
@@ -1009,8 +1000,6 @@ class BusServiceTest {
                     route = TEST_ROUTE_STOP_2.route,
                     stop = TEST_ROUTE_STOP_2.stop,
                     startStop = TEST_ROUTE_STOP_2.startStop,
-                    log = TEST_ROUTE_STOP_2.log,
-                    realtime = TEST_ROUTE_STOP_2.realtime,
                 ),
             ),
         ).thenReturn(updatedRouteStop)
@@ -1173,7 +1162,6 @@ class BusServiceTest {
                     departureDate = LocalDate.parse("2021-03-15"),
                     departureTime = LocalTime.parse("14:30:00"),
                     vehicleID = "123가4567",
-                    routeStop = null,
                 ),
                 BusDepartureLog(
                     seq = 2,
@@ -1182,7 +1170,6 @@ class BusServiceTest {
                     departureDate = LocalDate.parse("2021-03-15"),
                     departureTime = LocalTime.parse("15:00:00"),
                     vehicleID = "234나5678",
-                    routeStop = null,
                 ),
             ),
         )
@@ -1212,7 +1199,6 @@ class BusServiceTest {
                     departureDate = LocalDate.parse("2021-03-15"),
                     departureTime = LocalTime.parse("14:30:00"),
                     vehicleID = "123가4567",
-                    routeStop = null,
                 ),
                 BusDepartureLog(
                     seq = 2,
@@ -1221,7 +1207,6 @@ class BusServiceTest {
                     departureDate = LocalDate.parse("2021-03-15"),
                     departureTime = LocalTime.parse("15:00:00"),
                     vehicleID = "234나5678",
-                    routeStop = null,
                 ),
             ),
         )
@@ -1298,7 +1283,6 @@ class BusServiceTest {
                     departureDate = LocalDate.parse("2025-03-01"),
                     departureTime = LocalTime.parse("05:30:00"),
                     vehicleID = "123가4567",
-                    routeStop = null,
                 ),
                 BusDepartureLog(
                     seq = 2,
@@ -1307,7 +1291,6 @@ class BusServiceTest {
                     departureDate = LocalDate.parse("2025-03-02"),
                     departureTime = LocalTime.parse("06:00:00"),
                     vehicleID = "234나5678",
-                    routeStop = null,
                 ),
                 BusDepartureLog(
                     seq = 3,
@@ -1316,7 +1299,6 @@ class BusServiceTest {
                     departureDate = LocalDate.parse("2025-03-01"),
                     departureTime = LocalTime.parse("07:00:00"),
                     vehicleID = "345다6789",
-                    routeStop = null,
                 ),
             ),
         )
@@ -1345,7 +1327,6 @@ class BusServiceTest {
                     departureDate = dates[0],
                     departureTime = LocalTime.parse("05:30:00"),
                     vehicleID = "123가4567",
-                    routeStop = null,
                 ),
                 BusDepartureLog(
                     seq = 2,
@@ -1354,7 +1335,6 @@ class BusServiceTest {
                     departureDate = dates[0],
                     departureTime = LocalTime.parse("06:00:00"),
                     vehicleID = "234나5678",
-                    routeStop = null,
                 ),
             ),
         )
@@ -1404,7 +1384,6 @@ class BusServiceTest {
                     departureDate = LocalDate.parse("2025-03-01"),
                     departureTime = LocalTime.parse("05:30:00"),
                     vehicleID = "123가4567",
-                    routeStop = null,
                 ),
             ),
         )
@@ -2829,7 +2808,6 @@ class BusServiceTest {
                     remainingSeat = 40,
                     isLowFloor = true,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
                 BusRealtime(
                     routeID = 216000068,
@@ -2840,7 +2818,6 @@ class BusServiceTest {
                     remainingSeat = 20,
                     isLowFloor = false,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
             ),
         )
@@ -2871,7 +2848,6 @@ class BusServiceTest {
                     remainingSeat = 40,
                     isLowFloor = true,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
                 BusRealtime(
                     routeID = 216000068,
@@ -2882,7 +2858,6 @@ class BusServiceTest {
                     remainingSeat = 20,
                     isLowFloor = false,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
             ),
         )
@@ -2929,7 +2904,6 @@ class BusServiceTest {
                     remainingSeat = 40,
                     isLowFloor = true,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
                 BusRealtime(
                     routeID = 216000068,
@@ -2940,7 +2914,6 @@ class BusServiceTest {
                     remainingSeat = 20,
                     isLowFloor = false,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
                 BusRealtime(
                     routeID = 216000068,
@@ -2951,7 +2924,6 @@ class BusServiceTest {
                     remainingSeat = 30,
                     isLowFloor = false,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
             ),
         )
@@ -3018,7 +2990,6 @@ class BusServiceTest {
                     remainingSeat = 40,
                     isLowFloor = true,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
                 BusRealtime(
                     routeID = 216000068,
@@ -3029,7 +3000,6 @@ class BusServiceTest {
                     remainingSeat = 20,
                     isLowFloor = false,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
             ),
         )
@@ -3117,7 +3087,6 @@ class BusServiceTest {
                     remainingSeat = 10,
                     isLowFloor = false,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
             ),
         )
@@ -3128,7 +3097,6 @@ class BusServiceTest {
                 departureDate = LocalDate.of(2025, 2, 24),
                 departureTime = LocalTime.of(4, 0),
                 vehicleID = "vehicle-1",
-                routeStop = null,
             )
         val destinationLog =
             BusDepartureLog(
@@ -3137,7 +3105,6 @@ class BusServiceTest {
                 departureDate = LocalDate.of(2025, 2, 24),
                 departureTime = LocalTime.of(5, 0),
                 vehicleID = "vehicle-1",
-                routeStop = null,
             )
         val sameTimeSourceLog =
             BusDepartureLog(
@@ -3146,7 +3113,6 @@ class BusServiceTest {
                 departureDate = LocalDate.of(2025, 2, 24),
                 departureTime = LocalTime.of(6, 0),
                 vehicleID = "vehicle-2",
-                routeStop = null,
             )
         val sameTimeDestinationLog =
             BusDepartureLog(
@@ -3155,7 +3121,6 @@ class BusServiceTest {
                 departureDate = LocalDate.of(2025, 2, 24),
                 departureTime = LocalTime.of(6, 0, 30),
                 vehicleID = "vehicle-2",
-                routeStop = null,
             )
         val longSourceLog =
             BusDepartureLog(
@@ -3164,7 +3129,6 @@ class BusServiceTest {
                 departureDate = LocalDate.of(2025, 2, 24),
                 departureTime = LocalTime.of(7, 0),
                 vehicleID = "vehicle-3",
-                routeStop = null,
             )
         val longDestinationLog =
             BusDepartureLog(
@@ -3173,7 +3137,6 @@ class BusServiceTest {
                 departureDate = LocalDate.of(2025, 2, 24),
                 departureTime = LocalTime.of(10, 0),
                 vehicleID = "vehicle-3",
-                routeStop = null,
             )
         val lateSourceLog =
             BusDepartureLog(
@@ -3182,7 +3145,6 @@ class BusServiceTest {
                 departureDate = LocalDate.of(2025, 2, 24),
                 departureTime = LocalTime.of(8, 0),
                 vehicleID = "vehicle-4",
-                routeStop = null,
             )
         val earlyDestinationLog =
             BusDepartureLog(
@@ -3191,7 +3153,6 @@ class BusServiceTest {
                 departureDate = LocalDate.of(2025, 2, 24),
                 departureTime = LocalTime.of(7, 0),
                 vehicleID = "vehicle-4",
-                routeStop = null,
             )
         val wrongVehicleDestinationLog =
             BusDepartureLog(
@@ -3200,7 +3161,6 @@ class BusServiceTest {
                 departureDate = LocalDate.of(2025, 2, 24),
                 departureTime = LocalTime.of(4, 30),
                 vehicleID = "other-vehicle",
-                routeStop = null,
             )
         whenever(logRepository.findByRouteStopAndDepartureDates(any())).thenReturn(
             listOf(
@@ -3278,7 +3238,6 @@ class BusServiceTest {
                     remainingSeat = 10,
                     isLowFloor = false,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
             ),
         )
@@ -3331,7 +3290,6 @@ class BusServiceTest {
                 departureDate = LocalDate.of(2025, 2, 24),
                 departureTime = LocalTime.of(4, 0),
                 vehicleID = "vehicle-1",
-                routeStop = null,
             )
         val destinationLog =
             BusDepartureLog(
@@ -3340,7 +3298,6 @@ class BusServiceTest {
                 departureDate = LocalDate.of(2025, 2, 24),
                 departureTime = LocalTime.of(5, 0),
                 vehicleID = "vehicle-1",
-                routeStop = null,
             )
         val laterDestinationLog =
             BusDepartureLog(
@@ -3349,7 +3306,6 @@ class BusServiceTest {
                 departureDate = LocalDate.of(2025, 2, 24),
                 departureTime = LocalTime.of(5, 30),
                 vehicleID = "vehicle-1",
-                routeStop = null,
             )
         val calculated =
             method.invoke(
@@ -3406,7 +3362,6 @@ class BusServiceTest {
                     remainingSeat = 40,
                     isLowFloor = true,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
                 BusRealtime(
                     routeID = 216000068,
@@ -3417,7 +3372,6 @@ class BusServiceTest {
                     remainingSeat = 20,
                     isLowFloor = false,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
             ),
         )
@@ -3523,7 +3477,6 @@ class BusServiceTest {
                     remainingSeat = 40,
                     isLowFloor = true,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
                 BusRealtime(
                     routeID = 216000069,
@@ -3534,7 +3487,6 @@ class BusServiceTest {
                     remainingSeat = 30,
                     isLowFloor = false,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
             ),
         )
@@ -4094,7 +4046,6 @@ class BusServiceTest {
                     remainingSeat = 30,
                     isLowFloor = false,
                     updatedAt = ZonedDateTime.now(),
-                    routeStop = null,
                 ),
             ),
         )
@@ -4110,7 +4061,6 @@ class BusServiceTest {
                     departureDate = LocalDate.of(2025, 2, 24),
                     departureTime = LocalTime.parse("07:25:00"),
                     vehicleID = "1000001",
-                    routeStop = null,
                 ),
             ),
         )
@@ -4180,7 +4130,6 @@ class BusServiceTest {
                     departureDate = LocalDate.of(2025, 3, 3),
                     departureTime = LocalTime.parse("08:00:00"),
                     vehicleID = "1000001",
-                    routeStop = null,
                 ),
             ),
         )
@@ -4250,7 +4199,6 @@ class BusServiceTest {
                     departureDate = LocalDate.of(2025, 2, 24),
                     departureTime = LocalTime.parse("08:00:00"),
                     vehicleID = "1000001",
-                    routeStop = null,
                 ),
             ),
         )

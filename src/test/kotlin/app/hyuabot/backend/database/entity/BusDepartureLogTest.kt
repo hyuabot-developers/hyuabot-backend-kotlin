@@ -16,7 +16,6 @@ class BusDepartureLogTest {
             departureDate = LocalDate.parse("2025-01-01"),
             departureTime = LocalTime.parse("09:00"),
             vehicleID = "x",
-            routeStop = null,
         )
 
     @Test

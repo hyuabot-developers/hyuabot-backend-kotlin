@@ -87,8 +87,6 @@ class BusRepositoryTest {
                 route = route,
                 stop = busStop,
                 startStop = stops[0],
-                log = mutableListOf(),
-                realtime = mutableListOf(),
             )
         }
 
@@ -103,7 +101,6 @@ class BusRepositoryTest {
                 remainingTime = Duration.ofMinutes(it * 5L),
                 isLowFloor = false,
                 updatedAt = ZonedDateTime.now(),
-                routeStop = routeStops[1],
             )
         }
 
@@ -125,7 +122,6 @@ class BusRepositoryTest {
                 departureDate = LocalDate.now(),
                 departureTime = LocalTime.parse("05:${padStartWithZero(it % 60)}:00"),
                 vehicleID = "Vehicle-${it.toString().padStart(3, '0')}",
-                routeStop = routeStops[it % 10],
             )
         }
 
@@ -212,8 +208,6 @@ class BusRepositoryTest {
             assert(routeStop.routeID == route.id)
             assert(routeStop.stopID == stops[index].id)
             assert(routeStop.startStopID == stops[0].id)
-            assert(routeStop.log.isEmpty())
-            assert(routeStop.realtime.isEmpty())
         }
     }
 
@@ -293,8 +287,6 @@ class BusRepositoryTest {
             assert(realtime.remainingTime == Duration.ofMinutes((index + 1) * 5L))
             assert(!realtime.isLowFloor)
             assert(realtime.updatedAt.isBefore(ZonedDateTime.now()))
-            assert(realtime.routeStop!!.routeID == realtime.routeID)
-            assert(realtime.routeStop!!.stopID == realtime.stopID)
         }
     }
 
@@ -310,8 +302,6 @@ class BusRepositoryTest {
             assert(log.departureDate == LocalDate.now())
             assert(log.departureTime >= LocalTime.parse("05:00:00"))
             assert(log.vehicleID.startsWith("Vehicle-"))
-            assert(log.routeStop!!.routeID == log.routeID)
-            assert(log.routeStop!!.stopID == log.stopID)
         }
     }
 
@@ -326,8 +316,6 @@ class BusRepositoryTest {
             assert(log.departureDate == LocalDate.now())
             assert(log.departureTime >= LocalTime.parse("05:00:00"))
             assert(log.vehicleID.startsWith("Vehicle-"))
-            assert(log.routeStop!!.routeID == log.routeID)
-            assert(log.routeStop!!.stopID == log.stopID)
         }
     }
 
