@@ -15,7 +15,11 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -233,5 +237,22 @@ class PublicHolidayServiceTest {
                 PublicHolidayRequest(date = "2026-01-01", name = "테스트", calendarType = "gregorian"),
             )
         }
+    }
+
+    @Test
+    @DisplayName("공휴일 검색 - 같은 날짜 반복 조회는 캐시를 사용하고 관리자 변경 시 비워짐")
+    fun testFindPublicHolidayCachesPerDate() {
+        val solarDate = LocalDate.of(2025, 3, 3)
+        whenever(repository.findBySolarDateOrLunarDate(eq(solarDate), any())).thenReturn(null)
+
+        service.findPublicHoliday(solarDate)
+        service.findPublicHoliday(solarDate)
+        verify(repository, times(1)).findBySolarDateOrLunarDate(eq(solarDate), any())
+
+        val existing = PublicHoliday(seq = 1, date = solarDate, name = "대체공휴일", calendarType = "solar")
+        whenever(repository.findById(1)).thenReturn(Optional.of(existing))
+        service.deletePublicHoliday(1)
+        service.findPublicHoliday(solarDate)
+        verify(repository, times(2)).findBySolarDateOrLunarDate(eq(solarDate), any())
     }
 }

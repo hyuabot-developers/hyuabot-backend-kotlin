@@ -234,6 +234,22 @@ class BusRealtimeService(
             val arrivals = (realtimeArrivals + scheduledArrivals).take(key.limit ?: Int.MAX_VALUE)
             val sourceLogs = logGrouped[key.routeID to key.stopID].orEmpty()
             val destinationStopIDs = (key.destinationStopIDs + listOfNotNull(key.destinationStopID)).distinct()
+            // The travel-duration cache entry depends only on route/stops/log dates, so read it once per destination
+            // rather than once per arrival.
+            val durationsByDestination =
+                if (arrivals.isEmpty()) {
+                    emptyMap()
+                } else {
+                    destinationStopIDs.associateWith { destinationStopID ->
+                        cachedTravelDurations(
+                            key.routeID,
+                            key.stopID,
+                            destinationStopID,
+                            sourceLogs,
+                            logGrouped[key.routeID to destinationStopID].orEmpty(),
+                        )
+                    }
+                }
             arrivals.map { arrival ->
                 val primaryTime = arrival.arrivalTime ?: currentTime.plusMinutes(arrival.minutes!!.toLong())
                 val destinationTravelMinutes =
@@ -242,6 +258,7 @@ class BusRealtimeService(
                             key = key,
                             destinationStopID = destinationStopID,
                             primaryTime = primaryTime,
+                            durations = durationsByDestination.getValue(destinationStopID),
                             sourceLogs = sourceLogs,
                             destinationLogs = logGrouped[key.routeID to destinationStopID].orEmpty(),
                         )?.let { minutes ->
@@ -267,10 +284,10 @@ class BusRealtimeService(
         key: BusArrivalKey,
         destinationStopID: Int,
         primaryTime: LocalTime,
+        durations: Map<Int, Int>,
         sourceLogs: List<app.hyuabot.backend.database.entity.BusDepartureLog>,
         destinationLogs: List<app.hyuabot.backend.database.entity.BusDepartureLog>,
     ): Int? {
-        val durations = cachedTravelDurations(key.routeID, key.stopID, destinationStopID, sourceLogs, destinationLogs)
         if (durations.isEmpty()) {
             logger.info(
                 "Bus destination ETA diagnostic route={} sourceStop={} destinationStop={} " +

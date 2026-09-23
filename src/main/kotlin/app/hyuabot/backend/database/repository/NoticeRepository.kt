@@ -16,6 +16,11 @@ interface NoticeRepository : JpaRepository<Notice, Int> {
         expiredAt: ZonedDateTime,
     ): List<Notice>
 
+    fun findByCategoryIDInAndExpiredAtAfter(
+        categoryIDs: Collection<Int>,
+        expiredAt: ZonedDateTime,
+    ): List<Notice>
+
     @Query("SELECT DISTINCT c FROM notice_category c LEFT JOIN FETCH c.notice n")
     fun findAllWithNotices(): List<NoticeCategory>
 }
