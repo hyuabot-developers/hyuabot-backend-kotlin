@@ -22,6 +22,7 @@ class PublicHolidayService(
      * A single GraphQL request resolves the holiday for the same date from the bus, subway (per station) and shuttle
      * fetchers. A short-lived per-date memo removes those repeated queries; admin writes on this instance clear it
      * immediately and other instances pick changes up within [HOLIDAY_CACHE_TTL_NANOS].
+     * Serialized reads and writes keep in-flight lookups from restoring stale values after an admin update.
      */
     private val holidayCache = ConcurrentHashMap<LocalDate, Pair<Long, PublicHoliday?>>()
 
@@ -30,6 +31,7 @@ class PublicHolidayService(
 
     fun getPublicHolidayList() = publicHolidayRepository.findAll().sortedBy { it.date }
 
+    @Synchronized
     fun createPublicHoliday(payload: PublicHolidayRequest): PublicHoliday {
         require(payload.calendarType in CALENDAR_TYPES) { "Unsupported calendar type" }
         if (!LocalDateTimeBuilder.checkLocalDateFormat(payload.date)) {
@@ -42,19 +44,22 @@ class PublicHolidayService(
             )?.let {
                 throw DuplicatePublicHolidayException()
             }
+        val saved =
+            publicHolidayRepository.save(
+                PublicHoliday(
+                    date = LocalDate.parse(payload.date),
+                    name = payload.name,
+                    calendarType = payload.calendarType,
+                ),
+            )
         holidayCache.clear()
-        return publicHolidayRepository.save(
-            PublicHoliday(
-                date = LocalDate.parse(payload.date),
-                name = payload.name,
-                calendarType = payload.calendarType,
-            ),
-        )
+        return saved
     }
 
     fun getPublicHolidayById(seq: Int): PublicHoliday =
         publicHolidayRepository.findById(seq).orElseThrow { throw PublicHolidayNotFoundException() }
 
+    @Synchronized
     fun updatePublicHoliday(
         seq: Int,
         payload: PublicHolidayRequest,
@@ -72,22 +77,26 @@ class PublicHolidayService(
             )?.let {
                 throw DuplicatePublicHolidayException()
             }
+        val saved =
+            publicHolidayRepository.save(
+                existing.apply {
+                    date = LocalDate.parse(payload.date)
+                    name = payload.name
+                    calendarType = payload.calendarType
+                },
+            )
         holidayCache.clear()
-        return publicHolidayRepository.save(
-            existing.apply {
-                date = LocalDate.parse(payload.date)
-                name = payload.name
-                calendarType = payload.calendarType
-            },
-        )
+        return saved
     }
 
+    @Synchronized
     fun deletePublicHoliday(seq: Int) {
         val existing = publicHolidayRepository.findById(seq).orElseThrow { throw PublicHolidayNotFoundException() }
-        holidayCache.clear()
         publicHolidayRepository.delete(existing)
+        holidayCache.clear()
     }
 
+    @Synchronized
     fun findPublicHoliday(date: LocalDate): PublicHoliday? {
         val now = nanoClock()
         holidayCache[date]?.let { (cachedAt, holiday) -> if (now - cachedAt < HOLIDAY_CACHE_TTL_NANOS) return holiday }
