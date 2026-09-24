@@ -139,8 +139,6 @@ class BusDataFetcherTest {
         route = route,
         stop = stop,
         startStop = startStop,
-        realtime = mutableListOf(),
-        log = mutableListOf(),
     )
 
     private fun createBusTimetable(
@@ -174,7 +172,6 @@ class BusDataFetcherTest {
         remainingSeat = remainingSeat,
         isLowFloor = lowFloor,
         updatedAt = now(),
-        routeStop = null,
     )
 
     private fun createBusDepartureLog(
@@ -191,7 +188,6 @@ class BusDataFetcherTest {
         departureDate = departureDate,
         departureTime = departureTime,
         vehicleID = vehicleID,
-        routeStop = null,
     )
 
     private val route = createBusRoute()
@@ -497,6 +493,35 @@ class BusDataFetcherTest {
     }
 
     @Test
+    fun `bus aliases keep independent date and limit inputs`() {
+        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
+        val requestedKeys = mutableSetOf<BusDepartureLogKey>()
+        whenever(routeService.getBusDepartureLogBatch(any())).thenAnswer { invocation ->
+            val keys = invocation.getArgument<Set<BusDepartureLogKey>>(0)
+            requestedKeys.addAll(keys)
+            keys.associateWith { key ->
+                if (key.dates == listOf(LocalDate.parse("2025-03-01"))) listOf(createBusDepartureLog()) else emptyList()
+            }
+        }
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<Map<String, List<Map<String, Any>>>>(
+                """
+                {
+                    first: bus(input: [{route: 1, stop: 1, dates: ["2025-03-01"], limit: 1}]) { log { seq } }
+                    second: bus(input: [{route: 1, stop: 1, dates: ["2025-03-02"], limit: 3}]) { log { seq } }
+                }
+                """.trimIndent(),
+                "data",
+            )
+        assertEquals(1, (result.getValue("first").first().getValue("log") as List<*>).size)
+        assertEquals(0, (result.getValue("second").first().getValue("log") as List<*>).size)
+        assertEquals(
+            setOf(listOf(LocalDate.parse("2025-03-01")) to 1, listOf(LocalDate.parse("2025-03-02")) to 3),
+            requestedKeys.map { it.dates to it.limit }.toSet(),
+        )
+    }
+
+    @Test
     @DisplayName("버스 출발 기록 조회 - 결과 없음")
     fun testBusDepartureLogEmpty() {
         whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
@@ -747,5 +772,27 @@ class BusDataFetcherTest {
             )
 
         assertEquals(1, (result[0]["log"] as List<*>).size)
+    }
+
+    @Test
+    fun `log without dates returns an empty list instead of failing`() {
+        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
+        whenever(routeService.getBusDepartureLogBatch(any())).thenReturn(
+            mapOf(BusDepartureLogKey(routeID = route.id, stopID = stop.id, dates = emptyList()) to emptyList()),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    bus(input: [{ route: 1, stop: 1 }]) {
+                        log { seq }
+                    }
+                }
+                """.trimIndent(),
+                "data.bus",
+            )
+
+        assertEquals(emptyList<Any>(), result[0]["log"])
     }
 }

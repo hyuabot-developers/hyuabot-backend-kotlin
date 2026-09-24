@@ -22,9 +22,8 @@ import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsData
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
+import graphql.execution.DataFetcherResult
 import graphql.schema.DataFetchingEnvironment
-import java.time.LocalDate
-import java.time.LocalTime
 import java.util.concurrent.CompletableFuture
 import app.hyuabot.backend.database.entity.BusDepartureLog as BusDepartureLogEntity
 import app.hyuabot.backend.database.entity.BusRealtime as BusRealtimeEntity
@@ -37,127 +36,99 @@ class BusDataFetcher(
     @DgsQuery
     fun bus(
         @InputArgument input: List<BusRouteStopInput>,
-        dfe: DataFetchingEnvironment,
-    ): List<BusRouteStop> {
-        if (input.isEmpty()) return emptyList()
-        val datesMap =
-            input.associate { key ->
-                (key.route to key.stop) to key.dates
+    ): DataFetcherResult<List<BusRouteStop>> {
+        if (input.isEmpty()) return DataFetcherResult.newResult<List<BusRouteStop>>().data(emptyList()).build()
+        val context = BusQueryContext(input)
+        val result =
+            routeService.fetchRouteStops(input).map {
+                BusRouteStop(
+                    route =
+                        BusRoute(
+                            seq = it.routeID,
+                            name = it.route!!.name,
+                            type =
+                                BusRouteType(
+                                    code = it.route!!.typeCode,
+                                    name = it.route!!.typeName,
+                                ),
+                            company =
+                                BusCompany(
+                                    seq = it.route!!.companyID,
+                                    name = it.route!!.companyName,
+                                    telephone = it.route!!.companyPhone,
+                                ),
+                            runningTime =
+                                BusRunningTime(
+                                    up =
+                                        BusRunningTimeEntry(
+                                            first = it.route!!.upFirstTime,
+                                            last = it.route!!.upLastTime,
+                                            terminal =
+                                                it.route!!.endStop.let { endStop ->
+                                                    BusStop(
+                                                        seq = endStop.id,
+                                                        name = endStop.name,
+                                                        districtCode = endStop.districtCode,
+                                                        region = endStop.regionName,
+                                                        mobileNumber = endStop.mobileNumber,
+                                                        latitude = endStop.latitude,
+                                                        longitude = endStop.longitude,
+                                                    )
+                                                },
+                                        ),
+                                    down =
+                                        BusRunningTimeEntry(
+                                            first = it.route!!.downFirstTime,
+                                            last = it.route!!.downLastTime,
+                                            terminal =
+                                                it.route!!.startStop.let { startStop ->
+                                                    BusStop(
+                                                        seq = startStop.id,
+                                                        name = startStop.name,
+                                                        districtCode = startStop.districtCode,
+                                                        region = startStop.regionName,
+                                                        mobileNumber = startStop.mobileNumber,
+                                                        latitude = startStop.latitude,
+                                                        longitude = startStop.longitude,
+                                                    )
+                                                },
+                                        ),
+                                ),
+                        ),
+                    stop =
+                        BusStop(
+                            seq = it.stopID,
+                            name = it.stop!!.name,
+                            districtCode = it.stop!!.districtCode,
+                            region = it.stop!!.regionName,
+                            mobileNumber = it.stop!!.mobileNumber,
+                            latitude = it.stop!!.latitude,
+                            longitude = it.stop!!.longitude,
+                        ),
+                    startStop =
+                        BusStop(
+                            seq = it.startStopID,
+                            name = it.startStop!!.name,
+                            districtCode = it.startStop!!.districtCode,
+                            region = it.startStop!!.regionName,
+                            mobileNumber = it.startStop!!.mobileNumber,
+                            latitude = it.startStop!!.latitude,
+                            longitude = it.startStop!!.longitude,
+                        ),
+                    order = it.order,
+                    minutes = it.minuteFromStart,
+                    realtime = emptyList(),
+                    timetable = emptyList(),
+                    log = emptyList(),
+                    arrival = emptyList(),
+                    minimumDispatchIntervals = emptyList(),
+                )
             }
-        val weekdaysMap =
-            input.associate {
-                (it.route to it.stop) to it.weekdays
-            }
-        val limitMap =
-            input.associate { key ->
-                (key.route to key.stop) to key.limit
-            }
-        val afterMap =
-            input.associate { key ->
-                (key.route to key.stop) to key.after
-            }
-        val destinationStopMap =
-            input.associate { key ->
-                (key.route to key.stop) to key.destinationStop
-            }
-        val destinationStopsMap =
-            input
-                .groupBy { it.route to it.stop }
-                .mapValues { (_, keys) ->
-                    keys
-                        .flatMap { key -> key.destinationStops.orEmpty() + listOfNotNull(key.destinationStop) }
-                        .distinct()
-                }
-        dfe.graphQlContext.put("datesMap", datesMap)
-        dfe.graphQlContext.put("weekdaysMap", weekdaysMap)
-        dfe.graphQlContext.put("limitMap", limitMap)
-        dfe.graphQlContext.put("afterMap", afterMap)
-        dfe.graphQlContext.put("destinationStopMap", destinationStopMap)
-        dfe.graphQlContext.put("destinationStopsMap", destinationStopsMap)
-        return routeService.fetchRouteStops(input).map {
-            BusRouteStop(
-                route =
-                    BusRoute(
-                        seq = it.routeID,
-                        name = it.route!!.name,
-                        type =
-                            BusRouteType(
-                                code = it.route!!.typeCode,
-                                name = it.route!!.typeName,
-                            ),
-                        company =
-                            BusCompany(
-                                seq = it.route!!.companyID,
-                                name = it.route!!.companyName,
-                                telephone = it.route!!.companyPhone,
-                            ),
-                        runningTime =
-                            BusRunningTime(
-                                up =
-                                    BusRunningTimeEntry(
-                                        first = it.route!!.upFirstTime,
-                                        last = it.route!!.upLastTime,
-                                        terminal =
-                                            it.route!!.endStop.let { endStop ->
-                                                BusStop(
-                                                    seq = endStop.id,
-                                                    name = endStop.name,
-                                                    districtCode = endStop.districtCode,
-                                                    region = endStop.regionName,
-                                                    mobileNumber = endStop.mobileNumber,
-                                                    latitude = endStop.latitude,
-                                                    longitude = endStop.longitude,
-                                                )
-                                            },
-                                    ),
-                                down =
-                                    BusRunningTimeEntry(
-                                        first = it.route!!.downFirstTime,
-                                        last = it.route!!.downLastTime,
-                                        terminal =
-                                            it.route!!.startStop.let { startStop ->
-                                                BusStop(
-                                                    seq = startStop.id,
-                                                    name = startStop.name,
-                                                    districtCode = startStop.districtCode,
-                                                    region = startStop.regionName,
-                                                    mobileNumber = startStop.mobileNumber,
-                                                    latitude = startStop.latitude,
-                                                    longitude = startStop.longitude,
-                                                )
-                                            },
-                                    ),
-                            ),
-                    ),
-                stop =
-                    BusStop(
-                        seq = it.stopID,
-                        name = it.stop!!.name,
-                        districtCode = it.stop!!.districtCode,
-                        region = it.stop!!.regionName,
-                        mobileNumber = it.stop!!.mobileNumber,
-                        latitude = it.stop!!.latitude,
-                        longitude = it.stop!!.longitude,
-                    ),
-                startStop =
-                    BusStop(
-                        seq = it.startStopID,
-                        name = it.startStop!!.name,
-                        districtCode = it.startStop!!.districtCode,
-                        region = it.startStop!!.regionName,
-                        mobileNumber = it.startStop!!.mobileNumber,
-                        latitude = it.startStop!!.latitude,
-                        longitude = it.startStop!!.longitude,
-                    ),
-                order = it.order,
-                minutes = it.minuteFromStart,
-                realtime = emptyList(),
-                timetable = emptyList(),
-                log = emptyList(),
-                arrival = emptyList(),
-                minimumDispatchIntervals = emptyList(),
-            )
-        }
+        return DataFetcherResult
+            .newResult<List<BusRouteStop>>()
+            .data(result)
+            .localContext(context)
+            .build()
     }
 
     @DgsData(parentType = "BusRouteStop")
@@ -182,8 +153,9 @@ class BusDataFetcher(
     @DgsData(parentType = "BusRouteStop")
     fun timetable(dfe: DataFetchingEnvironment): CompletableFuture<List<BusTimetable>> {
         val routeStop = dfe.getSource<BusRouteStop>()!!
-        val weekdaysMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, List<String>?>>("weekdaysMap")
-        val afterMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, LocalTime?>>("afterMap")
+        val context = dfe.busQueryContext()
+        val weekdaysMap = context.weekdaysMap
+        val afterMap = context.afterMap
         val routeID = routeStop.route.seq
         val startStopID = routeStop.startStop.seq
         val weekdays = weekdaysMap[routeID to routeStop.stop.seq]
@@ -204,11 +176,13 @@ class BusDataFetcher(
     @DgsData(parentType = "BusRouteStop")
     fun log(dfe: DataFetchingEnvironment): CompletableFuture<List<BusDepartureLog>> {
         val routeStop = dfe.getSource<BusRouteStop>()!!
-        val datesMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, List<LocalDate>>>("datesMap")
-        val limitMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, Int>>("limitMap")
+        val context = dfe.busQueryContext()
+        val datesMap = context.datesMap
+        val limitMap = context.limitMap
         val routeID = routeStop.route.seq
         val stopID = routeStop.stop.seq
-        val dates = datesMap[routeID to stopID]!!
+        // `dates` is optional in the schema; without it there is no log to return (the repository skips empty keys).
+        val dates = datesMap[routeID to stopID].orEmpty()
         val limit = limitMap[routeID to stopID]
 
         val key = BusDepartureLogKey(routeID = routeID, stopID = stopID, dates = dates, limit = limit)
@@ -241,9 +215,10 @@ class BusDataFetcher(
     @DgsData(parentType = "BusRouteStop")
     fun arrival(dfe: DataFetchingEnvironment): CompletableFuture<List<BusArrival>> {
         val routeStop = dfe.getSource<BusRouteStop>()!!
-        val limitMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, Int>>("limitMap")
-        val destinationStopMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, Int?>>("destinationStopMap")
-        val destinationStopsMap = dfe.graphQlContext.get<Map<Pair<Int, Int>, List<Int>>>("destinationStopsMap")
+        val context = dfe.busQueryContext()
+        val limitMap = context.limitMap
+        val destinationStopMap = context.destinationStopMap
+        val destinationStopsMap = context.destinationStopsMap
         val destinationStopID = destinationStopMap[routeStop.route.seq to routeStop.stop.seq]
         val key =
             BusArrivalKey(
@@ -261,4 +236,22 @@ class BusDataFetcher(
         val dataLoader = dfe.getDataLoader<BusArrivalKey, List<BusArrival>>("busArrivalDataLoader")!!
         return dataLoader.load(key)
     }
+}
+
+/** Set by `Query.bus` on every returned BusRouteStop. */
+private fun DataFetchingEnvironment.busQueryContext(): BusQueryContext = getLocalContext<BusQueryContext>()!!
+
+/** Argument state belongs to one root field, including when the query uses bus aliases. */
+private class BusQueryContext(
+    input: List<BusRouteStopInput>,
+) {
+    val datesMap = input.associate { (it.route to it.stop) to it.dates }
+    val weekdaysMap = input.associate { (it.route to it.stop) to it.weekdays }
+    val limitMap = input.associate { (it.route to it.stop) to it.limit }
+    val afterMap = input.associate { (it.route to it.stop) to it.after }
+    val destinationStopMap = input.associate { (it.route to it.stop) to it.destinationStop }
+    val destinationStopsMap =
+        input.groupBy { it.route to it.stop }.mapValues { (_, keys) ->
+            keys.flatMap { it.destinationStops.orEmpty() + listOfNotNull(it.destinationStop) }.distinct()
+        }
 }

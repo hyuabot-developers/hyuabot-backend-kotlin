@@ -6,9 +6,6 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.Index
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.JoinColumns
-import jakarta.persistence.ManyToOne
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -38,12 +35,6 @@ class BusDepartureLog(
     var departureTime: LocalTime,
     @Column(name = "vehicle_id", length = 20, nullable = false)
     var vehicleID: String,
-    @ManyToOne
-    @JoinColumns(
-        JoinColumn(name = "route_id", referencedColumnName = "route_id", insertable = false, updatable = false),
-        JoinColumn(name = "stop_id", referencedColumnName = "stop_id", insertable = false, updatable = false),
-    )
-    val routeStop: BusRouteStop?,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

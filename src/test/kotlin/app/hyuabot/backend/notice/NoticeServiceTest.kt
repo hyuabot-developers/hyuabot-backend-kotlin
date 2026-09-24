@@ -18,7 +18,10 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.any
 import org.mockito.kotlin.argThat
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.ZonedDateTime
 import java.util.Optional
@@ -623,9 +626,10 @@ class NoticeServiceTest {
     @Test
     @DisplayName("공지사항 카테고리 이름으로 필터링 - 대소문자 무시")
     fun shouldFilterByCategoryNameIgnoringCase() {
-        val cat1 = NoticeCategory(name = "General Notice", notice = mutableListOf())
-        val cat2 = NoticeCategory(name = "Academic", notice = mutableListOf())
-        whenever(noticeRepository.findAllWithNotices()).thenReturn(listOf(cat1, cat2))
+        val cat1 = NoticeCategory(id = 1, name = "General Notice", notice = mutableListOf())
+        val cat2 = NoticeCategory(id = 2, name = "Academic", notice = mutableListOf())
+        whenever(categoryRepository.findAll()).thenReturn(listOf(cat1, cat2))
+        whenever(noticeRepository.findByCategoryIDInAndExpiredAtAfter(any(), any())).thenReturn(listOf(cat1, cat2).flatMap { it.notice })
 
         val result =
             service.fetchNotices(
@@ -642,7 +646,7 @@ class NoticeServiceTest {
     @DisplayName("카테고리에 해당하는 공지사항이 없더라도 카테고리는 포함되어야 함")
     fun shouldIncludeCategoryEvenIfNoNoticesMatchCriteria() {
         val now = ZonedDateTime.now()
-        val category = NoticeCategory(name = "Empty Category", notice = mutableListOf())
+        val category = NoticeCategory(id = 1, name = "Empty Category", notice = mutableListOf())
         val expired =
             Notice(
                 title = "Expired",
@@ -655,9 +659,8 @@ class NoticeServiceTest {
                 user = null,
             )
         category.notice.add(expired)
-        whenever(
-            noticeRepository.findAllWithNotices(),
-        ).thenReturn(listOf(category))
+        whenever(categoryRepository.findAll()).thenReturn(listOf(category))
+        whenever(noticeRepository.findByCategoryIDInAndExpiredAtAfter(any(), any())).thenReturn(listOf(category).flatMap { it.notice })
         val result = service.fetchNotices(null, null, null, now)
         assertEquals(1, result.size)
         assertEquals("Empty Category", result[0].name)
@@ -667,7 +670,7 @@ class NoticeServiceTest {
     @Test
     fun shouldFilterByLanguageWhenProvided() {
         val now = ZonedDateTime.now()
-        val category = NoticeCategory(name = "Lang Test", notice = mutableListOf())
+        val category = NoticeCategory(id = 1, name = "Lang Test", notice = mutableListOf())
         val koNotice =
             Notice(
                 title = "Korean",
@@ -691,7 +694,8 @@ class NoticeServiceTest {
                 user = null,
             )
         category.notice.addAll(listOf(koNotice, enNotice))
-        whenever(noticeRepository.findAllWithNotices()).thenReturn(listOf(category))
+        whenever(categoryRepository.findAll()).thenReturn(listOf(category))
+        whenever(noticeRepository.findByCategoryIDInAndExpiredAtAfter(any(), any())).thenReturn(listOf(category).flatMap { it.notice })
         val result = service.fetchNotices(null, "ENGLISH", null, now)
         assertEquals(1, result[0].notice.size)
         assertEquals("ENGLISH", result[0].notice[0].language)
@@ -701,7 +705,7 @@ class NoticeServiceTest {
     @DisplayName("since 파라미터로 공지사항 필터링 - expiredAt이 since 이후인 공지만 반환되어야 함")
     fun shouldFilterByTimestampCorrectly() {
         val now = ZonedDateTime.now()
-        val category = NoticeCategory(name = "Time Test", notice = mutableListOf())
+        val category = NoticeCategory(id = 1, name = "Time Test", notice = mutableListOf())
         val futureDate = now.plusDays(2)
         val pastDate = now.plusDays(1)
 
@@ -728,9 +732,36 @@ class NoticeServiceTest {
                 user = null,
             )
         category.notice.addAll(listOf(validNotice, invalidNotice))
-        whenever(noticeRepository.findAllWithNotices()).thenReturn(listOf(category))
+        whenever(categoryRepository.findAll()).thenReturn(listOf(category))
+        whenever(noticeRepository.findByCategoryIDInAndExpiredAtAfter(any(), any())).thenReturn(listOf(category).flatMap { it.notice })
         val result = service.fetchNotices(null, null, pastDate, now)
         assertEquals(1, result[0].notice.size)
         assertEquals("Valid", result[0].notice[0].title)
+    }
+
+    @Test
+    @DisplayName("공지사항 조회 - 요청한 카테고리의 만료되지 않은 공지만 DB에서 조회")
+    fun shouldQueryOnlyRequestedCategoriesAndUnexpiredNotices() {
+        val now = ZonedDateTime.now()
+        val bus = NoticeCategory(id = 1, name = "버스", notice = mutableListOf())
+        val shuttle = NoticeCategory(id = 2, name = "셔틀", notice = mutableListOf())
+        whenever(categoryRepository.findAll()).thenReturn(listOf(bus, shuttle))
+        whenever(noticeRepository.findByCategoryIDInAndExpiredAtAfter(listOf(1), now)).thenReturn(emptyList())
+
+        val result = service.fetchNotices("버스", null, null, now)
+
+        assertEquals(listOf("버스"), result.map { it.name })
+        verify(noticeRepository).findByCategoryIDInAndExpiredAtAfter(listOf(1), now)
+    }
+
+    @Test
+    @DisplayName("공지사항 조회 - 일치하는 카테고리가 없으면 공지를 조회하지 않음")
+    fun shouldSkipNoticeQueryWhenNoCategoryMatches() {
+        whenever(categoryRepository.findAll()).thenReturn(listOf(NoticeCategory(id = 1, name = "버스", notice = mutableListOf())))
+
+        val result = service.fetchNotices("셔틀", null, null, ZonedDateTime.now())
+
+        assertEquals(0, result.size)
+        verify(noticeRepository, never()).findByCategoryIDInAndExpiredAtAfter(any(), any())
     }
 }

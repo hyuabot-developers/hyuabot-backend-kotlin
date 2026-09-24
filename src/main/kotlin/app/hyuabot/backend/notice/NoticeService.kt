@@ -126,19 +126,25 @@ class NoticeService(
         since: ZonedDateTime?,
         currentTime: ZonedDateTime,
     ): List<NoticeCategory> {
-        val categories = noticeRepository.findAllWithNotices()
         val categoryFilter = category?.split(",")?.map { it.trim() } ?: emptyList()
         val timestamp = since ?: currentTime
-        return categories
-            .filter { cat ->
+        // Load only unexpired notices of the requested categories instead of every notice ever written.
+        val categories =
+            categoryRepository.findAll().filter { cat ->
                 categoryFilter.isEmpty() || categoryFilter.contains(cat.name)
-            }.map { cat ->
-                val filteredNotices =
-                    cat.notice
-                        .filter { n ->
-                            (language == null || n.language == language) && n.expiredAt.isAfter(timestamp)
-                        }.toMutableList()
-                NoticeCategory(id = cat.id, name = cat.name, notice = filteredNotices)
             }
+        val categoryIDs = categories.mapNotNull { it.id }
+        val noticesByCategory =
+            if (categoryIDs.isEmpty()) {
+                emptyMap()
+            } else {
+                noticeRepository
+                    .findByCategoryIDInAndExpiredAtAfter(categoryIDs, timestamp)
+                    .filter { n -> (language == null || n.language == language) && n.expiredAt.isAfter(timestamp) }
+                    .groupBy { it.categoryID }
+            }
+        return categories.map { cat ->
+            NoticeCategory(id = cat.id, name = cat.name, notice = noticesByCategory[cat.id].orEmpty().toMutableList())
+        }
     }
 }

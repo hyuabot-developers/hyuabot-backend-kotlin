@@ -9,15 +9,29 @@ import app.hyuabot.backend.holiday.exception.PublicHolidayNotFoundException
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import com.github.usingsky.calendar.KoreanLunarCalendar
 import org.springframework.stereotype.Service
+import java.time.Duration
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.ConcurrentHashMap
 
 @Service
 class PublicHolidayService(
     private val publicHolidayRepository: PublicHolidayRepository,
 ) {
+    /**
+     * A single GraphQL request resolves the holiday for the same date from the bus, subway (per station) and shuttle
+     * fetchers. A short-lived per-date memo removes those repeated queries; admin writes on this instance clear it
+     * immediately and other instances pick changes up within [HOLIDAY_CACHE_TTL_NANOS].
+     * Serialized reads and writes keep in-flight lookups from restoring stale values after an admin update.
+     */
+    private val holidayCache = ConcurrentHashMap<LocalDate, Pair<Long, PublicHoliday?>>()
+
+    /** Monotonic clock for the cache TTL; replaceable in tests. */
+    internal var nanoClock: () -> Long = System::nanoTime
+
     fun getPublicHolidayList() = publicHolidayRepository.findAll().sortedBy { it.date }
 
+    @Synchronized
     fun createPublicHoliday(payload: PublicHolidayRequest): PublicHoliday {
         require(payload.calendarType in CALENDAR_TYPES) { "Unsupported calendar type" }
         if (!LocalDateTimeBuilder.checkLocalDateFormat(payload.date)) {
@@ -30,18 +44,22 @@ class PublicHolidayService(
             )?.let {
                 throw DuplicatePublicHolidayException()
             }
-        return publicHolidayRepository.save(
-            PublicHoliday(
-                date = LocalDate.parse(payload.date),
-                name = payload.name,
-                calendarType = payload.calendarType,
-            ),
-        )
+        val saved =
+            publicHolidayRepository.save(
+                PublicHoliday(
+                    date = LocalDate.parse(payload.date),
+                    name = payload.name,
+                    calendarType = payload.calendarType,
+                ),
+            )
+        holidayCache.clear()
+        return saved
     }
 
     fun getPublicHolidayById(seq: Int): PublicHoliday =
         publicHolidayRepository.findById(seq).orElseThrow { throw PublicHolidayNotFoundException() }
 
+    @Synchronized
     fun updatePublicHoliday(
         seq: Int,
         payload: PublicHolidayRequest,
@@ -59,21 +77,33 @@ class PublicHolidayService(
             )?.let {
                 throw DuplicatePublicHolidayException()
             }
-        return publicHolidayRepository.save(
-            existing.apply {
-                date = LocalDate.parse(payload.date)
-                name = payload.name
-                calendarType = payload.calendarType
-            },
-        )
+        val saved =
+            publicHolidayRepository.save(
+                existing.apply {
+                    date = LocalDate.parse(payload.date)
+                    name = payload.name
+                    calendarType = payload.calendarType
+                },
+            )
+        holidayCache.clear()
+        return saved
     }
 
+    @Synchronized
     fun deletePublicHoliday(seq: Int) {
         val existing = publicHolidayRepository.findById(seq).orElseThrow { throw PublicHolidayNotFoundException() }
         publicHolidayRepository.delete(existing)
+        holidayCache.clear()
     }
 
+    @Synchronized
     fun findPublicHoliday(date: LocalDate): PublicHoliday? {
+        val now = nanoClock()
+        holidayCache[date]?.let { (cachedAt, holiday) -> if (now - cachedAt < HOLIDAY_CACHE_TTL_NANOS) return holiday }
+        return lookupPublicHoliday(date).also { holidayCache[date] = now to it }
+    }
+
+    private fun lookupPublicHoliday(date: LocalDate): PublicHoliday? {
         val lunarDate = KoreanLunarCalendar.getInstance()
         val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         lunarDate.setSolarDate(date.year, date.monthValue, date.dayOfMonth)
@@ -85,5 +115,6 @@ class PublicHolidayService(
 
     companion object {
         private val CALENDAR_TYPES = setOf("solar", "lunar")
+        private val HOLIDAY_CACHE_TTL_NANOS = Duration.ofMinutes(1).toNanos()
     }
 }

@@ -18,8 +18,11 @@ import com.netflix.graphql.dgs.DgsData
 import com.netflix.graphql.dgs.DgsDataFetchingEnvironment
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
+import graphql.execution.DataFetcherResult
+import graphql.schema.DataFetchingEnvironment
 import java.time.LocalDate
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
 
 @DgsComponent
 class SubwayDataFetcher(
@@ -30,9 +33,8 @@ class SubwayDataFetcher(
     @DgsQuery
     fun subway(
         @InputArgument input: SubwayInput,
-        dfe: DgsDataFetchingEnvironment,
-    ): List<SubwayStation> {
-        if (input.keys.isEmpty()) return emptyList()
+    ): DataFetcherResult<List<SubwayStation>> {
+        if (input.keys.isEmpty()) return DataFetcherResult.newResult<List<SubwayStation>>().data(emptyList()).build()
         val filterMap =
             input.keys
                 .groupBy {
@@ -42,46 +44,47 @@ class SubwayDataFetcher(
                     val weekdays = keys.flatMap { it.weekdays }.map(::normalizeSubwayWeekday).distinct()
                     directions to weekdays
                 }
-        dfe.graphQlContext.put("filterMap", filterMap)
         val limitMap =
             input.keys.associate {
                 it.stationID to it.limit
             }
-        dfe.graphQlContext.put("limitMap", limitMap)
-        input.language?.let { dfe.graphQlContext.put("subwayLanguage", it) }
         // distinct + sorted so the cache key is insensitive to request order/duplicates
-        return subwayService.getStationViews(
-            input.keys
-                .map { it.stationID }
-                .distinct()
-                .sorted(),
-        )
+        val stations =
+            subwayService.getStationViews(
+                input.keys
+                    .map { it.stationID }
+                    .distinct()
+                    .sorted(),
+            )
+        return DataFetcherResult
+            .newResult<List<SubwayStation>>()
+            .data(stations)
+            .localContext(SubwayQueryContext(filterMap, limitMap, input.language))
+            .build()
     }
 
     @DgsData(parentType = "SubwayStation", field = "name")
     fun stationName(dfe: DgsDataFetchingEnvironment): String {
         val station = dfe.getSource<SubwayStation>()!!
-        return subwayStationNameService.displayName(
-            station.stationID,
-            dfe.graphQlContext.get("subwayLanguage"),
-            station.name,
-        )
+        val language = dfe.subwayQueryContext().language
+        return dfe.memoizedStationName("id:${station.stationID}:$language:${station.name}") {
+            subwayStationNameService.displayName(station.stationID, language, station.name)
+        }
     }
 
     @DgsData(parentType = "SubwayOriginTerminal", field = "name")
     fun terminalName(dfe: DgsDataFetchingEnvironment): String {
         val station = dfe.getSource<SubwayOriginTerminal>()!!
-        return subwayStationNameService.displayName(
-            station.stationID,
-            dfe.graphQlContext.get("subwayLanguage"),
-            station.name,
-        )
+        val language = dfe.subwayQueryContext().language
+        return dfe.memoizedStationName("id:${station.stationID}:$language:${station.name}") {
+            subwayStationNameService.displayName(station.stationID, language, station.name)
+        }
     }
 
     @DgsData(parentType = "SubwayStation")
     fun realtime(dfe: DgsDataFetchingEnvironment): List<SubwayRealtime> {
         val station = dfe.getSource<SubwayStation>()!!
-        val filterMap = dfe.graphQlContext.get<Map<String, Pair<List<String>, List<String>>>>("filterMap")
+        val filterMap = dfe.subwayQueryContext().filters
         val (directions, _) = filterMap[station.stationID]!!
         val entries =
             subwayService.getRealtimeList(
@@ -109,7 +112,7 @@ class SubwayDataFetcher(
     @DgsData(parentType = "SubwayStation")
     fun timetable(dfe: DgsDataFetchingEnvironment): CompletableFuture<List<SubwayTimetable>> {
         val station = dfe.getSource<SubwayStation>()!!
-        val filterMap = dfe.graphQlContext.get<Map<String, Pair<List<String>, List<String>>>>("filterMap")
+        val filterMap = dfe.subwayQueryContext().filters
         val (directions, weekdays) = filterMap[station.stationID]!!
         val key =
             SubwayTimetableKey(
@@ -127,7 +130,7 @@ class SubwayDataFetcher(
     @DgsData(parentType = "SubwayStation")
     fun arrival(dfe: DgsDataFetchingEnvironment): List<SubwayArrivalGroup> {
         val station = dfe.getSource<SubwayStation>()!!
-        val filterMap = dfe.graphQlContext.get<Map<String, Pair<List<String>, List<String>>>>("filterMap")
+        val filterMap = dfe.subwayQueryContext().filters
         val (directions, weekdays) = filterMap[station.stationID]!!
         if (weekdays.isEmpty()) {
             return emptyList()
@@ -138,7 +141,7 @@ class SubwayDataFetcher(
         }
         val today = LocalDate.now(LocalDateTimeBuilder.serviceTimezone)
         val weekday = if (publicHolidayService.findPublicHoliday(today) != null) "weekends" else weekdays.first()
-        val limitMap = dfe.graphQlContext.get<Map<String, Int>>("limitMap")
+        val limitMap = dfe.subwayQueryContext().limits
         val limit = limitMap[station.stationID]
         return directions.map { direction ->
             val entries =
@@ -187,10 +190,8 @@ class SubwayDataFetcher(
         dfe: DgsDataFetchingEnvironment,
     ): String? =
         location?.let {
-            subwayStationNameService.displayNameByKoreanName(
-                it,
-                dfe.graphQlContext.get("subwayLanguage"),
-            )
+            val language = dfe.subwayQueryContext().language
+            dfe.memoizedStationName("name:$it:$language") { subwayStationNameService.displayNameByKoreanName(it, language) }
         }
 
     private fun SubwayRouteStation.toSubwayStation() =
@@ -227,4 +228,29 @@ class SubwayDataFetcher(
     companion object {
         private const val MIN_TIMETABLE_GAP_MINUTES = 5
     }
+}
+
+private data class SubwayQueryContext(
+    val filters: Map<String, Pair<List<String>, List<String>>>,
+    val limits: Map<String, Int?>,
+    val language: String?,
+)
+
+/** Set by `Query.subway` and inherited by nested station fields. */
+private fun DataFetchingEnvironment.subwayQueryContext(): SubwayQueryContext = getLocalContext<SubwayQueryContext>()!!
+
+private const val STATION_NAME_MEMO_KEY = "subwayStationNameMemo"
+
+/**
+ * Terminal and location names repeat across every arrival/timetable entry of a response. Memoizing them per request
+ * turns hundreds of Redis cache reads into one per distinct name, without any cross-request staleness.
+ */
+private fun DataFetchingEnvironment.memoizedStationName(
+    key: String,
+    compute: () -> String,
+): String {
+    @Suppress("UNCHECKED_CAST")
+    val memo =
+        graphQlContext.computeIfAbsent(STATION_NAME_MEMO_KEY) { ConcurrentHashMap<String, String>() } as ConcurrentHashMap<String, String>
+    return memo.computeIfAbsent(key) { compute() }
 }

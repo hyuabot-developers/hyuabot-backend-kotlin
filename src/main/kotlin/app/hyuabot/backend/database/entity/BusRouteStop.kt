@@ -7,7 +7,6 @@ import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
-import jakarta.persistence.OneToMany
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
@@ -44,10 +43,6 @@ class BusRouteStop(
     @ManyToOne
     @JoinColumn(name = "start_stop_id", insertable = false, updatable = false)
     val startStop: BusStop?,
-    @OneToMany(mappedBy = "routeStop")
-    val log: MutableList<BusDepartureLog>,
-    @OneToMany(mappedBy = "routeStop")
-    val realtime: MutableList<BusRealtime>,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
