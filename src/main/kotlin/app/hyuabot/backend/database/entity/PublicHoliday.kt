@@ -30,6 +30,8 @@ class PublicHoliday(
     var name: String,
     @Column(name = "calendar_type", length = 15, nullable = false)
     var calendarType: String,
+    @Column(name = "source", length = 20, nullable = false)
+    var source: String = "MANUAL",
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

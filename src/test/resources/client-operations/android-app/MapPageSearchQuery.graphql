@@ -1,0 +1,12 @@
+query MapPageSearchQuery ($keyword: String!) {
+    building (roomInput: { name: $keyword }) {
+        name
+        latitude
+        longitude
+        url
+        rooms {
+            name
+            number
+        }
+    }
+}

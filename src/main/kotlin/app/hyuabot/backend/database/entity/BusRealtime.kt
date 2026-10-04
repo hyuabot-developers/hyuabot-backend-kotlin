@@ -37,6 +37,14 @@ class BusRealtime(
     var isLowFloor: Boolean,
     @Column(name = "last_updated_time", columnDefinition = "timestamptz", nullable = false)
     var updatedAt: ZonedDateTime,
+    @Column(name = "current_stop_name", length = 50)
+    var currentStopName: String? = null,
+    @Column(name = "plate_no", length = 20)
+    var plateNumber: String? = null,
+    @Column(name = "crowded", columnDefinition = "smallint")
+    var crowded: Int? = null,
+    @Column(name = "state_code", columnDefinition = "smallint")
+    var stateCode: Int? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

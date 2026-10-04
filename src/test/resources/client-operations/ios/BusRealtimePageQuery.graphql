@@ -1,0 +1,36 @@
+query BusRealtimePageQuery($language: String!, $busInput: [BusRouteStopInput!]!) {
+    notices(input: {language: $language, category: "버스"}) {
+        notices {
+            title
+            url
+        }
+    }
+    bus(input: $busInput) {
+        route { seq, name }
+        stop { seq, latitude, longitude }
+        order
+        arrival {
+            stops
+            seats
+            minutes
+            lowFloor
+            isRealtime
+            time
+            arrivalTime
+            destinationTravelMinutes {
+                destinationStopId
+                minutes
+            }
+            destinationArrivalTime
+        }
+        log {
+            date
+            time
+            vehicle
+        }
+        minimumDispatchIntervals {
+            weekday
+            minutes
+        }
+    }
+}

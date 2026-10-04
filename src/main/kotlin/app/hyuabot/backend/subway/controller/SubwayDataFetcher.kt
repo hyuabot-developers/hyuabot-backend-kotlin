@@ -8,6 +8,8 @@ import app.hyuabot.backend.codegen.types.SubwayRealtime
 import app.hyuabot.backend.codegen.types.SubwayStation
 import app.hyuabot.backend.codegen.types.SubwayTimetable
 import app.hyuabot.backend.database.entity.SubwayRouteStation
+import app.hyuabot.backend.database.entity.SubwayTrainDelay
+import app.hyuabot.backend.database.repository.SubwayTrainDelayRepository
 import app.hyuabot.backend.holiday.service.PublicHolidayService
 import app.hyuabot.backend.subway.domain.SubwayTimetableKey
 import app.hyuabot.backend.subway.service.SubwayService
@@ -21,6 +23,8 @@ import com.netflix.graphql.dgs.InputArgument
 import graphql.execution.DataFetcherResult
 import graphql.schema.DataFetchingEnvironment
 import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZonedDateTime
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
@@ -29,6 +33,7 @@ class SubwayDataFetcher(
     private val subwayService: SubwayService,
     private val publicHolidayService: PublicHolidayService,
     private val subwayStationNameService: SubwayStationNameService,
+    private val subwayTrainDelayRepository: SubwayTrainDelayRepository,
 ) {
     @DgsQuery
     fun subway(
@@ -48,6 +53,7 @@ class SubwayDataFetcher(
             input.keys.associate {
                 it.stationID to it.limit
             }
+        val afterMap = input.keys.associate { it.stationID to it.after }
         // distinct + sorted so the cache key is insensitive to request order/duplicates
         val stations =
             subwayService.getStationViews(
@@ -59,7 +65,7 @@ class SubwayDataFetcher(
         return DataFetcherResult
             .newResult<List<SubwayStation>>()
             .data(stations)
-            .localContext(SubwayQueryContext(filterMap, limitMap, input.language))
+            .localContext(SubwayQueryContext(filterMap, limitMap, input.language, afterMap))
             .build()
     }
 
@@ -105,6 +111,10 @@ class SubwayDataFetcher(
                 isLast = it.isLast,
                 status = it.status,
                 updatedAt = it.updatedAt.withZoneSameInstant(LocalDateTimeBuilder.serviceTimezone),
+                message = it.arrivalMessage,
+                messageDetail = it.arrivalMessageDetail,
+                seconds = it.remainingSeconds,
+                arrivalCode = it.arrivalCode,
             )
         }
     }
@@ -124,7 +134,10 @@ class SubwayDataFetcher(
             dfe.getDataLoader<SubwayTimetableKey, List<SubwayTimetable>>(
                 "subwayTimetableDataLoader",
             )!!
-        return dataLoader.load(key)
+        val after = dfe.subwayQueryContext().after[station.stationID]
+        return dataLoader.load(key).thenApply { entries ->
+            if (after == null) entries else entries.filter { isAtOrAfterSubwayTime(it.time, after) }
+        }
     }
 
     @DgsData(parentType = "SubwayStation")
@@ -163,12 +176,47 @@ class SubwayDataFetcher(
                         )
                     }.filterTimetableAfterRealtime()
                     .sortedWith(compareBy<SubwayArrival> { !it.isRealtime }.thenBy { it.minutes })
-                    .let { if (limit != null) it.take(limit) else it }
+                    .let { entries ->
+                        val after = dfe.subwayQueryContext().after[station.stationID]
+                        val filtered =
+                            if (after == null) {
+                                entries
+                            } else {
+                                val now = LocalTime.now(LocalDateTimeBuilder.serviceTimezone)
+                                entries.filter { isArrivalAtOrAfterSubwayTime(it.minutes, now, after) }
+                            }
+                        if (limit != null) filtered.take(limit) else filtered
+                    }
             SubwayArrivalGroup(
                 direction = direction,
                 entries = entries,
             )
         }
+    }
+
+    @DgsData(parentType = "SubwayRealtime", field = "delayMinutes")
+    fun realtimeDelayMinutes(dfe: DgsDataFetchingEnvironment): Int? {
+        val realtime = dfe.getSource<SubwayRealtime>()!!
+        return delayMap(dfe)[realtime.trainNumber]?.delayMinutes
+    }
+
+    @DgsData(parentType = "SubwayArrival", field = "delayMinutes")
+    fun arrivalDelayMinutes(dfe: DgsDataFetchingEnvironment): Int? {
+        val arrival = dfe.getSource<SubwayArrival>()!!
+        if (!arrival.isRealtime || arrival.trainNumber == null) return null
+        return delayMap(dfe)[arrival.trainNumber]?.delayMinutes
+    }
+
+    private fun delayMap(dfe: DgsDataFetchingEnvironment): Map<String, SubwayTrainDelay> {
+        val now = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone)
+        val runDate = if (now.toLocalTime().isBefore(LocalTime.of(4, 0))) now.toLocalDate().minusDays(1) else now.toLocalDate()
+
+        @Suppress("UNCHECKED_CAST")
+        val cache =
+            dfe.graphQlContext.computeIfAbsent("subwayTrainDelayMap") {
+                subwayTrainDelayRepository.findByRunDate(runDate).associateBy { it.trainNumber }
+            } as Map<String, SubwayTrainDelay>
+        return cache
     }
 
     private fun SubwayArrival.withLocalizedLocation(dfe: DgsDataFetchingEnvironment) =
@@ -183,6 +231,11 @@ class SubwayDataFetcher(
             isExpress = isExpress,
             isLast = isLast,
             status = status,
+            message = message,
+            messageDetail = messageDetail,
+            seconds = seconds,
+            arrivalCode = arrivalCode,
+            delayMinutes = delayMinutes,
         )
 
     private fun localizedLocation(
@@ -234,12 +287,29 @@ private data class SubwayQueryContext(
     val filters: Map<String, Pair<List<String>, List<String>>>,
     val limits: Map<String, Int?>,
     val language: String?,
+    val after: Map<String, java.time.LocalTime?>,
 )
 
 /** Set by `Query.subway` and inherited by nested station fields. */
 private fun DataFetchingEnvironment.subwayQueryContext(): SubwayQueryContext = getLocalContext<SubwayQueryContext>()!!
 
 private const val STATION_NAME_MEMO_KEY = "subwayStationNameMemo"
+
+internal fun isAtOrAfterSubwayTime(
+    time: LocalTime,
+    after: LocalTime,
+): Boolean = subwayServiceSeconds(time) >= subwayServiceSeconds(after)
+
+internal fun isArrivalAtOrAfterSubwayTime(
+    minutes: Int,
+    now: LocalTime,
+    after: LocalTime,
+): Boolean = subwayServiceSeconds(now) + minutes * 60L >= subwayServiceSeconds(after)
+
+private fun subwayServiceSeconds(time: LocalTime): Long {
+    val seconds = time.toSecondOfDay().toLong()
+    return if (seconds < 4 * 60 * 60) seconds + 24L * 60 * 60 else seconds
+}
 
 /**
  * Terminal and location names repeat across every arrival/timetable entry of a response. Memoizing them per request

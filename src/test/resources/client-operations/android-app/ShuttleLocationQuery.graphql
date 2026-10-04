@@ -1,0 +1,10 @@
+query ShuttleLocationQuery {
+    shuttle(input: {stops: [
+        {name: "dormitory_o", limit: {}}, {name: "shuttlecock_o", limit: {}},
+        {name: "station", limit: {}}, {name: "terminal", limit: {}},
+        {name: "jungang_stn", limit: {}}, {name: "shuttlecock_i", limit: {}}
+    ]}) {
+        initialStopRules { seq stopName priority polygon { latitude longitude } }
+        stops { name latitude longitude }
+    }
+}

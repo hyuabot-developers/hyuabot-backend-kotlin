@@ -1,0 +1,504 @@
+scalar Date
+scalar DateTime
+scalar LocalTime
+
+type Query {
+    homeWeather: HomeWeather
+    notices(input: NoticeInput): [NoticeCategory!]!
+    calendar(input: AcademicCalendarInput): AcademicCalendar!
+    phonebook(input: PhonebookInput): Phonebook!
+    readingRoom: [ReadingRoom!]!
+    commute: [CommuteShuttleRoute!]!
+    building(buildingInput: BuildingInput, roomInput: RoomInput): [Building!]!
+    cafeteria(input: CafeteriaInput!): [Cafeteria!]!
+    bus(input: [BusRouteStopInput!]!): [BusRouteStop!]!
+    subway(input: SubwayInput!): [SubwayStation!]!
+    shuttle(input: ShuttleInput!): Shuttle!
+}
+
+type HomeWeather {
+    issuedAt: DateTime!
+    expiresAt: DateTime!
+    observedAt: DateTime
+    forecastUpdatedAt: DateTime
+    currentTemperature: Float
+    currentPrecipitationType: String
+    currentPrecipitationAmount: Float
+    minimumTemperature: Float
+    maximumTemperature: Float
+    precipitationProbabilityMax: Int!
+    precipitationStartAt: DateTime
+    precipitationEndAt: DateTime
+    precipitationType: String!
+    precipitationConfidence: String
+    availableModelCount: Int
+    agreeingModelCount: Int
+    primaryCondition: String!
+    attribution: String
+}
+
+# 공지사항 카테고리와 공지사항을 반환하는 쿼리입니다.
+input NoticeInput {
+    category: String
+    language: String
+    timestamp: DateTime
+}
+
+type NoticeCategory {
+    seq: Int!
+    name: String!
+    notices: [Notice!]!
+}
+
+type Notice {
+    seq: Int!
+    title: String!
+    url: String!
+    userID: String!
+    language: String!
+    expiredAt: DateTime!
+}
+
+# 학사일정 버전, 학사일정 카테고리 및 학사일정을 반환하는 쿼리입니다.
+input AcademicCalendarInput {
+    category: String
+    start: Date
+    end: Date
+}
+
+type AcademicCalendar {
+    version: String!
+    categories: [AcademicCalendarCategory!]!
+}
+
+type AcademicCalendarCategory {
+    seq: Int!
+    name: String!
+    events: [AcademicCalendarEvent!]!
+}
+
+type AcademicCalendarEvent {
+    seq: Int!
+    title: String!
+    description: String!
+    start: Date!
+    end: Date!
+}
+
+# 전화부 버전, 전화부 카테고리 및 전화부 항목을 반환하는 쿼리입니다.
+input PhonebookInput {
+    category: String
+    campus: Int
+    name: String
+    phone: String
+}
+
+type Phonebook {
+    version: String!
+    categories: [PhonebookCategory!]!
+}
+
+type PhonebookCategory {
+    seq: Int!
+    name: String!
+    entries: [PhonebookEntry!]!
+}
+
+type PhonebookEntry {
+    seq: Int!
+    name: String!
+    phone: String!
+    campus: Int!
+}
+
+# 열람실 정보와 열람실 좌석 정보를 반환하는 쿼리입니다.
+type ReadingRoom {
+    seq: Int!
+    name: String!
+    campus: Int!
+    active: Boolean!
+    reservable: Boolean!
+    seats: ReadingRoomSeat!
+    updatedAt: DateTime!
+}
+
+type ReadingRoomSeat {
+    total: Int!
+    available: Int!
+    active: Int!
+    occupied: Int!
+}
+
+# 통학버스 노선 및 시간표를 반환하는 쿼리입니다.
+type CommuteShuttleRoute {
+    name: String!
+    description: CommuteShuttleDescription!
+    timetable: [CommuteShuttleTimetable!]!
+}
+
+type CommuteShuttleDescription {
+    korean: String!
+    english: String!
+}
+
+type CommuteShuttleTimetable {
+    name: String!
+    order: Int!
+    stop: CommuteShuttleStop
+    time: LocalTime!
+}
+
+type CommuteShuttleStop {
+    name: String!
+    latitude: Float!
+    longitude: Float!
+    description: String!
+}
+
+# 건물 및 강의실 정보를 반환하는 쿼리입니다.
+input BuildingInput {
+    name: String
+    north: Float
+    south: Float
+    east: Float
+    west: Float
+}
+
+input RoomInput {
+    name: String
+}
+
+type Building {
+    seq: String
+    name: String!
+    latitude: Float!
+    longitude: Float!
+    url: String
+    rooms: [Room!]!
+}
+
+type Room {
+    seq: Int!
+    name: String!
+    number: String!
+}
+
+# 학식 식당 및 메뉴 정보를 반환하는 쿼리입니다.
+input CafeteriaInput {
+    date: Date
+    campus: Int
+}
+
+type Cafeteria {
+    seq: Int!
+    name: String!
+    campus: Int!
+    latitude: Float!
+    longitude: Float!
+    runningTime: CafeteriaRunningTime!
+    menus: [Menu!]!
+}
+
+type CafeteriaRunningTime {
+    breakfast: String
+    lunch: String
+    dinner: String
+}
+
+type Menu {
+    seq: Int!
+    type: String!
+    food: String!
+    price: String!
+}
+
+# 노선 버스 정보를 반환하는 쿼리입니다.
+
+input BusRouteStopInput {
+    route: Int!
+    stop: Int!
+    destinationStops: [Int!]
+    destinationStop: Int @deprecated(reason: "Use destinationStops to request travel times for multiple destinations")
+    after: LocalTime
+    limit: Int
+    dates: [Date!]
+    weekdays: [String!]
+}
+
+type BusRouteStop {
+    route: BusRoute!
+    stop: BusStop!
+    order: Int!
+    startStop: BusStop!
+    minutes: Int!
+    realtime: [BusRealtime!]!
+    timetable: [BusTimetable!]!
+    arrival: [BusArrival!]!
+    log: [BusDepartureLog!]!
+    minimumDispatchIntervals: [BusMinimumDispatchInterval!]!
+}
+
+type BusRoute {
+    seq: Int!
+    name: String!
+    type: BusRouteType!
+    company: BusCompany!
+    runningTime: BusRunningTime!
+}
+
+type BusRouteType {
+    code: String!
+    name: String!
+}
+
+type BusCompany {
+    seq: Int!
+    name: String!
+    telephone: String!
+}
+
+type BusRunningTime {
+    up: BusRunningTimeEntry!
+    down: BusRunningTimeEntry!
+}
+
+type BusRunningTimeEntry {
+    first: LocalTime!
+    last: LocalTime!
+    terminal: BusStop!
+}
+
+type BusStop {
+    seq: Int!
+    name: String!
+    districtCode: Int!
+    region: String!
+    mobileNumber: String!
+    latitude: Float!
+    longitude: Float!
+}
+
+type BusRealtime {
+    order: Int!
+    stops: Int!
+    seats: Int!
+    minutes: Int!
+    lowFloor: Boolean!
+    updatedAt: DateTime!
+}
+
+type BusTimetable {
+    seq: Int!
+    time: LocalTime!
+    weekday: String!
+}
+
+type BusMinimumDispatchInterval {
+    weekday: String!
+    minutes: Int!
+}
+
+type BusDepartureLog {
+    seq: Int!
+    date: Date!
+    time: LocalTime!
+    vehicle: String!
+}
+
+type BusArrival {
+    stops: Int
+    seats: Int
+    minutes: Int
+    lowFloor: Boolean
+    isRealtime: Boolean!
+    time: LocalTime
+    arrivalTime: LocalTime
+    destinationTravelMinutes: [BusDestinationTravelMinutes!]!
+    """Deprecated. Use destinationTravelMinutes instead."""
+    destinationArrivalTime: LocalTime
+}
+
+type BusDestinationTravelMinutes {
+    destinationStopId: Int!
+    minutes: Int!
+}
+
+# 전철 정보를 반환하는 쿼리입니다.
+input SubwayInput {
+    keys: [SubwayStationInput!]!
+    language: String
+}
+
+input SubwayStationInput {
+    stationID: String!
+    direction: [String!]!
+    weekdays: [String!]!
+    limit: Int
+}
+
+type SubwayStation {
+    stationID: String!
+    name: String!
+    order: Int!
+    minutes: Int!
+    route: SubwayRoute!
+    realtime: [SubwayRealtime!]!
+    timetable: [SubwayTimetable!]!
+    arrival: [SubwayArrivalGroup!]!
+}
+
+type SubwayOriginTerminal {
+    stationID: String!
+    name: String!
+}
+
+type SubwayRoute {
+    seq: Int!
+    name: String!
+}
+
+type SubwayRealtime {
+    order: Int!
+    location: String!
+    stops: Int!
+    minutes: Int!
+    direction: String!
+    terminal: SubwayOriginTerminal!
+    trainNumber: String!
+    isExpress: Boolean!
+    isLast: Boolean!
+    status: Int!
+    updatedAt: DateTime!
+}
+
+type SubwayTimetable {
+    seq: Int!
+    time: LocalTime!
+    weekday: String!
+    direction: String!
+    origin: SubwayOriginTerminal!
+    terminal: SubwayOriginTerminal!
+}
+
+type SubwayArrivalGroup {
+    direction: String!
+    entries: [SubwayArrival!]!
+}
+
+type SubwayArrival {
+    minutes: Int!
+    origin: SubwayOriginTerminal,
+    terminal: SubwayOriginTerminal!
+    isRealtime: Boolean!
+    location: String
+    stops: Int
+    trainNumber: String
+    isExpress: Boolean
+    isLast: Boolean
+    status: Int
+}
+
+# 셔틀버스 노선 및 시간표를 반환하는 쿼리입니다.
+input ShuttleInput {
+    stops: [ShuttleStopInput!]
+    periods: [String!]
+    weekdays: [Boolean!]
+    date: Date
+    after: LocalTime
+}
+
+input ShuttleStopInput {
+    name: String!
+    limit: ShuttleLimitInput!
+    destinations: [String!]
+    routes: [String!]
+    tags: [String!]
+}
+
+input ShuttleLimitInput {
+    order: Int
+    destination: Int
+}
+
+type Shuttle {
+    period: ShuttlePeriod
+    holiday: ShuttleHoliday
+    serviceNotices(start: Date!, end: Date!): [ShuttleServiceNotice!]!
+    initialStopRules: [ShuttleInitialStopRule!]!
+    stops: [ShuttleStop!]!
+}
+
+type ShuttleInitialStopRule {
+    seq: Int!
+    name: String!
+    periodType: String!
+    weekday: Boolean!
+    startTime: LocalTime
+    endTime: LocalTime
+    stopName: String!
+    priority: Int!
+    polygon: [ShuttleGeoPoint!]!
+}
+
+type ShuttleGeoPoint {
+    latitude: Float!
+    longitude: Float!
+}
+
+type ShuttleServiceNotice {
+    id: String!
+    kind: String!
+    date: Date!
+    period: ShuttlePeriod
+    holiday: ShuttleHoliday
+}
+
+type ShuttlePeriod {
+    seq: Int!
+    type: String!
+    start: DateTime!
+    end: DateTime!
+}
+
+type ShuttleHoliday {
+    seq: Int!
+    date: Date!
+    type: String!
+    calendar: String!
+}
+
+type ShuttleStop {
+    name: String!
+    latitude: Float!
+    longitude: Float!
+    timetable: ShuttleTimetable!
+}
+
+type ShuttleTimetable {
+    order: [ShuttleTimetableEntry!]!
+    destination: [ShuttleTimetableGroup!]!
+}
+
+type ShuttleTimetableGroup {
+    destination: String!
+    entries:  [ShuttleTimetableEntry!]!
+}
+
+type ShuttleTimetableEntry {
+    seq: Int!
+    route: ShuttleRoute!
+    period: String!
+    weekday: Boolean!
+    time: LocalTime!
+    stops: [ShuttleArrival!]!
+}
+
+type ShuttleRoute {
+    name: String!
+    tag: String!
+}
+
+type ShuttleArrival {
+    stop: String!
+    time: LocalTime!
+}

@@ -1,0 +1,11 @@
+query CafeteriaPageQuery($date: Date!, $campusID: Int!) {
+    cafeteria (input: { date: $date, campus: $campusID }) {
+        seq
+        runningTime {
+            breakfast, lunch, dinner
+        }
+        menus {
+            type, food, price
+        }
+    }
+}

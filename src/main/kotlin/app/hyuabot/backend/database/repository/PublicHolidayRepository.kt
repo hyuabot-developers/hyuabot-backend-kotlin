@@ -6,6 +6,11 @@ import org.springframework.data.jpa.repository.Query
 import java.time.LocalDate
 
 interface PublicHolidayRepository : JpaRepository<PublicHoliday, Int> {
+    fun findByDateBetween(
+        start: LocalDate,
+        end: LocalDate,
+    ): List<PublicHoliday>
+
     fun findByDateAndCalendarType(
         date: LocalDate,
         calendarType: String,

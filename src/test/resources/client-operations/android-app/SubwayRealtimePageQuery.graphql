@@ -1,0 +1,23 @@
+query SubwayRealtimePageQuery($keys: [SubwayStationInput!]!, $language: String!) {
+    subway (
+        input: {
+            language: $language,
+            keys: $keys,
+        }) {
+        stationID
+        arrival {
+            direction
+            entries {
+                minutes
+                origin { stationID, name }
+                terminal { stationID, name }
+                isRealtime
+                location
+                stops
+                trainNumber
+                isExpress
+                isLast
+            }
+        }
+    }
+}

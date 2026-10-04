@@ -1,0 +1,151 @@
+query HomePageQuery(
+    $language: String!
+    $subwayLanguage: String!
+    $after: LocalTime
+    $date: Date!
+    $campusID: Int!
+    $busInput: [BusRouteStopInput!]!
+    $shuttleStops: [ShuttleStopInput!]!
+    $transferBusInput: [BusRouteStopInput!]!
+    $subwayKeys: [SubwayStationInput!]!
+    $subwayTimetableKeys: [SubwayStationInput!]!
+) {
+    homeWeather {
+        issuedAt
+        expiresAt
+        currentTemperature
+        minimumTemperature
+        maximumTemperature
+        precipitationProbabilityMax
+        precipitationStartAt
+        precipitationType
+        primaryCondition
+        observedAt
+        forecastUpdatedAt
+        currentPrecipitationType
+        currentPrecipitationAmount
+        precipitationEndAt
+        precipitationConfidence
+        availableModelCount
+        agreeingModelCount
+        attribution
+    }
+    notices(input: { language: $language, category: "셔틀" }) {
+        notices {
+            title
+            url
+            expiredAt
+        }
+    }
+    shuttle(input: {
+        stops: $shuttleStops,
+        after: $after
+    }) {
+        initialStopRules {
+            seq
+            stopName
+            priority
+            polygon {
+                latitude
+                longitude
+            }
+        }
+        stops {
+            name
+            timetable {
+                destination {
+                    destination
+                    entries {
+                        seq
+                        route {
+                            tag
+                            name
+                        }
+                        time
+                        stops {
+                            stop
+                            time
+                        }
+                    }
+                }
+            }
+        }
+    }
+    transferBus: bus(input: $transferBusInput) {
+        stop {
+            seq
+        }
+        arrival {
+            minutes
+            stops
+            isRealtime
+        }
+    }
+    subway(input: { language: $subwayLanguage, keys: $subwayKeys }) {
+        stationID
+        arrival {
+            direction
+            entries {
+                minutes
+                isRealtime
+                location
+                stops
+                status
+                terminal {
+                    stationID
+                    name
+                }
+            }
+        }
+
+    }
+    subwayTimetable: subway(input: {language: $subwayLanguage, keys: $subwayTimetableKeys}) {
+        stationID
+        timetable {
+            weekday
+            direction
+            time
+            terminal {
+                stationID
+                name
+            }
+        }
+    }
+    bus(input: $busInput) {
+        route {
+            seq
+            name
+        }
+        stop {
+            seq
+            name
+        }
+        arrival {
+            minutes
+            arrivalTime
+            stops
+            seats
+            isRealtime
+            destinationTravelMinutes {
+                destinationStopId
+                minutes
+            }
+        }
+        log {
+            time
+        }
+    }
+    cafeteria(input: { date: $date, campus: $campusID }) {
+        seq
+        runningTime {
+            breakfast
+            lunch
+            dinner
+        }
+        menus {
+            type
+            food
+            price
+        }
+    }
+}

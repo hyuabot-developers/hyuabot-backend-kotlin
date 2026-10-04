@@ -1,0 +1,23 @@
+query ShuttleStopDialogQuery ($date: Date!, $stopID: String!) {
+    shuttle (input: {
+        date: $date,
+        stops: [{ name: $stopID, limit: { order: null, destination: null } }],
+    }) {
+        stops {
+            latitude
+            longitude
+            timetable {
+                destination {
+                    destination
+                    entries {
+                        time
+                        weekday
+                        route {
+                            tag
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

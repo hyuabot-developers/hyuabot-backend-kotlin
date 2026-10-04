@@ -1,0 +1,16 @@
+query CalendarPageQuery {
+    calendar {
+        version
+        categories {
+            seq
+            name
+            events {
+                seq
+                title
+                description
+                start
+                end
+            }
+        }
+    }
+}

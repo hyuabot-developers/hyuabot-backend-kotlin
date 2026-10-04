@@ -1,0 +1,13 @@
+query ReadingRoomPageQuery {
+    readingRoom {
+        seq
+        name
+        campus
+        seats {
+            available
+            active
+            occupied
+        }
+        updatedAt
+    }
+}

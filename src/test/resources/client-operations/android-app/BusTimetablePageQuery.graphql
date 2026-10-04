@@ -1,0 +1,8 @@
+query BusTimetablePageQuery($routeStops: [BusRouteStopInput!]!) {
+    bus (input: $routeStops) {
+        route { name }
+        timetable {
+            weekday, time
+        }
+    }
+}

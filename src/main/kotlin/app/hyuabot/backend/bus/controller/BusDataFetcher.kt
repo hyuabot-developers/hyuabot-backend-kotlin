@@ -17,6 +17,8 @@ import app.hyuabot.backend.codegen.types.BusRunningTime
 import app.hyuabot.backend.codegen.types.BusRunningTimeEntry
 import app.hyuabot.backend.codegen.types.BusStop
 import app.hyuabot.backend.codegen.types.BusTimetable
+import app.hyuabot.backend.database.repository.BusLocationRepository
+import app.hyuabot.backend.database.repository.BusRouteStationRepository
 import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsData
@@ -32,6 +34,8 @@ import app.hyuabot.backend.database.entity.BusTimetable as BusTimetableEntity
 @DgsComponent
 class BusDataFetcher(
     private val routeService: BusRouteService,
+    private val busRouteStationRepository: BusRouteStationRepository,
+    private val busLocationRepository: BusLocationRepository,
 ) {
     @DgsQuery
     fun bus(
@@ -145,6 +149,10 @@ class BusDataFetcher(
                     minutes = it.remainingTime.toMinutes().toInt(),
                     lowFloor = it.isLowFloor,
                     updatedAt = it.updatedAt.withZoneSameInstant(LocalDateTimeBuilder.serviceTimezone),
+                    currentStopName = it.currentStopName,
+                    plateNumber = it.plateNumber,
+                    crowded = it.crowded,
+                    stateCode = it.stateCode,
                 )
             }
         }
@@ -235,6 +243,46 @@ class BusDataFetcher(
             )
         val dataLoader = dfe.getDataLoader<BusArrivalKey, List<BusArrival>>("busArrivalDataLoader")!!
         return dataLoader.load(key)
+    }
+
+    @DgsData(parentType = "BusRouteStop", field = "approach")
+    fun approach(
+        dfe: DataFetchingEnvironment,
+        @InputArgument count: Int?,
+    ): List<Map<String, Any?>>? {
+        val routeStop = dfe.getSource<BusRouteStop>()!!
+        val routeID = routeStop.route.seq
+        val routeStations = busRouteStationRepository.findByRouteIDOrderByStationSeqAsc(routeID)
+        if (routeStations.isEmpty()) return null
+        val target = routeStations.firstOrNull { it.stationID == routeStop.stop.seq } ?: return null
+        val limit = (count ?: 5).coerceAtLeast(0)
+        val byStation =
+            busLocationRepository
+                .findByRouteIDOrderByStationSeqDesc(routeID)
+                .filter { it.stationSeq < target.stationSeq }
+                .groupBy { it.stationSeq }
+        return routeStations
+            .asSequence()
+            .filter { it.stationSeq < target.stationSeq }
+            .sortedByDescending { it.stationSeq }
+            .take(limit)
+            .map { station ->
+                mapOf(
+                    "sequence" to station.stationSeq,
+                    "stopID" to station.stationID,
+                    "name" to station.stationName,
+                    "vehicles" to
+                        byStation[station.stationSeq].orEmpty().map { vehicle ->
+                            mapOf(
+                                "plateNumber" to vehicle.plateNumber,
+                                "crowded" to vehicle.crowded,
+                                "seats" to vehicle.remainingSeatCount,
+                                "lowFloor" to vehicle.lowFloor,
+                                "updatedAt" to vehicle.updatedAt,
+                            )
+                        },
+                )
+            }.toList()
     }
 }
 

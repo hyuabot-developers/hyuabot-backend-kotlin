@@ -1,0 +1,28 @@
+query ShuttleRealtimePageWatchQuery (
+    $stops: [ShuttleStopInput!]!,
+    $after: LocalTime,
+) {
+    shuttle(input: {
+        stops: $stops,
+        after: $after
+    }) {
+        stops {
+            latitude
+            longitude
+            name
+            timetable {
+                order {
+                    route {
+                        tag
+                        name
+                    }
+                    time
+                    stops {
+                        stop
+                        time
+                    }
+                }
+            }
+        }
+    }
+}

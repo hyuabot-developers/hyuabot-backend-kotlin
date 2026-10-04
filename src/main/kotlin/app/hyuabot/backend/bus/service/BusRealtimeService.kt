@@ -182,6 +182,10 @@ class BusRealtimeService(
                         lowFloor = it.isLowFloor,
                         isRealtime = true,
                         destinationTravelMinutes = emptyList(),
+                        currentStopName = it.currentStopName,
+                        plateNumber = it.plateNumber,
+                        crowded = it.crowded,
+                        stateCode = it.stateCode,
                     )
                 }
             val timetableEntries = timetableGrouped[key.routeID to key.startStopID] ?: emptyList()

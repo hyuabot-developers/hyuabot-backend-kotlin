@@ -17,11 +17,15 @@ import app.hyuabot.backend.bus.service.BusTimetableService
 import app.hyuabot.backend.codegen.types.BusArrival
 import app.hyuabot.backend.codegen.types.BusDestinationTravelMinutes
 import app.hyuabot.backend.database.entity.BusDepartureLog
+import app.hyuabot.backend.database.entity.BusLocation
 import app.hyuabot.backend.database.entity.BusRealtime
 import app.hyuabot.backend.database.entity.BusRoute
+import app.hyuabot.backend.database.entity.BusRouteStation
 import app.hyuabot.backend.database.entity.BusRouteStop
 import app.hyuabot.backend.database.entity.BusStop
 import app.hyuabot.backend.database.entity.BusTimetable
+import app.hyuabot.backend.database.repository.BusLocationRepository
+import app.hyuabot.backend.database.repository.BusRouteStationRepository
 import app.hyuabot.backend.utility.ScalarRegistration
 import com.netflix.graphql.dgs.DgsQueryExecutor
 import com.netflix.graphql.dgs.test.EnableDgsTest
@@ -61,6 +65,10 @@ class BusDataFetcherTest {
     @MockitoBean lateinit var timetableService: BusTimetableService
 
     @MockitoBean lateinit var realtimeService: BusRealtimeService
+
+    @MockitoBean lateinit var busRouteStationRepository: BusRouteStationRepository
+
+    @MockitoBean lateinit var busLocationRepository: BusLocationRepository
 
     private fun now() = ZonedDateTime.now()
 
@@ -276,6 +284,49 @@ class BusDataFetcherTest {
         val busStop = busRouteStop["stop"] as Map<*, *>
         assertEquals(1, busStop["seq"])
         assertEquals("Test Bus Stop", busStop["name"])
+    }
+
+    @Test
+    @DisplayName("버스 접근 정류장과 차량 정보를 조회한다")
+    fun testBusApproach() {
+        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
+        whenever(busRouteStationRepository.findByRouteIDOrderByStationSeqAsc(route.id)).thenReturn(
+            listOf(
+                BusRouteStation(route.id, 1, 900, "Before Stop", ZonedDateTime.now()),
+                BusRouteStation(route.id, 2, stop.id, stop.name, ZonedDateTime.now()),
+            ),
+        )
+        whenever(busLocationRepository.findByRouteIDOrderByStationSeqDesc(route.id)).thenReturn(
+            listOf(
+                BusLocation(
+                    routeID = route.id,
+                    plateNumber = "12가3456",
+                    stationSeq = 1,
+                    crowded = 2,
+                    remainingSeatCount = 30,
+                    lowFloor = true,
+                    updatedAt = ZonedDateTime.now(),
+                ),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                { bus(input: [{ route: 1, stop: 1 }]) {
+                    approach { sequence stopID name vehicles { plateNumber crowded seats lowFloor updatedAt } }
+                } }
+                """.trimIndent(),
+                "data.bus",
+            )
+
+        val approach = result.single()["approach"] as List<*>
+        val station = approach.single() as Map<*, *>
+        assertEquals(1, station["sequence"])
+        assertEquals(900, station["stopID"])
+        val vehicle = (station["vehicles"] as List<*>).single() as Map<*, *>
+        assertEquals("12가3456", vehicle["plateNumber"])
+        assertEquals(30, vehicle["seats"])
     }
 
     @Test
