@@ -8,7 +8,9 @@ import jakarta.persistence.Id
 import jakarta.persistence.IdClass
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.annotations.Type
+import org.hibernate.type.SqlTypes
 import java.time.Duration
 import java.time.ZonedDateTime
 import java.util.Objects
@@ -42,8 +44,10 @@ class BusRealtime(
     @Column(name = "plate_no", length = 20)
     var plateNumber: String? = null,
     @Column(name = "crowded", columnDefinition = "smallint")
+    @JdbcTypeCode(SqlTypes.SMALLINT)
     var crowded: Int? = null,
     @Column(name = "state_code", columnDefinition = "smallint")
+    @JdbcTypeCode(SqlTypes.SMALLINT)
     var stateCode: Int? = null,
 ) {
     override fun equals(other: Any?): Boolean {

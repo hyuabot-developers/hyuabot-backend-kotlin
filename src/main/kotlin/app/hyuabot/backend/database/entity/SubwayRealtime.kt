@@ -11,7 +11,9 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.annotations.Type
+import org.hibernate.type.SqlTypes
 import java.time.Duration
 import java.time.ZonedDateTime
 import java.util.Objects
@@ -61,6 +63,7 @@ class SubwayRealtime(
     @Column(name = "remaining_seconds")
     var remainingSeconds: Int? = null,
     @Column(name = "arrival_code", columnDefinition = "smallint")
+    @JdbcTypeCode(SqlTypes.SMALLINT)
     var arrivalCode: Int? = null,
 ) {
     override fun equals(other: Any?): Boolean {

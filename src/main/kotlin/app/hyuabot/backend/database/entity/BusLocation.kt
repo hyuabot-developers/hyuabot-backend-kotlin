@@ -6,6 +6,8 @@ import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.IdClass
 import jakarta.persistence.Table
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.ZonedDateTime
 
 @Entity(name = "bus_location")
@@ -23,12 +25,14 @@ class BusLocation(
     @Column(name = "station_id")
     var stationID: Int? = null,
     @Column(name = "crowded", columnDefinition = "smallint")
+    @JdbcTypeCode(SqlTypes.SMALLINT)
     var crowded: Int? = null,
     @Column(name = "remaining_seat_count")
     var remainingSeatCount: Int? = null,
     @Column(name = "low_plate")
     var lowFloor: Boolean? = null,
     @Column(name = "state_code", columnDefinition = "smallint")
+    @JdbcTypeCode(SqlTypes.SMALLINT)
     var stateCode: Int? = null,
     @Column(name = "last_updated_time", columnDefinition = "timestamptz", nullable = false)
     var updatedAt: ZonedDateTime,
