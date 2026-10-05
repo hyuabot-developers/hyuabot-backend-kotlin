@@ -14,7 +14,6 @@ type Query {
     bus(input: [BusRouteStopInput!]!): [BusRouteStop!]!
     subway(input: SubwayInput!): [SubwayStation!]!
     shuttle(input: ShuttleInput!): Shuttle!
-    specialDays(start: Date!, end: Date!): [SpecialDay!]
 }
 
 type HomeWeather {
@@ -496,14 +495,6 @@ type SubwayAlert {
     content: String
     startsAt: DateTime
     endsAt: DateTime
-    source: String
-}
-
-type SpecialDay {
-    date: Date
-    name: String
-    kind: String
-    isHoliday: Boolean
     source: String
 }
 

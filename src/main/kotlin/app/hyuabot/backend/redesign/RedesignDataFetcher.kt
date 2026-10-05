@@ -1,8 +1,6 @@
 package app.hyuabot.backend.redesign
 
 import app.hyuabot.backend.codegen.types.SubwayStation
-import app.hyuabot.backend.database.repository.PublicHolidayRepository
-import app.hyuabot.backend.database.repository.SpecialDayRepository
 import app.hyuabot.backend.database.repository.SubwayAlertRepository
 import app.hyuabot.backend.database.repository.SubwayStationFacilityRepository
 import app.hyuabot.backend.database.repository.SubwayTimetableRepository
@@ -11,41 +9,15 @@ import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsData
 import com.netflix.graphql.dgs.DgsDataFetchingEnvironment
-import com.netflix.graphql.dgs.DgsQuery
-import com.netflix.graphql.dgs.InputArgument
-import java.time.LocalDate
 import java.time.ZonedDateTime
 
 @DgsComponent
 class RedesignDataFetcher(
-    private val specialDayRepository: SpecialDayRepository,
     private val facilityRepository: SubwayStationFacilityRepository,
     private val timetableRepository: SubwayTimetableRepository,
     private val alertRepository: SubwayAlertRepository,
-    private val publicHolidayRepository: PublicHolidayRepository,
     private val publicHolidayService: PublicHolidayService,
 ) {
-    @DgsQuery
-    fun specialDays(
-        @InputArgument start: LocalDate,
-        @InputArgument end: LocalDate,
-    ): List<Map<String, Any?>> {
-        if (start.isAfter(end)) return emptyList()
-        val special =
-            specialDayRepository.findByDayDateBetweenOrderByDayDateAscDayNameAsc(start, end).map {
-                mapOf("date" to it.date, "name" to it.name, "kind" to it.kind, "isHoliday" to it.isHoliday, "source" to it.source)
-            }
-        val holidays =
-            publicHolidayRepository
-                .findByDateBetween(start, end)
-                .asSequence()
-                .map { mapOf("date" to it.date, "name" to it.name, "kind" to "holiday", "isHoliday" to true, "source" to it.source) }
-                .toList()
-        return (special + holidays)
-            .distinctBy { it["date"] to it["name"] }
-            .sortedWith(compareBy<Map<String, Any?>> { it["date"].toString() }.thenBy { it["name"].toString() })
-    }
-
     @DgsData(parentType = "SubwayStation", field = "facilities")
     fun facilities(dfe: DgsDataFetchingEnvironment): List<Map<String, Any?>> {
         val station = dfe.getSource<SubwayStation>()!!
