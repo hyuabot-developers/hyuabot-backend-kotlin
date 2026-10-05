@@ -1,6 +1,7 @@
 package app.hyuabot.backend.redesign
 
 import app.hyuabot.backend.codegen.types.SubwayStation
+import app.hyuabot.backend.database.entity.SubwayTimetable
 import app.hyuabot.backend.database.repository.SubwayAlertRepository
 import app.hyuabot.backend.database.repository.SubwayStationFacilityRepository
 import app.hyuabot.backend.database.repository.SubwayTimetableRepository
@@ -9,6 +10,8 @@ import app.hyuabot.backend.utility.LocalDateTimeBuilder
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsData
 import com.netflix.graphql.dgs.DgsDataFetchingEnvironment
+import java.time.Clock
+import java.time.LocalTime
 import java.time.ZonedDateTime
 
 @DgsComponent
@@ -17,6 +20,7 @@ class RedesignDataFetcher(
     private val timetableRepository: SubwayTimetableRepository,
     private val alertRepository: SubwayAlertRepository,
     private val publicHolidayService: PublicHolidayService,
+    private val clock: Clock = Clock.systemUTC(),
 ) {
     @DgsData(parentType = "SubwayStation", field = "facilities")
     fun facilities(dfe: DgsDataFetchingEnvironment): List<Map<String, Any?>> {
@@ -38,7 +42,7 @@ class RedesignDataFetcher(
     @DgsData(parentType = "SubwayStation", field = "firstLast")
     fun firstLast(dfe: DgsDataFetchingEnvironment): List<Map<String, Any?>> {
         val station = dfe.getSource<SubwayStation>()!!
-        val now = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone)
+        val now = ZonedDateTime.now(clock.withZone(LocalDateTimeBuilder.serviceTimezone))
         val serviceDate =
             if (now.toLocalTime().isBefore(
                     java.time.LocalTime.of(4, 0),
@@ -61,6 +65,7 @@ class RedesignDataFetcher(
             .filter { it.weekday == weekday }
             .groupBy { it.heading to it.weekday }
             .map { (key, entries) ->
+                val (first, last) = subwayFirstAndLast(entries)
                 mapOf(
                     "direction" to
                         when (key.first) {
@@ -69,8 +74,8 @@ class RedesignDataFetcher(
                             else -> key.first
                         },
                     "weekday" to key.second,
-                    "first" to entries.minOfOrNull { it.departureTime },
-                    "last" to entries.maxOfOrNull { it.departureTime },
+                    "first" to first,
+                    "last" to last,
                 )
             }.sortedWith(compareBy<Map<String, Any?>> { it["direction"].toString() }.thenBy { it["weekday"].toString() })
     }
@@ -78,7 +83,7 @@ class RedesignDataFetcher(
     @DgsData(parentType = "SubwayStation", field = "alerts")
     fun alerts(dfe: DgsDataFetchingEnvironment): List<Map<String, Any?>> {
         val station = dfe.getSource<SubwayStation>()!!
-        val now = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone)
+        val now = ZonedDateTime.now(clock.withZone(LocalDateTimeBuilder.serviceTimezone))
         return alertRepository
             .findAll()
             .asSequence()
@@ -100,3 +105,6 @@ class RedesignDataFetcher(
             }.toList()
     }
 }
+
+internal fun subwayFirstAndLast(entries: List<SubwayTimetable>): Pair<LocalTime?, LocalTime?> =
+    entries.minOfOrNull { it.departureTime } to entries.maxOfOrNull { it.departureTime }

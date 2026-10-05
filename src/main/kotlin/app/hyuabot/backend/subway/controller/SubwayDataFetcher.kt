@@ -22,6 +22,7 @@ import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
 import graphql.execution.DataFetcherResult
 import graphql.schema.DataFetchingEnvironment
+import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZonedDateTime
@@ -34,6 +35,7 @@ class SubwayDataFetcher(
     private val publicHolidayService: PublicHolidayService,
     private val subwayStationNameService: SubwayStationNameService,
     private val subwayTrainDelayRepository: SubwayTrainDelayRepository,
+    private val clock: Clock = Clock.systemUTC(),
 ) {
     @DgsQuery
     fun subway(
@@ -152,7 +154,8 @@ class SubwayDataFetcher(
                 "arrival query expects exactly one weekday, but got: $weekdays for station ${station.stationID}",
             )
         }
-        val today = LocalDate.now(LocalDateTimeBuilder.serviceTimezone)
+        val serviceClock = clock.withZone(LocalDateTimeBuilder.serviceTimezone)
+        val today = LocalDate.now(serviceClock)
         val weekday = if (publicHolidayService.findPublicHoliday(today) != null) "weekends" else weekdays.first()
         val limitMap = dfe.subwayQueryContext().limits
         val limit = limitMap[station.stationID]
@@ -182,7 +185,7 @@ class SubwayDataFetcher(
                             if (after == null) {
                                 entries
                             } else {
-                                val now = LocalTime.now(LocalDateTimeBuilder.serviceTimezone)
+                                val now = LocalTime.now(serviceClock)
                                 entries.filter { isArrivalAtOrAfterSubwayTime(it.minutes, now, after) }
                             }
                         if (limit != null) filtered.take(limit) else filtered
@@ -208,7 +211,7 @@ class SubwayDataFetcher(
     }
 
     private fun delayMap(dfe: DgsDataFetchingEnvironment): Map<String, SubwayTrainDelay> {
-        val now = ZonedDateTime.now(LocalDateTimeBuilder.serviceTimezone)
+        val now = ZonedDateTime.now(clock.withZone(LocalDateTimeBuilder.serviceTimezone))
         val runDate = if (now.toLocalTime().isBefore(LocalTime.of(4, 0))) now.toLocalDate().minusDays(1) else now.toLocalDate()
 
         @Suppress("UNCHECKED_CAST")

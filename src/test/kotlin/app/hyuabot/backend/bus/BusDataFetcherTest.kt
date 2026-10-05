@@ -16,6 +16,7 @@ import app.hyuabot.backend.bus.service.BusStopService
 import app.hyuabot.backend.bus.service.BusTimetableService
 import app.hyuabot.backend.codegen.types.BusArrival
 import app.hyuabot.backend.codegen.types.BusDestinationTravelMinutes
+import app.hyuabot.backend.codegen.types.BusRouteStopInput
 import app.hyuabot.backend.database.entity.BusDepartureLog
 import app.hyuabot.backend.database.entity.BusLocation
 import app.hyuabot.backend.database.entity.BusRealtime
@@ -29,10 +30,12 @@ import app.hyuabot.backend.database.repository.BusRouteStationRepository
 import app.hyuabot.backend.utility.ScalarRegistration
 import com.netflix.graphql.dgs.DgsQueryExecutor
 import com.netflix.graphql.dgs.test.EnableDgsTest
+import graphql.schema.DataFetchingEnvironment
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.assertNotNull
 import org.mockito.kotlin.any
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Import
@@ -43,6 +46,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZonedDateTime
 import kotlin.test.Test
+import app.hyuabot.backend.codegen.types.BusRouteStop as BusRouteStopDto
 
 @EnableDgsTest
 @SpringJUnitConfig
@@ -327,6 +331,97 @@ class BusDataFetcherTest {
         val vehicle = (station["vehicles"] as List<*>).single() as Map<*, *>
         assertEquals("12가3456", vehicle["plateNumber"])
         assertEquals(30, vehicle["seats"])
+    }
+
+    @Test
+    fun `approach applies its fallback count when called without a GraphQL default`() {
+        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
+        val fetcher = BusDataFetcher(routeService, busRouteStationRepository, busLocationRepository)
+        val routeStopDto = fetcher.bus(listOf(BusRouteStopInput(route = route.id, stop = stop.id))).data!!.single()
+        val environment = mock<DataFetchingEnvironment>()
+        whenever(environment.getSource<BusRouteStopDto>()).thenReturn(routeStopDto)
+        whenever(busRouteStationRepository.findByRouteIDOrderByStationSeqAsc(route.id))
+            .thenReturn(
+                listOf(
+                    BusRouteStation(route.id, 1, 900, "Before Stop", ZonedDateTime.now()),
+                    BusRouteStation(route.id, 2, stop.id, stop.name, ZonedDateTime.now()),
+                ),
+            )
+        whenever(busLocationRepository.findByRouteIDOrderByStationSeqDesc(route.id)).thenReturn(emptyList())
+
+        val result = fetcher.approach(environment, null)
+
+        assertEquals(1, result?.size)
+        assertEquals(900, result?.single()?.get("stopID"))
+    }
+
+    @Test
+    @DisplayName("버스 접근 정보는 정류장 및 차량 데이터가 없을 때 비어 있는 결과를 반환한다")
+    fun testBusApproachWithMissingStationsAndVehicles() {
+        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
+        whenever(busRouteStationRepository.findByRouteIDOrderByStationSeqAsc(route.id)).thenReturn(emptyList())
+
+        val emptyRouteResult =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any?>>>(
+                """
+                { bus(input: [{ route: 1, stop: 1 }]) { approach { sequence } } }
+                """.trimIndent(),
+                "data.bus",
+            )
+
+        assertEquals(null, emptyRouteResult.single()["approach"])
+
+        whenever(busRouteStationRepository.findByRouteIDOrderByStationSeqAsc(route.id))
+            .thenReturn(listOf(BusRouteStation(route.id, 1, 900, "Before Stop", ZonedDateTime.now())))
+
+        val missingTargetResult =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any?>>>(
+                """
+                { bus(input: [{ route: 1, stop: 1 }]) { approach { sequence } } }
+                """.trimIndent(),
+                "data.bus",
+            )
+
+        assertEquals(null, missingTargetResult.single()["approach"])
+
+        whenever(busRouteStationRepository.findByRouteIDOrderByStationSeqAsc(route.id))
+            .thenReturn(
+                listOf(
+                    BusRouteStation(route.id, 1, 900, "Before Stop", ZonedDateTime.now()),
+                    BusRouteStation(route.id, 2, stop.id, stop.name, ZonedDateTime.now()),
+                ),
+            )
+        whenever(busLocationRepository.findByRouteIDOrderByStationSeqDesc(route.id))
+            .thenReturn(
+                listOf(
+                    BusLocation(
+                        routeID = route.id,
+                        plateNumber = "at-target",
+                        stationSeq = 2,
+                        updatedAt = ZonedDateTime.now(),
+                    ),
+                ),
+            )
+
+        val clampedCountResult =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any?>>>(
+                """
+                { bus(input: [{ route: 1, stop: 1 }]) { approach(count: -1) { sequence } } }
+                """.trimIndent(),
+                "data.bus",
+            )
+        assertEquals(emptyList<Any>(), clampedCountResult.single()["approach"])
+
+        val missingVehiclesResult =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any?>>>(
+                """
+                { bus(input: [{ route: 1, stop: 1 }]) { approach { sequence vehicles { plateNumber } } } }
+                """.trimIndent(),
+                "data.bus",
+            )
+        val approach = missingVehiclesResult.single()["approach"] as List<*>
+        val station = approach.single() as Map<*, *>
+        assertEquals(emptyList<Any>(), station["vehicles"])
     }
 
     @Test
