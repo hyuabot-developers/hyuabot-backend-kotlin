@@ -133,7 +133,7 @@ class SubwayDataFetcherEdgeTest {
     }
 
     private fun fetcher(clock: Clock): SubwayDataFetcher =
-        SubwayDataFetcher(subwayService, publicHolidayService, stationNameService, delayRepository, clock)
+        SubwayDataFetcher(subwayService, publicHolidayService, stationNameService, clock)
 
     private fun environment(
         fetcher: SubwayDataFetcher,
