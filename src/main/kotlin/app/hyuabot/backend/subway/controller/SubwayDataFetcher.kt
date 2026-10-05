@@ -8,8 +8,6 @@ import app.hyuabot.backend.codegen.types.SubwayRealtime
 import app.hyuabot.backend.codegen.types.SubwayStation
 import app.hyuabot.backend.codegen.types.SubwayTimetable
 import app.hyuabot.backend.database.entity.SubwayRouteStation
-import app.hyuabot.backend.database.entity.SubwayTrainDelay
-import app.hyuabot.backend.database.repository.SubwayTrainDelayRepository
 import app.hyuabot.backend.holiday.service.PublicHolidayService
 import app.hyuabot.backend.subway.domain.SubwayTimetableKey
 import app.hyuabot.backend.subway.service.SubwayService
@@ -25,7 +23,6 @@ import graphql.schema.DataFetchingEnvironment
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.ZonedDateTime
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 
@@ -34,7 +31,6 @@ class SubwayDataFetcher(
     private val subwayService: SubwayService,
     private val publicHolidayService: PublicHolidayService,
     private val subwayStationNameService: SubwayStationNameService,
-    private val subwayTrainDelayRepository: SubwayTrainDelayRepository,
     private val clock: Clock = Clock.systemUTC(),
 ) {
     @DgsQuery
@@ -197,31 +193,6 @@ class SubwayDataFetcher(
         }
     }
 
-    @DgsData(parentType = "SubwayRealtime", field = "delayMinutes")
-    fun realtimeDelayMinutes(dfe: DgsDataFetchingEnvironment): Int? {
-        val realtime = dfe.getSource<SubwayRealtime>()!!
-        return delayMap(dfe)[realtime.trainNumber]?.delayMinutes
-    }
-
-    @DgsData(parentType = "SubwayArrival", field = "delayMinutes")
-    fun arrivalDelayMinutes(dfe: DgsDataFetchingEnvironment): Int? {
-        val arrival = dfe.getSource<SubwayArrival>()!!
-        if (!arrival.isRealtime || arrival.trainNumber == null) return null
-        return delayMap(dfe)[arrival.trainNumber]?.delayMinutes
-    }
-
-    private fun delayMap(dfe: DgsDataFetchingEnvironment): Map<String, SubwayTrainDelay> {
-        val now = ZonedDateTime.now(clock.withZone(LocalDateTimeBuilder.serviceTimezone))
-        val runDate = if (now.toLocalTime().isBefore(LocalTime.of(4, 0))) now.toLocalDate().minusDays(1) else now.toLocalDate()
-
-        @Suppress("UNCHECKED_CAST")
-        val cache =
-            dfe.graphQlContext.computeIfAbsent("subwayTrainDelayMap") {
-                subwayTrainDelayRepository.findByRunDate(runDate).associateBy { it.trainNumber }
-            } as Map<String, SubwayTrainDelay>
-        return cache
-    }
-
     private fun SubwayArrival.withLocalizedLocation(dfe: DgsDataFetchingEnvironment) =
         SubwayArrival(
             minutes = minutes,
@@ -238,7 +209,6 @@ class SubwayDataFetcher(
             messageDetail = messageDetail,
             seconds = seconds,
             arrivalCode = arrivalCode,
-            delayMinutes = delayMinutes,
         )
 
     private fun localizedLocation(

@@ -2,7 +2,6 @@ package app.hyuabot.backend.redesign
 
 import app.hyuabot.backend.codegen.types.SubwayStation
 import app.hyuabot.backend.database.entity.SubwayTimetable
-import app.hyuabot.backend.database.repository.SubwayAlertRepository
 import app.hyuabot.backend.database.repository.SubwayStationFacilityRepository
 import app.hyuabot.backend.database.repository.SubwayTimetableRepository
 import app.hyuabot.backend.holiday.service.PublicHolidayService
@@ -18,7 +17,6 @@ import java.time.ZonedDateTime
 class RedesignDataFetcher(
     private val facilityRepository: SubwayStationFacilityRepository,
     private val timetableRepository: SubwayTimetableRepository,
-    private val alertRepository: SubwayAlertRepository,
     private val publicHolidayService: PublicHolidayService,
     private val clock: Clock = Clock.systemUTC(),
 ) {
@@ -78,31 +76,6 @@ class RedesignDataFetcher(
                     "last" to last,
                 )
             }.sortedWith(compareBy<Map<String, Any?>> { it["direction"].toString() }.thenBy { it["weekday"].toString() })
-    }
-
-    @DgsData(parentType = "SubwayStation", field = "alerts")
-    fun alerts(dfe: DgsDataFetchingEnvironment): List<Map<String, Any?>> {
-        val station = dfe.getSource<SubwayStation>()!!
-        val now = ZonedDateTime.now(clock.withZone(LocalDateTimeBuilder.serviceTimezone))
-        return alertRepository
-            .findAll()
-            .asSequence()
-            .filter {
-                (it.routeID == null || it.routeID == station.route.seq) &&
-                    (it.startsAt == null || !it.startsAt!!.isAfter(now)) &&
-                    (it.endsAt == null || it.endsAt!!.isAfter(now))
-            }.sortedByDescending { it.startsAt }
-            .map {
-                mapOf(
-                    "id" to it.id,
-                    "routeID" to it.routeID,
-                    "title" to it.title,
-                    "content" to it.content,
-                    "startsAt" to it.startsAt,
-                    "endsAt" to it.endsAt,
-                    "source" to it.source,
-                )
-            }.toList()
     }
 }
 
