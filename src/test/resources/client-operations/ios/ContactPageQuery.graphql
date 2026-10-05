@@ -1,0 +1,15 @@
+query ContactPageQuery {
+    phonebook {
+        version
+        categories {
+            seq
+            name
+            entries {
+                seq
+                name
+                phone
+                campus
+            }
+        }
+    }
+}

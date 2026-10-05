@@ -1,0 +1,15 @@
+query BusRouteInfoDialogQuery($routeID: Int!, $stopID: Int!) {
+    bus (
+        input: [
+            { route: $routeID, stop: $stopID, weekdays: ["weekdays", "saturday", "sunday"] }
+        ]
+    ) {
+        route {
+            name
+        }
+        startStop {
+            name
+        }
+        minutes
+    }
+}

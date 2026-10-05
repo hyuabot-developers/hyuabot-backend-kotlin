@@ -1,0 +1,6 @@
+query BusStopCoordinatesQuery($busInput: [BusRouteStopInput!]!) {
+    bus(input: $busInput) {
+        route { seq }
+        stop { seq latitude longitude }
+    }
+}

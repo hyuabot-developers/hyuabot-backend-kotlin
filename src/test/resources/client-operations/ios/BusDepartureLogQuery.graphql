@@ -1,0 +1,7 @@
+query BusDepartureLogDialogQuery($routeStops: [BusRouteStopInput!]!) {
+    bus (input:  $routeStops) {
+        log {
+            date, time
+        }
+    }
+}

@@ -1,0 +1,5 @@
+query CalendarPageVersionQuery {
+    calendar {
+        version
+    }
+}

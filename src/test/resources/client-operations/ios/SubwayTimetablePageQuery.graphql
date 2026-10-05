@@ -1,0 +1,16 @@
+query SubwayTimetablePageQuery($station: String!, $direction: [String!]!, $language: String!) {
+    subway (
+        input: {
+            language: $language,
+            keys: [
+                { stationID: $station, direction: $direction, weekdays: ["weekdays", "weekends"] },
+            ]
+        }) {
+        timetable {
+            weekday
+            direction
+            time
+            terminal { stationID, name }
+        }
+    }
+}

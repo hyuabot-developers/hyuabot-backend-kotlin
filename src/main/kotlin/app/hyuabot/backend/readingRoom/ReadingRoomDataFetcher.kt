@@ -30,6 +30,7 @@ class ReadingRoomDataFetcher(
                             occupied = readingRoom.occupied,
                         ),
                     updatedAt = readingRoom.updatedAt.withZoneSameInstant(LocalDateTimeBuilder.serviceTimezone),
+                    unableMessage = readingRoom.unableMessage,
                 )
             }
 }

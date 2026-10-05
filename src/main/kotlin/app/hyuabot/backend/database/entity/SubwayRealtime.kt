@@ -11,7 +11,9 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import jakarta.persistence.Table
 import org.hibernate.Hibernate
+import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.annotations.Type
+import org.hibernate.type.SqlTypes
 import java.time.Duration
 import java.time.ZonedDateTime
 import java.util.Objects
@@ -54,6 +56,15 @@ class SubwayRealtime(
     @OneToOne
     @JoinColumn(name = "terminal_station_id", referencedColumnName = "station_id", insertable = false, updatable = false)
     val terminalStation: SubwayRouteStation?,
+    @Column(name = "arrival_message", length = 100)
+    var arrivalMessage: String? = null,
+    @Column(name = "arrival_message_detail", length = 100)
+    var arrivalMessageDetail: String? = null,
+    @Column(name = "remaining_seconds")
+    var remainingSeconds: Int? = null,
+    @Column(name = "arrival_code", columnDefinition = "smallint")
+    @JdbcTypeCode(SqlTypes.SMALLINT)
+    var arrivalCode: Int? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

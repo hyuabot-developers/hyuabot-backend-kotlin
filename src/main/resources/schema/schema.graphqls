@@ -35,6 +35,39 @@ type HomeWeather {
     agreeingModelCount: Int
     primaryCondition: String!
     attribution: String
+    humidity: Int
+    windSpeed: Float
+    snowAmount: Float
+    airQuality: HomeAirQuality
+    warnings: [WeatherWarning!]
+    uvIndex: HomeUvIndex
+}
+
+type HomeAirQuality {
+    pm10Value: Int
+    pm10Grade: Int
+    pm25Value: Int
+    pm25Grade: Int
+    khaiValue: Int
+    khaiGrade: Int
+    stationName: String
+    measuredAt: DateTime
+}
+
+type WeatherWarning {
+    title: String
+    kind: String
+    level: String
+    area: String
+    issuedAt: DateTime
+    startsAt: DateTime
+    endsAt: DateTime
+}
+
+type HomeUvIndex {
+    value: Int
+    grade: String
+    forecastAt: DateTime
 }
 
 # 공지사항 카테고리와 공지사항을 반환하는 쿼리입니다.
@@ -120,6 +153,7 @@ type ReadingRoom {
     reservable: Boolean!
     seats: ReadingRoomSeat!
     updatedAt: DateTime!
+    unableMessage: String
 }
 
 type ReadingRoomSeat {
@@ -236,6 +270,7 @@ type BusRouteStop {
     arrival: [BusArrival!]!
     log: [BusDepartureLog!]!
     minimumDispatchIntervals: [BusMinimumDispatchInterval!]!
+    approach(count: Int = 5): [BusApproachStation!]
 }
 
 type BusRoute {
@@ -285,6 +320,10 @@ type BusRealtime {
     minutes: Int!
     lowFloor: Boolean!
     updatedAt: DateTime!
+    currentStopName: String
+    plateNumber: String
+    crowded: Int
+    stateCode: Int
 }
 
 type BusTimetable {
@@ -316,11 +355,30 @@ type BusArrival {
     destinationTravelMinutes: [BusDestinationTravelMinutes!]!
     """Deprecated. Use destinationTravelMinutes instead."""
     destinationArrivalTime: LocalTime
+    currentStopName: String
+    plateNumber: String
+    crowded: Int
+    stateCode: Int
 }
 
 type BusDestinationTravelMinutes {
     destinationStopId: Int!
     minutes: Int!
+}
+
+type BusApproachStation {
+    sequence: Int!
+    stopID: Int!
+    name: String!
+    vehicles: [BusVehicle!]!
+}
+
+type BusVehicle {
+    plateNumber: String!
+    crowded: Int
+    seats: Int
+    lowFloor: Boolean
+    updatedAt: DateTime!
 }
 
 # 전철 정보를 반환하는 쿼리입니다.
@@ -334,6 +392,7 @@ input SubwayStationInput {
     direction: [String!]!
     weekdays: [String!]!
     limit: Int
+    after: LocalTime
 }
 
 type SubwayStation {
@@ -345,6 +404,9 @@ type SubwayStation {
     realtime: [SubwayRealtime!]!
     timetable: [SubwayTimetable!]!
     arrival: [SubwayArrivalGroup!]!
+    facilities: [SubwayStationFacility!]
+    firstLast: [SubwayFirstLast!]
+    alerts: [SubwayAlert!]
 }
 
 type SubwayOriginTerminal {
@@ -369,6 +431,11 @@ type SubwayRealtime {
     isLast: Boolean!
     status: Int!
     updatedAt: DateTime!
+    message: String
+    messageDetail: String
+    seconds: Int
+    arrivalCode: Int
+    delayMinutes: Int
 }
 
 type SubwayTimetable {
@@ -396,6 +463,39 @@ type SubwayArrival {
     isExpress: Boolean
     isLast: Boolean
     status: Int
+    message: String
+    messageDetail: String
+    seconds: Int
+    arrivalCode: Int
+    delayMinutes: Int
+}
+
+type SubwayStationFacility {
+    type: String
+    order: Int
+    exitNumber: String
+    fromPlace: String
+    toPlace: String
+    descriptionKorean: String
+    descriptionEnglish: String
+    source: String
+}
+
+type SubwayFirstLast {
+    direction: String
+    weekday: String
+    first: LocalTime
+    last: LocalTime
+}
+
+type SubwayAlert {
+    id: String
+    routeID: Int
+    title: String
+    content: String
+    startsAt: DateTime
+    endsAt: DateTime
+    source: String
 }
 
 # 셔틀버스 노선 및 시간표를 반환하는 쿼리입니다.

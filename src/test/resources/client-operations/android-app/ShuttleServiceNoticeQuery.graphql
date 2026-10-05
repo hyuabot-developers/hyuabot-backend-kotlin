@@ -1,0 +1,15 @@
+query ShuttleServiceNoticeQuery($start: Date!, $end: Date!) {
+    shuttle(input: {}) {
+        serviceNotices(start: $start, end: $end) {
+            id
+            kind
+            date
+            period {
+                type
+            }
+            holiday {
+                type
+            }
+        }
+    }
+}

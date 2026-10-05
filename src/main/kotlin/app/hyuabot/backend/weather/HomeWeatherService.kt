@@ -1,5 +1,6 @@
 package app.hyuabot.backend.weather
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.stereotype.Service
@@ -7,6 +8,7 @@ import tools.jackson.databind.ObjectMapper
 import java.time.Clock
 import java.time.ZonedDateTime
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class HomeWeatherPayload(
     val issuedAt: ZonedDateTime,
     val expiresAt: ZonedDateTime,
@@ -27,6 +29,42 @@ data class HomeWeatherPayload(
     val primaryCondition: String,
     val attribution: String? = null,
     val sources: List<WeatherSourceStatus> = emptyList(),
+    val humidity: Int? = null,
+    val windSpeed: Double? = null,
+    val snowAmount: Double? = null,
+    val airQuality: HomeAirQualityPayload? = null,
+    val warnings: List<HomeWeatherWarningPayload> = emptyList(),
+    val uvIndex: HomeUvIndexPayload? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class HomeAirQualityPayload(
+    val pm10Value: Int? = null,
+    val pm10Grade: Int? = null,
+    val pm25Value: Int? = null,
+    val pm25Grade: Int? = null,
+    val khaiValue: Int? = null,
+    val khaiGrade: Int? = null,
+    val stationName: String? = null,
+    val measuredAt: ZonedDateTime? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class HomeWeatherWarningPayload(
+    val title: String? = null,
+    val issuedAt: ZonedDateTime? = null,
+    val kind: String? = null,
+    val level: String? = null,
+    val area: String? = null,
+    val startsAt: ZonedDateTime? = null,
+    val endsAt: ZonedDateTime? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class HomeUvIndexPayload(
+    val value: Int? = null,
+    val grade: String? = null,
+    val forecastAt: ZonedDateTime? = null,
 )
 
 data class WeatherSourceStatus(

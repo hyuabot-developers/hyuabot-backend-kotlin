@@ -36,6 +36,8 @@ class ReadingRoom(
     @ManyToOne
     @JoinColumn(name = "campus_id", referencedColumnName = "campus_id", insertable = false, updatable = false)
     val campus: Campus?,
+    @Column(name = "unable_message", length = 255)
+    var unableMessage: String? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

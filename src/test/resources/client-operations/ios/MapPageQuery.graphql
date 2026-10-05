@@ -1,0 +1,8 @@
+query MapPageQuery ($north: Float!, $south: Float!, $west: Float!, $east: Float!) {
+    building (buildingInput: { north: $north, south: $south, west: $west, east: $east }) {
+        name
+        latitude
+        longitude
+        url
+    }
+}

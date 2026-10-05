@@ -509,6 +509,11 @@ class SubwayService(
                         isExpress = realtime.isExpress,
                         isLast = realtime.isLast,
                         status = realtime.status,
+                        message = realtime.arrivalMessage,
+                        messageDetail = realtime.arrivalMessageDetail,
+                        seconds = realtime.remainingSeconds,
+                        arrivalCode = realtime.arrivalCode,
+                        delayMinutes = null,
                     )
                 }
             val startSvcSecs = timetableStartSvcSecsMap[direction]!!
@@ -528,6 +533,11 @@ class SubwayService(
                             isExpress = null,
                             isLast = null,
                             status = null,
+                            message = null,
+                            messageDetail = null,
+                            seconds = null,
+                            arrivalCode = null,
+                            delayMinutes = null,
                         )
                     }
             val allArrivals = (realtimeArrivals + timetableArrivals).sortedBy { it.minutes }

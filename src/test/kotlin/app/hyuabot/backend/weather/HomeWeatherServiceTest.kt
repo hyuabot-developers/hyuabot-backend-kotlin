@@ -6,6 +6,8 @@ import org.mockito.kotlin.whenever
 import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.core.ValueOperations
 import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.kotlinModule
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -91,6 +93,27 @@ class HomeWeatherServiceTest {
         assertEquals(emptyList(), forecast.sources)
         assertEquals("NONE", forecast.precipitationType)
         assertEquals("CLEAR", forecast.primaryCondition)
+    }
+
+    @Test
+    fun `ignores fields added by weather collectors`() {
+        val mapper =
+            JsonMapper
+                .builder()
+                .addModule(kotlinModule())
+                .build()
+        val json =
+            """{"issuedAt":"2026-07-21T11:00:00+09:00","expiresAt":"2026-07-21T13:00:00+09:00","precipitationProbabilityMax":0,"precipitationType":"NONE","primaryCondition":"CLEAR","humidity":43,"windSpeed":2.5,"snowAmount":0.5,"airQuality":{"pm10Value":20,"pm10Grade":1,"pm25Value":8,"pm25Grade":1,"khaiValue":35,"khaiGrade":1,"stationName":"Ansan","measuredAt":"2026-07-21T11:00:00+09:00","futureAirField":"ignored"},"warnings":[{"title":"호우주의보","kind":"호우","level":"주의보","area":"안산","issuedAt":"2026-07-21T11:00:00+09:00","futureWarningField":"ignored"}],"uvIndex":{"value":3,"grade":"낮음","forecastAt":"2026-07-21T11:00:00+09:00","futureUvField":"ignored"},"futureCollectorField":"ignored"}"""
+
+        val payload = mapper.readValue(json, HomeWeatherPayload::class.java)
+
+        assertEquals("CLEAR", payload.primaryCondition)
+        assertEquals(43, payload.humidity)
+        assertEquals(2.5, payload.windSpeed)
+        assertEquals(0.5, payload.snowAmount)
+        assertEquals(20, payload.airQuality?.pm10Value)
+        assertEquals("호우", payload.warnings.single().kind)
+        assertEquals("낮음", payload.uvIndex?.grade)
     }
 
     private fun forecast(expiresAt: String) =
