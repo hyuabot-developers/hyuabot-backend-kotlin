@@ -132,8 +132,9 @@ class SubwayDataFetcherEdgeTest {
         assertEquals(listOf(LocalTime.of(5, 0)), fetcher.timetable(unfilteredEnvironment).join().map { it.time })
     }
 
-    private fun fetcher(clock: Clock): SubwayDataFetcher =
-        SubwayDataFetcher(subwayService, publicHolidayService, stationNameService, clock)
+    private fun fetcher(clock: Clock): SubwayDataFetcher {
+        return SubwayDataFetcher(subwayService, publicHolidayService, stationNameService, clock)
+    }
 
     private fun environment(
         fetcher: SubwayDataFetcher,
