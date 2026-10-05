@@ -7,7 +7,6 @@ import app.hyuabot.backend.database.entity.PublicHoliday
 import app.hyuabot.backend.database.entity.SubwayRealtime
 import app.hyuabot.backend.database.entity.SubwayRoute
 import app.hyuabot.backend.database.entity.SubwayRouteStation
-import app.hyuabot.backend.database.repository.SubwayTrainDelayRepository
 import app.hyuabot.backend.holiday.service.PublicHolidayService
 import app.hyuabot.backend.subway.controller.SubwayDataFetcher
 import app.hyuabot.backend.subway.controller.SubwayTimetableDataLoader
@@ -51,7 +50,6 @@ class SubwayDataFetcherTest {
 
     @MockitoBean private lateinit var subwayStationNameService: SubwayStationNameService
 
-    @MockitoBean private lateinit var subwayTrainDelayRepository: SubwayTrainDelayRepository
 
     @BeforeEach
     fun configureStationNameFallback() {
@@ -965,7 +963,7 @@ class SubwayDataFetcherTest {
     @Test
     @DisplayName("전철 도착 정보 필터 - 실시간이 없으면 원본 목록 반환")
     fun testFilterKeepsTimetableWhenRealtimeIsEmpty() {
-        val fetcher = SubwayDataFetcher(subwayService, publicHolidayService, subwayStationNameService, subwayTrainDelayRepository)
+        val fetcher = SubwayDataFetcher(subwayService, publicHolidayService, subwayStationNameService)
         val method =
             SubwayDataFetcher::class.java.getDeclaredMethod(
                 "filterTimetableAfterRealtime",
@@ -992,7 +990,7 @@ class SubwayDataFetcherTest {
     @Test
     @DisplayName("전철 도착 정보 필터 - 첫 실시간 값이 최대여도 시간표 간격 적용")
     fun testFilterUsesFirstRealtimeWhenItIsMaximum() {
-        val fetcher = SubwayDataFetcher(subwayService, publicHolidayService, subwayStationNameService, subwayTrainDelayRepository)
+        val fetcher = SubwayDataFetcher(subwayService, publicHolidayService, subwayStationNameService)
         val method =
             SubwayDataFetcher::class.java.getDeclaredMethod(
                 "filterTimetableAfterRealtime",

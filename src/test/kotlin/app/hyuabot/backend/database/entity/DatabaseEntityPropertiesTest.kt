@@ -88,41 +88,6 @@ class DatabaseEntityPropertiesTest {
         val holiday = PublicHoliday(date = LocalDate.of(2026, 10, 5), name = "holiday", calendarType = "SOLAR")
         holiday.source = "API"
         assertEquals("API", holiday.source)
-
-        val alert = SubwayAlert("alert", 4, "title", "content", now, now.plusHours(1), "source", now)
-        assertEquals("alert", alert.id)
-        alert.routeID = 5
-        alert.title = "updated title"
-        alert.content = "updated content"
-        alert.startsAt = now.plusMinutes(1)
-        alert.endsAt = now.plusHours(2)
-        alert.source = "updated source"
-        alert.updatedAt = now.plusMinutes(2)
-        assertEquals(5, alert.routeID)
-        assertEquals("updated title", alert.title)
-        assertEquals("updated content", alert.content)
-        assertEquals(now.plusMinutes(1), alert.startsAt)
-        assertEquals(now.plusHours(2), alert.endsAt)
-        assertEquals("updated source", alert.source)
-        assertEquals(now.plusMinutes(2), alert.updatedAt)
-        val defaultAlert = SubwayAlert(id = "default", title = "default title")
-        assertEquals("SEOUL_METRO", defaultAlert.source)
-        assertTrue(SubwayAlert::class.java.getDeclaredConstructor().newInstance() is SubwayAlert)
-
-        val delay = SubwayTrainDelay(LocalDate.of(2026, 10, 5), "train", 4, 5, "station", now)
-        assertEquals(LocalDate.of(2026, 10, 5), delay.runDate)
-        assertEquals("train", delay.trainNumber)
-        delay.routeID = 6
-        delay.delayMinutes = 7
-        delay.referenceStationName = "updated station"
-        delay.updatedAt = now.plusMinutes(1)
-        assertEquals(6, delay.routeID)
-        assertEquals(7, delay.delayMinutes)
-        assertEquals("updated station", delay.referenceStationName)
-        assertEquals(now.plusMinutes(1), delay.updatedAt)
-        val defaultDelay = SubwayTrainDelay(LocalDate.of(2026, 10, 5), "default train")
-        assertEquals(null, defaultDelay.delayMinutes)
-        assertTrue(SubwayTrainDelay::class.java.getDeclaredConstructor().newInstance() is SubwayTrainDelay)
     }
 
     @Test

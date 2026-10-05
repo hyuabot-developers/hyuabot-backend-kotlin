@@ -3,10 +3,8 @@ package app.hyuabot.backend.redesign
 import app.hyuabot.backend.codegen.types.SubwayRoute
 import app.hyuabot.backend.codegen.types.SubwayStation
 import app.hyuabot.backend.database.entity.PublicHoliday
-import app.hyuabot.backend.database.entity.SubwayAlert
 import app.hyuabot.backend.database.entity.SubwayStationFacility
 import app.hyuabot.backend.database.entity.SubwayTimetable
-import app.hyuabot.backend.database.repository.SubwayAlertRepository
 import app.hyuabot.backend.database.repository.SubwayStationFacilityRepository
 import app.hyuabot.backend.database.repository.SubwayTimetableRepository
 import app.hyuabot.backend.holiday.service.PublicHolidayService
@@ -39,7 +37,6 @@ class RedesignDataFetcherTest {
         )
     private val facilityRepository = mock<SubwayStationFacilityRepository>()
     private val timetableRepository = mock<SubwayTimetableRepository>()
-    private val alertRepository = mock<SubwayAlertRepository>()
     private val publicHolidayService = mock<PublicHolidayService>()
 
     @Test
@@ -70,7 +67,7 @@ class RedesignDataFetcherTest {
     fun `fetcher defaults to the system clock when no clock is injected`() {
         whenever(facilityRepository.findByStationIDOrderByFacilityTypeAscSortOrderAsc("S1")).thenReturn(emptyList())
 
-        val fetcher = RedesignDataFetcher(facilityRepository, timetableRepository, alertRepository, publicHolidayService)
+        val fetcher = RedesignDataFetcher(facilityRepository, timetableRepository, publicHolidayService)
 
         assertEquals(emptyList(), fetcher.facilities(environment()))
     }
@@ -153,50 +150,8 @@ class RedesignDataFetcherTest {
         assertEquals("weekends", result.single()["weekday"])
     }
 
-    @Test
-    fun `alerts include global and active route alerts only`() {
-        val now = ZonedDateTime.parse("2026-10-05T12:00:00+09:00[Asia/Seoul]")
-        whenever(alertRepository.findAll())
-            .thenReturn(
-                listOf(
-                    SubwayAlert("global", null, "Global", null, null, null, "source", now),
-                    SubwayAlert("global-window", null, "Global window", "content", now.minusMinutes(2), now.plusMinutes(2), "source", now),
-                    SubwayAlert("global-future", null, "Global future", "content", now.plusMinutes(1), now.plusHours(1), "source", now),
-                    SubwayAlert("global-expired", null, "Global expired", "content", null, now, "source", now),
-                    SubwayAlert("active", 4, "Active", "content", now.minusHours(1), now.plusHours(1), "source", now),
-                    SubwayAlert("no-start", 4, "No start", "content", null, now.plusHours(1), "source", now),
-                    SubwayAlert("no-end", 4, "No end", "content", now.minusHours(2), null, "source", now),
-                    SubwayAlert("future", 4, "Future", "content", now.plusMinutes(1), null, "source", now),
-                    SubwayAlert("expired", 4, "Expired", "content", null, now, "source", now),
-                    SubwayAlert("other-route", 9, "Other route", "content", null, null, "source", now),
-                ),
-            )
-
-        val result = fetcher(at("2026-10-05T03:00:00Z")).alerts(environment())
-
-        assertEquals(setOf("active", "global", "global-window", "no-start", "no-end"), result.map { it["id"] }.toSet())
-        val active = result.single { it["id"] == "active" }
-        assertEquals(4, active["routeID"])
-        assertEquals("Active", active["title"])
-        assertEquals("content", active["content"])
-        assertEquals(now.minusHours(1), active["startsAt"])
-        assertEquals(now.plusHours(1), active["endsAt"])
-        assertEquals("source", active["source"])
-    }
-
-    @Test
-    fun `alerts handle a route id that becomes null between proxy reads`() {
-        val proxyAlert = mock<SubwayAlert>()
-        whenever(proxyAlert.routeID).thenReturn(4, null)
-        whenever(alertRepository.findAll()).thenReturn(listOf(proxyAlert))
-
-        val result = fetcher(at("2026-10-05T03:00:00Z")).alerts(environment())
-
-        assertEquals(emptyList(), result)
-    }
-
     private fun fetcher(clock: Clock) =
-        RedesignDataFetcher(facilityRepository, timetableRepository, alertRepository, publicHolidayService, clock)
+        RedesignDataFetcher(facilityRepository, timetableRepository, publicHolidayService, clock)
 
     private fun environment(): DgsDataFetchingEnvironment =
         mock<DgsDataFetchingEnvironment>().also { whenever(it.getSource<SubwayStation>()).thenReturn(station) }

@@ -10,8 +10,6 @@ import app.hyuabot.backend.codegen.types.SubwayStation
 import app.hyuabot.backend.codegen.types.SubwayStationInput
 import app.hyuabot.backend.codegen.types.SubwayTimetable
 import app.hyuabot.backend.database.entity.PublicHoliday
-import app.hyuabot.backend.database.entity.SubwayTrainDelay
-import app.hyuabot.backend.database.repository.SubwayTrainDelayRepository
 import app.hyuabot.backend.holiday.service.PublicHolidayService
 import app.hyuabot.backend.subway.controller.SubwayDataFetcher
 import app.hyuabot.backend.subway.domain.SubwayTimetableKey
@@ -42,7 +40,6 @@ class SubwayDataFetcherEdgeTest {
     private val subwayService = mock<SubwayService>()
     private val publicHolidayService = mock<PublicHolidayService>()
     private val stationNameService = mock<SubwayStationNameService>()
-    private val delayRepository = mock<SubwayTrainDelayRepository>()
     private val station =
         SubwayStation(
             stationID = "S1",
@@ -135,53 +132,6 @@ class SubwayDataFetcherEdgeTest {
         whenever(unfilteredLoader.load(key)).thenReturn(CompletableFuture.completedFuture(listOf(timetable("05:00"))))
 
         assertEquals(listOf(LocalTime.of(5, 0)), fetcher.timetable(unfilteredEnvironment).join().map { it.time })
-    }
-
-    @Test
-    fun `delay lookups cover early service date cache and absent values`() {
-        val clock = at("2026-10-04T18:30:00Z")
-        val fetcher = fetcher(clock)
-        val delay = SubwayTrainDelay(LocalDate.of(2026, 10, 4), "R1", delayMinutes = 6)
-        whenever(delayRepository.findByRunDate(LocalDate.of(2026, 10, 4))).thenReturn(listOf(delay))
-        val context = GraphQLContext.newContext().build()
-        val realtimeEnvironment = mock<DgsDataFetchingEnvironment>()
-        whenever(realtimeEnvironment.graphQlContext).thenReturn(context)
-        whenever(realtimeEnvironment.getSource<SubwayRealtime>()).thenReturn(realtime("R1"))
-
-        assertEquals(6, fetcher.realtimeDelayMinutes(realtimeEnvironment))
-
-        val matchingArrivalEnvironment = mock<DgsDataFetchingEnvironment>()
-        whenever(matchingArrivalEnvironment.graphQlContext).thenReturn(context)
-        whenever(matchingArrivalEnvironment.getSource<SubwayArrival>()).thenReturn(arrival(4, realtime = true, trainNumber = "R1"))
-        assertEquals(6, fetcher.arrivalDelayMinutes(matchingArrivalEnvironment))
-
-        val missingTrainEnvironment = mock<DgsDataFetchingEnvironment>()
-        whenever(missingTrainEnvironment.graphQlContext).thenReturn(context)
-        whenever(missingTrainEnvironment.getSource<SubwayArrival>()).thenReturn(arrival(4, realtime = true, trainNumber = "missing"))
-        assertNull(fetcher.arrivalDelayMinutes(missingTrainEnvironment))
-
-        val timetableEnvironment = mock<DgsDataFetchingEnvironment>()
-        whenever(timetableEnvironment.getSource<SubwayArrival>()).thenReturn(arrival(10, realtime = false, trainNumber = "R1"))
-        assertNull(fetcher.arrivalDelayMinutes(timetableEnvironment))
-
-        val realtimeWithoutNumberEnvironment = mock<DgsDataFetchingEnvironment>()
-        whenever(realtimeWithoutNumberEnvironment.getSource<SubwayArrival>()).thenReturn(arrival(4, realtime = true, trainNumber = null))
-        assertNull(fetcher.arrivalDelayMinutes(realtimeWithoutNumberEnvironment))
-
-        verify(delayRepository).findByRunDate(LocalDate.of(2026, 10, 4))
-    }
-
-    @Test
-    fun `delay map uses the current service date after four am`() {
-        val fetcher = fetcher(at("2026-10-05T03:00:00Z"))
-        whenever(delayRepository.findByRunDate(LocalDate.of(2026, 10, 5))).thenReturn(emptyList())
-        val environment = mock<DgsDataFetchingEnvironment>()
-        whenever(environment.graphQlContext).thenReturn(GraphQLContext.newContext().build())
-        whenever(environment.getSource<SubwayRealtime>()).thenReturn(realtime("missing"))
-
-        assertNull(fetcher.realtimeDelayMinutes(environment))
-
-        verify(delayRepository).findByRunDate(LocalDate.of(2026, 10, 5))
     }
 
     private fun fetcher(clock: Clock): SubwayDataFetcher =
