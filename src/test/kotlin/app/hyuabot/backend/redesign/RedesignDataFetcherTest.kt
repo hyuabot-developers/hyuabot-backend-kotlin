@@ -19,7 +19,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneOffset
-import java.time.ZonedDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -150,8 +149,7 @@ class RedesignDataFetcherTest {
         assertEquals("weekends", result.single()["weekday"])
     }
 
-    private fun fetcher(clock: Clock) =
-        RedesignDataFetcher(facilityRepository, timetableRepository, publicHolidayService, clock)
+    private fun fetcher(clock: Clock) = RedesignDataFetcher(facilityRepository, timetableRepository, publicHolidayService, clock)
 
     private fun environment(): DgsDataFetchingEnvironment =
         mock<DgsDataFetchingEnvironment>().also { whenever(it.getSource<SubwayStation>()).thenReturn(station) }

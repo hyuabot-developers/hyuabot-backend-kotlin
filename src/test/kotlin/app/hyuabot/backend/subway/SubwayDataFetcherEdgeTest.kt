@@ -23,7 +23,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isNull
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.time.Clock
 import java.time.Instant
@@ -34,7 +33,6 @@ import java.time.ZonedDateTime
 import java.util.concurrent.CompletableFuture
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 class SubwayDataFetcherEdgeTest {
     private val subwayService = mock<SubwayService>()

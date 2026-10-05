@@ -50,7 +50,6 @@ class SubwayDataFetcherTest {
 
     @MockitoBean private lateinit var subwayStationNameService: SubwayStationNameService
 
-
     @BeforeEach
     fun configureStationNameFallback() {
         whenever(subwayStationNameService.displayName(any(), anyOrNull(), any())).thenAnswer { invocation ->
