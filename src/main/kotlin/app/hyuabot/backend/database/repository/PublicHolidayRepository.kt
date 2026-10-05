@@ -31,7 +31,7 @@ interface PublicHolidayRepository : JpaRepository<PublicHoliday, Int> {
 
     @Query(
         value = """
-            SELECT seq, holiday_date, holiday_name, calendar_type
+            SELECT seq, holiday_date, holiday_name, calendar_type, source
             FROM public_holiday
             WHERE source = :source
               AND calendar_type = :calendarType
