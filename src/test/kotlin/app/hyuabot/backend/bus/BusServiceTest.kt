@@ -1346,6 +1346,72 @@ class BusServiceTest {
     }
 
     @Test
+    @DisplayName("버스 출발 로그 배치 조회 - after 이후와 자정 이후 로그만 순서대로")
+    fun testGetBusDepartureLogBatchWithAfter() {
+        val dates = listOf(LocalDate.parse("2026-11-07"), LocalDate.parse("2026-10-31"))
+        val key =
+            BusDepartureLogKey(
+                routeID = 216000061,
+                stopID = 216000379,
+                dates = dates,
+                limit = 4,
+                after = LocalTime.parse("20:40"),
+            )
+        val logs =
+            listOf(
+                Triple(10, LocalDate.parse("2026-10-31"), "00:02"),
+                Triple(11, LocalDate.parse("2026-10-31"), "21:30"),
+                Triple(1, LocalDate.parse("2026-11-07"), "00:04"),
+                Triple(2, LocalDate.parse("2026-11-07"), "06:25"),
+                Triple(3, LocalDate.parse("2026-11-07"), "21:27"),
+                Triple(4, LocalDate.parse("2026-11-07"), "23:25"),
+            ).map { (seq, date, time) ->
+                BusDepartureLog(
+                    seq = seq,
+                    routeID = 216000061,
+                    stopID = 216000379,
+                    departureDate = date,
+                    departureTime = LocalTime.parse(time),
+                    vehicleID = "v$seq",
+                )
+            }
+        whenever(logRepository.findByRouteStopAndDepartureDates(setOf(key))).thenReturn(logs)
+
+        val result = routeService.getBusDepartureLogBatch(setOf(key))
+
+        assertEquals(listOf(3, 4, 1, 11), result[key]!!.map { it.seq })
+
+        val unlimitedKey = key.copy(limit = null)
+        whenever(logRepository.findByRouteStopAndDepartureDates(setOf(unlimitedKey))).thenReturn(logs)
+
+        val unlimitedResult = routeService.getBusDepartureLogBatch(setOf(unlimitedKey))
+
+        assertEquals(listOf(3, 4, 1, 11, 10), unlimitedResult[unlimitedKey]!!.map { it.seq })
+    }
+
+    @Test
+    @DisplayName("버스 출발 로그 키 - 시간 창 판정")
+    fun testBusDepartureLogKeyWindow() {
+        val eveningKey = BusDepartureLogKey(1, 1, emptyList(), after = LocalTime.parse("20:40"))
+        assertEquals(true, eveningKey.includes(LocalTime.parse("20:40")))
+        assertEquals(false, eveningKey.includes(LocalTime.parse("20:39")))
+        assertEquals(true, eveningKey.includes(LocalTime.parse("03:59")))
+        assertEquals(false, eveningKey.includes(LocalTime.parse("04:00")))
+        assertEquals(0, eveningKey.wrapRank(LocalTime.parse("23:25")))
+        assertEquals(1, eveningKey.wrapRank(LocalTime.parse("00:04")))
+
+        val earlyKey = BusDepartureLogKey(1, 1, emptyList(), after = LocalTime.parse("01:00"))
+        assertEquals(true, earlyKey.includes(LocalTime.parse("00:30")))
+        assertEquals(true, earlyKey.includes(LocalTime.parse("05:00")))
+        assertEquals(0, earlyKey.wrapRank(LocalTime.parse("05:00")))
+        assertEquals(1, earlyKey.wrapRank(LocalTime.parse("00:30")))
+
+        val legacyKey = BusDepartureLogKey(1, 1, emptyList())
+        assertEquals(true, legacyKey.includes(LocalTime.parse("12:00")))
+        assertEquals(0, legacyKey.wrapRank(LocalTime.parse("00:04")))
+    }
+
+    @Test
     @DisplayName("버스 출발 로그 배치 조회 - 결과 없음")
     fun testGetBusDepartureLogBatchNoResult() {
         val keys =
