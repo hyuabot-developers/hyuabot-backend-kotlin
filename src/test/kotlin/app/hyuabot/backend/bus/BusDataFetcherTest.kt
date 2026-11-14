@@ -901,6 +901,7 @@ class BusDataFetcherTest {
                     stopID = stop.id,
                     dates = listOf(LocalDate.parse("2025-03-01")),
                     limit = 1,
+                    after = LocalTime.parse("20:40"),
                 ) to listOf(createBusDepartureLog()),
             ),
         )
@@ -909,7 +910,7 @@ class BusDataFetcherTest {
             dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
                 """
                 {
-                    bus(input: [{ route: 1, stop: 1, limit: 1, dates: ["2025-03-01"] }]) {
+                    bus(input: [{ route: 1, stop: 1, limit: 2, logLimit: 1, logAfter: "20:40", dates: ["2025-03-01"] }]) {
                         log { seq }
                     }
                 }
