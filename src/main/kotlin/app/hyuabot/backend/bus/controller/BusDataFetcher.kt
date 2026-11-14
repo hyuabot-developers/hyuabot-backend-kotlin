@@ -186,14 +186,15 @@ class BusDataFetcher(
         val routeStop = dfe.getSource<BusRouteStop>()!!
         val context = dfe.busQueryContext()
         val datesMap = context.datesMap
-        val limitMap = context.limitMap
+        val logLimitMap = context.logLimitMap
         val routeID = routeStop.route.seq
         val stopID = routeStop.stop.seq
         // `dates` is optional in the schema; without it there is no log to return (the repository skips empty keys).
         val dates = datesMap[routeID to stopID].orEmpty()
-        val limit = limitMap[routeID to stopID]
+        val limit = logLimitMap[routeID to stopID]
+        val after = context.logAfterMap[routeID to stopID]
 
-        val key = BusDepartureLogKey(routeID = routeID, stopID = stopID, dates = dates, limit = limit)
+        val key = BusDepartureLogKey(routeID = routeID, stopID = stopID, dates = dates, limit = limit, after = after)
         val dataLoader = dfe.getDataLoader<BusDepartureLogKey, List<BusDepartureLogEntity>>("busDepartureLogDataLoader")!!
         return dataLoader.load(key).thenApply { logList ->
             logList.map {
@@ -296,6 +297,13 @@ private class BusQueryContext(
     val datesMap = input.associate { (it.route to it.stop) to it.dates }
     val weekdaysMap = input.associate { (it.route to it.stop) to it.weekdays }
     val limitMap = input.associate { (it.route to it.stop) to it.limit }
+
+    /** Log row cap: logLimit when given, otherwise the legacy limit (older clients send only limit). */
+    val logLimitMap = input.associate { (it.route to it.stop) to (it.logLimit ?: it.limit) }
+
+    /** Log time-of-day window start (null for older clients). */
+    val logAfterMap = input.associate { (it.route to it.stop) to it.logAfter }
+
     val afterMap = input.associate { (it.route to it.stop) to it.after }
     val destinationStopMap = input.associate { (it.route to it.stop) to it.destinationStop }
     val destinationStopsMap =

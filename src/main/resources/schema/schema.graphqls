@@ -255,6 +255,8 @@ input BusRouteStopInput {
     destinationStop: Int @deprecated(reason: "Use destinationStops to request travel times for multiple destinations")
     after: LocalTime
     limit: Int
+    logLimit: Int
+    logAfter: LocalTime
     dates: [Date!]
     weekdays: [String!]
 }

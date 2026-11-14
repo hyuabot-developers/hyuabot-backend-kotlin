@@ -208,8 +208,11 @@ class BusRouteService(
                 .groupBy { Triple(it.routeID, it.stopID, it.departureDate) }
         return keys.associateWith { key ->
             key.dates
-                .flatMap { date -> grouped[Triple(key.routeID, key.stopID, date)] ?: emptyList() }
-                .let { logs -> key.limit?.let(logs::take) ?: logs }
+                .flatMap { date ->
+                    (grouped[Triple(key.routeID, key.stopID, date)] ?: emptyList())
+                        .filter { key.includes(it.departureTime) }
+                        .sortedWith(compareBy<BusDepartureLog>({ key.wrapRank(it.departureTime) }, { it.departureTime }, { it.seq }))
+                }.let { logs -> key.limit?.let(logs::take) ?: logs }
         }
     }
 }

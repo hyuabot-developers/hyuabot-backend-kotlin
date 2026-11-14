@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -49,6 +50,7 @@ class BusDepartureLogRepositoryTest {
 
         assertEquals(listOf(shared, other), result)
         assertTrue(sql.firstValue.contains("PARTITION BY k.key_index"))
+        assertTrue(!sql.firstValue.contains(":after"))
         assertTrue(sql.firstValue.contains("WHEN 0 THEN CASE b.departure_date WHEN :date0_0 THEN 0 WHEN :date0_1 THEN 1 END"))
         assertTrue(sql.firstValue.contains("WHEN 1 THEN CASE b.departure_date WHEN :date1_0 THEN 0 END"))
         assertTrue(sql.firstValue.contains("(VALUES (0, :route0, :stop0, :limit0), (1, :route1, :stop1, :limit1))"))
@@ -57,6 +59,41 @@ class BusDepartureLogRepositoryTest {
         verify(query).setParameter("date1_0", newest)
         verify(query).setParameter("limit0", 2)
         verify(query).setParameter("limit1", 1)
+    }
+
+    @Test
+    fun `windowed keys filter and rank post-midnight logs last in SQL`() {
+        val query = mock<Query>()
+        val sql = argumentCaptor<String>()
+        whenever(entityManager.createNativeQuery(sql.capture(), eq(BusDepartureLog::class.java))).thenReturn(query)
+        val newest = LocalDate.of(2026, 3, 2)
+        val expected = log(seq = 1, date = newest)
+        whenever(query.resultList).thenReturn(listOf(expected))
+
+        val result =
+            repository.findByRouteStopAndDepartureDates(
+                linkedSetOf(
+                    BusDepartureLogKey(1, 1, listOf(newest), 15, LocalTime.of(20, 40)),
+                    BusDepartureLogKey(1, 2, listOf(newest), null, LocalTime.of(21, 0)),
+                ),
+            )
+
+        assertEquals(listOf(expected), result)
+        assertTrue(
+            sql.firstValue.contains(
+                "(k.key_index = 0 AND b.departure_date IN (:dates0) AND (b.departure_time >= :after0 OR b.departure_time < TIME '04:00:00'))",
+            ),
+        )
+        assertTrue(
+            sql.firstValue.contains(
+                "CASE k.key_index WHEN 0 THEN CASE WHEN b.departure_time >= :after0 THEN 0 ELSE 1 END WHEN 1 THEN CASE WHEN b.departure_time >= :after1 THEN 0 ELSE 1 END ELSE 0 END, b.departure_time, b.seq",
+            ),
+        )
+        verify(query).setParameter("after0", LocalTime.of(20, 40))
+        verify(query).setParameter("after1", LocalTime.of(21, 0))
+        verify(query).setParameter("limit0", 15)
+        verify(query).setParameter("limit1", Int.MAX_VALUE)
+        verify(entityManager, never()).criteriaBuilder
     }
 
     private fun log(
