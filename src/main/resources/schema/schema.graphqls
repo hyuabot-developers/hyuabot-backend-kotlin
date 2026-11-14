@@ -14,6 +14,7 @@ type Query {
     bus(input: [BusRouteStopInput!]!): [BusRouteStop!]!
     subway(input: SubwayInput!): [SubwayStation!]!
     shuttle(input: ShuttleInput!): Shuttle!
+    publicHolidays(start: Date!, end: Date!): [Date!]!
 }
 
 type HomeWeather {
