@@ -3785,6 +3785,140 @@ class BusServiceTest {
     }
 
     @Test
+    @DisplayName("서비스일 결정 - 04시 전후")
+    fun testServiceDayOf() {
+        val departureDate = LocalDate.of(2026, 11, 14)
+        val beforeServiceStart =
+            BusDepartureLog(
+                routeID = 1,
+                stopID = 10,
+                departureDate = departureDate,
+                departureTime = LocalTime.of(3, 59),
+                vehicleID = "1000001",
+            )
+        val atServiceStart =
+            BusDepartureLog(
+                routeID = 1,
+                stopID = 10,
+                departureDate = departureDate,
+                departureTime = LocalTime.of(4, 0),
+                vehicleID = "1000002",
+            )
+
+        assertEquals(departureDate.minusDays(1), realtimeService.serviceDayOf(beforeServiceStart))
+        assertEquals(departureDate, realtimeService.serviceDayOf(atServiceStart))
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 이전 서비스일의 자정 이후 로그 제외")
+    fun testGetArrivalBatchSkipsAfterMidnightLogsOfPreviousServiceDay() {
+        val fixedNow = LocalDateTime.of(2026, 11, 14, 22, 0)
+        val spyService = spy(realtimeService)
+        doReturn(fixedNow).whenever(spyService).currentTime()
+        val key = BusArrivalKey(routeID = 1, stopID = 10, startStopID = 100, minuteFromStart = 0, limit = null)
+        whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
+        whenever(logRepository.findByRouteStopAndDepartureDates(any())).thenReturn(
+            listOf(
+                BusDepartureLog(
+                    routeID = 1,
+                    stopID = 10,
+                    departureDate = LocalDate.of(2026, 11, 7),
+                    departureTime = LocalTime.of(0, 2),
+                    vehicleID = "1000001",
+                ),
+                BusDepartureLog(
+                    routeID = 1,
+                    stopID = 10,
+                    departureDate = LocalDate.of(2026, 11, 7),
+                    departureTime = LocalTime.of(1, 2),
+                    vehicleID = "1000002",
+                ),
+            ),
+        )
+        whenever(timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(any(), any(), any(), any(), any()))
+            .thenReturn(emptyList())
+
+        val arrivals = spyService.getArrivalBatch(setOf(key))[key].orEmpty()
+
+        assertEquals(emptyList(), arrivals.map { it.arrivalTime })
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 서비스일 다음 날짜의 자정 이후 로그 포함")
+    fun testGetArrivalBatchUsesNextDateTailForServiceDay() {
+        val fixedNow = LocalDateTime.of(2026, 11, 14, 22, 0)
+        val spyService = spy(realtimeService)
+        doReturn(fixedNow).whenever(spyService).currentTime()
+        val key = BusArrivalKey(routeID = 1, stopID = 10, startStopID = 100, minuteFromStart = 0, limit = null)
+        whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
+        whenever(logRepository.findByRouteStopAndDepartureDates(any())).thenReturn(
+            listOf(
+                BusDepartureLog(
+                    routeID = 1,
+                    stopID = 10,
+                    departureDate = LocalDate.of(2026, 11, 7),
+                    departureTime = LocalTime.of(23, 10),
+                    vehicleID = "1000001",
+                ),
+                BusDepartureLog(
+                    routeID = 1,
+                    stopID = 10,
+                    departureDate = LocalDate.of(2026, 11, 8),
+                    departureTime = LocalTime.of(0, 20),
+                    vehicleID = "1000002",
+                ),
+            ),
+        )
+        whenever(timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(any(), any(), any(), any(), any()))
+            .thenReturn(emptyList())
+
+        val arrivals = spyService.getArrivalBatch(setOf(key))[key].orEmpty()
+
+        assertEquals(listOf(LocalTime.of(23, 10), LocalTime.of(0, 20)), arrivals.map { it.arrivalTime })
+        verify(logRepository).findByRouteStopAndDepartureDates(
+            argThat { keys -> keys.any { it.dates.contains(LocalDate.of(2026, 11, 8)) } },
+        )
+    }
+
+    @Test
+    @DisplayName("버스 도착 정보 배치 조회 - 과거 공휴일 서비스일 로그 제외")
+    fun testGetArrivalBatchSkipsPastHolidayServiceDay() {
+        val fixedNow = LocalDateTime.of(2026, 10, 16, 22, 0)
+        val spyService = spy(realtimeService)
+        doReturn(fixedNow).whenever(spyService).currentTime()
+        val holiday = LocalDate.of(2026, 10, 9)
+        whenever(publicHolidayService.findPublicHoliday(any())).thenAnswer { invocation ->
+            if (invocation.getArgument<LocalDate>(0) == holiday) {
+                PublicHoliday(seq = 1, date = holiday, name = "한글날", calendarType = "solar")
+            } else {
+                null
+            }
+        }
+        val key = BusArrivalKey(routeID = 1, stopID = 10, startStopID = 100, minuteFromStart = 0, limit = null)
+        whenever(realtimeRepository.findByRouteIDInAndStopIDIn(any(), any())).thenReturn(emptyList())
+        whenever(logRepository.findByRouteStopAndDepartureDates(any())).thenReturn(
+            listOf(
+                BusDepartureLog(
+                    routeID = 1,
+                    stopID = 10,
+                    departureDate = holiday,
+                    departureTime = LocalTime.of(22, 30),
+                    vehicleID = "1000001",
+                ),
+            ),
+        )
+        whenever(timetableRepository.findByRouteIDInAndStartStopIDInAndWeekdayAndDepartureTimeAfter(any(), any(), any(), any(), any()))
+            .thenReturn(emptyList())
+
+        val arrivals = spyService.getArrivalBatch(setOf(key))[key].orEmpty()
+
+        assertEquals(emptyList(), arrivals.map { it.arrivalTime })
+        verify(logRepository).findByRouteStopAndDepartureDates(
+            argThat { keys -> keys.none { it.dates.contains(holiday) } },
+        )
+    }
+
+    @Test
     @DisplayName("버스 도착 정보 배치 조회 - 자정 이후 버스 포함")
     fun testGetArrivalBatchIncludesAfterMidnightBuses() {
         val fixedNow = LocalDateTime.of(2025, 3, 3, 15, 0)
