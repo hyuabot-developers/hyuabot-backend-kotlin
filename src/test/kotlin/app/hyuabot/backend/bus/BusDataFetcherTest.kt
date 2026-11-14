@@ -901,6 +901,63 @@ class BusDataFetcherTest {
                     stopID = stop.id,
                     dates = listOf(LocalDate.parse("2025-03-01")),
                     limit = 1,
+                ) to listOf(createBusDepartureLog()),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    bus(input: [{ route: 1, stop: 1, limit: 1, dates: ["2025-03-01"] }]) {
+                        log { seq }
+                    }
+                }
+                """.trimIndent(),
+                "data.bus",
+            )
+
+        assertEquals(1, (result[0]["log"] as List<*>).size)
+    }
+
+    @Test
+    fun testBusDepartureLogLimitOverridesLimit() {
+        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
+        whenever(routeService.getBusDepartureLogBatch(any())).thenReturn(
+            mapOf(
+                BusDepartureLogKey(
+                    routeID = route.id,
+                    stopID = stop.id,
+                    dates = listOf(LocalDate.parse("2025-03-01")),
+                    limit = 1,
+                ) to listOf(createBusDepartureLog()),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    bus(input: [{ route: 1, stop: 1, limit: 2, logLimit: 1, dates: ["2025-03-01"] }]) {
+                        log { seq }
+                    }
+                }
+                """.trimIndent(),
+                "data.bus",
+            )
+        assertEquals(1, (result[0]["log"] as List<*>).size)
+    }
+
+    @Test
+    fun testBusDepartureLogAfterPassedToKey() {
+        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
+        whenever(routeService.getBusDepartureLogBatch(any())).thenReturn(
+            mapOf(
+                BusDepartureLogKey(
+                    routeID = route.id,
+                    stopID = stop.id,
+                    dates = listOf(LocalDate.parse("2025-03-01")),
+                    limit = 1,
                     after = LocalTime.parse("20:40"),
                 ) to listOf(createBusDepartureLog()),
             ),
@@ -917,8 +974,36 @@ class BusDataFetcherTest {
                 """.trimIndent(),
                 "data.bus",
             )
-
         assertEquals(1, (result[0]["log"] as List<*>).size)
+    }
+
+    @Test
+    fun testBusArrivalLimitIgnoresLogLimit() {
+        whenever(routeService.fetchRouteStops(any())).thenReturn(listOf(routeStop))
+        whenever(realtimeService.getArrivalBatch(any())).thenReturn(
+            mapOf(
+                BusArrivalKey(
+                    routeID = route.id,
+                    stopID = stop.id,
+                    startStopID = startStop.id,
+                    minuteFromStart = 1,
+                    limit = 2,
+                ) to emptyList(),
+            ),
+        )
+
+        val result =
+            dgsQueryExecutor.executeAndExtractJsonPath<List<Map<String, Any>>>(
+                """
+                {
+                    bus(input: [{ route: 1, stop: 1, limit: 2, logLimit: 1, logAfter: "20:40" }]) {
+                        arrival { minutes }
+                    }
+                }
+                """.trimIndent(),
+                "data.bus",
+            )
+        assertEquals(0, (result[0]["arrival"] as List<*>).size)
     }
 
     @Test

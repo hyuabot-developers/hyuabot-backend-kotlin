@@ -297,10 +297,13 @@ private class BusQueryContext(
     val datesMap = input.associate { (it.route to it.stop) to it.dates }
     val weekdaysMap = input.associate { (it.route to it.stop) to it.weekdays }
     val limitMap = input.associate { (it.route to it.stop) to it.limit }
+
     /** Log row cap: logLimit when given, otherwise the legacy limit (older clients send only limit). */
     val logLimitMap = input.associate { (it.route to it.stop) to (it.logLimit ?: it.limit) }
+
     /** Log time-of-day window start (null for older clients). */
     val logAfterMap = input.associate { (it.route to it.stop) to it.logAfter }
+
     val afterMap = input.associate { (it.route to it.stop) to it.after }
     val destinationStopMap = input.associate { (it.route to it.stop) to it.destinationStop }
     val destinationStopsMap =
