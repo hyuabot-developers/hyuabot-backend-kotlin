@@ -4,6 +4,7 @@ import app.hyuabot.backend.bus.domain.BusArrivalKey
 import app.hyuabot.backend.bus.domain.BusDepartureLogKey
 import app.hyuabot.backend.codegen.types.BusArrival
 import app.hyuabot.backend.codegen.types.BusDestinationTravelMinutes
+import app.hyuabot.backend.database.entity.BusDepartureLog
 import app.hyuabot.backend.database.entity.BusRealtime
 import app.hyuabot.backend.database.repository.BusDepartureLogRepository
 import app.hyuabot.backend.database.repository.BusRealtimeRepository
@@ -54,6 +55,9 @@ class BusRealtimeService(
         val threshold = serviceStartTime.toSecondOfDay()
         return if (seconds >= threshold) seconds else seconds + 24 * 60 * 60
     }
+
+    internal fun serviceDayOf(log: BusDepartureLog): LocalDate =
+        if (log.departureTime.isBefore(serviceStartTime)) log.departureDate.minusDays(1) else log.departureDate
 
     /** Median gap (minutes) between consecutive scheduled departures — this route's typical dispatch interval. */
     internal fun estimateHeadwayMinutes(departureTimes: List<LocalTime>): Int? {
@@ -131,21 +135,27 @@ class BusRealtimeService(
         val serviceDate =
             if (currentTime.isBefore(serviceStartTime)) now.toLocalDate().minusDays(1) else now.toLocalDate()
         val weekday = resolveWeekday(serviceDate)
-        // Include the current service day so arrival can use the same-day departure
-        // logs that the realtime screen receives through the log field. Keep three
-        // comparable prior weeks for fallback and travel-time estimation.
+        // After-midnight departures are stored under the next calendar date, so query each
+        // service day and its next date, then match logs by service day. Skip past dates whose
+        // holiday-aware day type differs from today's; keep three comparable prior weeks.
         val sameDayDates = (0..3).map { serviceDate.minusWeeks(it.toLong()) }
+        val matchingServiceDays = sameDayDates.filter { resolveWeekday(it) == weekday }.toSet()
+        val logDates = matchingServiceDays.sortedDescending().flatMap { listOf(it, it.plusDays(1)) }.distinct()
         val logKeys =
             keys
                 .flatMap { key ->
                     buildList {
-                        add(BusDepartureLogKey(key.routeID, key.stopID, sameDayDates))
+                        add(BusDepartureLogKey(key.routeID, key.stopID, logDates))
                         (key.destinationStopIDs + listOfNotNull(key.destinationStopID)).forEach { destinationStopID ->
-                            add(BusDepartureLogKey(key.routeID, destinationStopID, sameDayDates))
+                            add(BusDepartureLogKey(key.routeID, destinationStopID, logDates))
                         }
                     }
                 }
-        val allLogs = departureLogRepository.findByRouteStopAndDepartureDates(logKeys.toSet())
+        val allLogs =
+            departureLogRepository.findByRouteStopAndDepartureDates(logKeys.toSet()).filter {
+                serviceDayOf(it) in
+                    matchingServiceDays
+            }
         val logGrouped = allLogs.groupBy { it.routeID to it.stopID }
         val sort = Sort.by(Sort.Order.asc("routeID"), Sort.Order.asc("startStopID"), Sort.Order.asc("departureTime"))
         val timetableGrouped =
